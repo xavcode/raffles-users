@@ -1,0 +1,9 @@
+{"userId":{"placeholder_id":"user_id_1"},"type":"deposit","amount":150000,"status":"completed","paymentGateway":"ePayco","gatewayTransactionId":"epayco_trx_valgomez"}
+{"userId":{"placeholder_id":"user_id_2"},"type":"deposit","amount":25000,"status":"completed","paymentGateway":"ePayco","gatewayTransactionId":"epayco_trx_sanrodri"}
+{"userId":{"placeholder_id":"user_id_4"},"type":"deposit","amount":500000,"status":"completed","paymentGateway":"ePayco","gatewayTransactionId":"epayco_trx_sebmart"}
+{"userId":{"placeholder_id":"user_id_5"},"type":"deposit","amount":75000,"status":"completed","paymentGateway":"ePayco","gatewayTransactionId":"epayco_trx_margon"}
+{"userId":{"placeholder_id":"user_id_6"},"type":"deposit","amount":10000,"status":"completed","paymentGateway":"ePayco","gatewayTransactionId":"epayco_trx_aleher"}
+{"userId":{"placeholder_id":"user_id_7"},"type":"deposit","amount":90000,"status":"completed","paymentGateway":"ePayco","gatewayTransactionId":"epayco_trx_valper"}
+{"userId":{"placeholder_id":"user_id_8"},"type":"deposit","amount":200000,"status":"completed","paymentGateway":"ePayco","gatewayTransactionId":"epayco_trx_matsan"}
+{"userId":{"placeholder_id":"user_id_9"},"type":"deposit","amount":30000,"status":"completed","paymentGateway":"ePayco","gatewayTransactionId":"epayco_trx_gabram"}
+{"userId":{"placeholder_id":"user_id_10"},"type":"deposit","amount":50000,"status":"completed","paymentGateway":"ePayco","gatewayTransactionId":"epayco_trx_dantor"}
