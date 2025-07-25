@@ -1,6 +1,6 @@
 import { useAuth } from '@clerk/clerk-expo'
 import { FontAwesome } from '@expo/vector-icons'
-import { Redirect, Tabs } from 'expo-router'
+import { Tabs } from 'expo-router'
 import React from 'react'
 import { ActivityIndicator, View } from 'react-native'
 
@@ -14,11 +14,6 @@ const _layout = () => {
         <ActivityIndicator size="large" color="#6366F1" />
       </View>
     )
-  }
-
-  // Si el usuario no ha iniciado sesión, redirígelo a la pantalla de login.
-  if (!isSignedIn) {
-    return <Redirect href="/sign-in" />
   }
 
   return (

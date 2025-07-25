@@ -21,13 +21,21 @@ export default defineSchema({
         .index("by_status", ["status"]),
 
     tickets: defineTable({
-        sorteoId: v.id("raffles"),
+        raffleId: v.id("raffles"),
+        purchaseId: v.id("purchases"), // ID de la compra a la que pertenece
         ticketNumber: v.float64(),
-        userId: v.id("users"),
+        userId: v.optional(v.id("users")), // El userId es opcional hasta que se confirma la compra
+        status: v.union(
+            v.literal("available"),
+            v.literal("reserved"),
+            v.literal("sold")
+        ),
+        reservedUntil: v.optional(v.float64()), // Timestamp de cuando expira la reserva
     })
         .index("by_user", ["userId"])
-        .index("by_raffle", ["sorteoId"])
-        .index("by_raffle_and_ticket", ["sorteoId", "ticketNumber"]),
+        .index("by_raffle", ["raffleId"])
+        .index("by_purchase", ["purchaseId"]) // Nuevo índice para buscar boletos por compra
+        .index("by_raffle_status", ["raffleId", "status"]),
 
     transactions: defineTable({
         amount: v.float64(),
@@ -40,11 +48,25 @@ export default defineSchema({
         .index("by_user", ["userId"])
         .index("by_status", ["status"]),
 
+    purchases: defineTable({
+        userId: v.id("users"),
+        raffleId: v.id("raffles"),
+        ticketCount: v.float64(),
+        totalAmount: v.float64(),
+        status: v.union(v.literal("pending_payment"), v.literal("completed"), v.literal("expired")),
+        expiresAt: v.optional(v.float64()), // Timestamp de cuando expira la reserva
+    })
+        .index("by_user", ["userId"])
+        .index("by_raffle", ["raffleId"])
+        .index("by_status", ["status"])
+        .index("by_user_and_raffle", ["userId", "raffleId"]),
+
     users: defineTable({
         balance: v.float64(),
         clerkId: v.string(),
-        email: v.string(),
-        name: v.string(),
+        email: v.optional(v.string()),
+        firstName: v.string(),
+        lastName: v.string(),
         phone: v.optional(v.string())
     })
         .index("by_clerk_id", ["clerkId"])

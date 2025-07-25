@@ -1,173 +1,172 @@
-import { useAuth } from "@clerk/clerk-expo";
-import { useQuery } from "convex/react";
-import { useLocalSearchParams, useNavigation } from "expo-router";
-import React, { useLayoutEffect, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Image, Pressable, Text, View } from "react-native";
-import { api } from "../../convex/_generated/api";
-import { Id } from "../../convex/_generated/dataModel";
+// app/raffles/[id].tsx o similar
 
-const NumberCircle = ({ number, isSelected, isBought, onSelect }: { number: number, isSelected: boolean, isBought: boolean, onSelect: (num: number) => void }) => {
-  const circleClassName = isBought
-    ? 'bg-gray-300 border-gray-400'
-    : isSelected
-      ? 'bg-primary border-indigo-700'
-      : 'bg-white border-gray-200 active:opacity-70';
+import { api } from '@/convex/_generated/api';
+import { Id } from '@/convex/_generated/dataModel';
+import { useMutation, useQuery } from 'convex/react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-  const textClassName = isBought ? 'text-gray-500' : isSelected ? 'text-white' : 'text-gray-700';
+// 1. Define las clases de Tailwind para cada estado del boleto
+const TICKET_CLASSES = {
+  sold: 'bg-gray-400',      // Gris para boletos vendidos
+  reserved: 'bg-primary',   // Naranja (color primario del tema) para reservados
+  available: 'bg-green-500',// Verde para disponibles
+  selected: 'bg-blue-500',  // Azul para seleccionados por el usuario
+};
+
+// 2. Componente para la leyenda de colores
+const ColorLegend = () => (
+  <View className="flex-row justify-around p-3 bg-white mx-4 my-3 rounded-lg shadow-md">
+    <View className="flex-row items-center">
+      <View className={`w-3.5 h-3.5 rounded-full mr-1.5 ${TICKET_CLASSES.available}`} />
+      <Text className="text-xs font-quicksand">Disponible</Text>
+    </View>
+    <View className="flex-row items-center">
+      <View className={`w-3.5 h-3.5 rounded-full mr-1.5 ${TICKET_CLASSES.reserved}`} />
+      <Text className="text-xs font-quicksand">Reservado</Text>
+    </View>
+    <View className="flex-row items-center">
+      <View className={`w-3.5 h-3.5 rounded-full mr-1.5 ${TICKET_CLASSES.sold}`} />
+      <Text className="text-xs font-quicksand">Vendido</Text>
+    </View>
+    <View className="flex-row items-center">
+      <View className={`w-3.5 h-3.5 rounded-full mr-1.5 ${TICKET_CLASSES.selected}`} />
+      <Text className="text-xs font-quicksand">Seleccionado</Text>
+    </View>
+  </View>
+);
+
+// 3. Componente de Boleto individual, optimizado para no re-renderizar innecesariamente
+const Ticket = React.memo(({ number, status, isSelected, onPress }: {
+  number: number;
+  status: 'sold' | 'reserved' | 'available';
+  isSelected: boolean;
+  onPress: () => void;
+}) => {
+  const bgClass = isSelected ? TICKET_CLASSES.selected : TICKET_CLASSES[status];
+  const isPressable = status === 'available';
 
   return (
     <Pressable
-      onPress={() => onSelect(number)}
-      disabled={isBought}
-      className={`w-14 h-14 rounded-full items-center justify-center m-1 border-2 ${circleClassName}`}
+      onPress={isPressable ? onPress : undefined}
+      className={`w-16 h-10 justify-center items-center m-1.5 rounded-lg shadow-md ${bgClass} ${!isPressable && 'opacity-70'}`}
+      disabled={!isPressable}
     >
-      <Text className={`font-quicksand-bold text-lg ${textClassName}`}>
-        {number}
-      </Text>
+      <Text className="text-white font-quicksand-bold text-base">{number.toString().padStart(3, '0')}</Text>
     </Pressable>
   );
-};
+});
 
-const RaffleDetail = () => {
-  const { id } = useLocalSearchParams<{ id: Id<"raffles"> }>();
-  const navigation = useNavigation();
-  const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
-  const [isPurchasing, setIsPurchasing] = useState(false);
-  const { isSignedIn } = useAuth();
+// 4. Componente principal de la pantalla
+export default function RaffleDetailsScreen() {
+  const { id } = useLocalSearchParams();
+  const router = useRouter();
+  const [selectedTickets, setSelectedTickets] = useState(new Set<number>());
+  const [isReserving, setIsReserving] = useState(false);
 
-  const raffle = useQuery(
-    api.raffles.getById,
-    !id ? "skip" : { id: id as Id<"raffles"> }
-  );
+  // Hooks de Convex
+  const raffle = useQuery(api.raffles.getById, { id: id as Id<'raffles'> });
+  const nonAvailableTickets = useQuery(api.tickets.getNonAvailableTickets, { raffleId: id as Id<'raffles'> });
+  const reserveTicketsMutation = useMutation(api.tickets.reserveTickets);
 
-  const boughtTickets = useQuery(api.tickets.getTicketsByRaffle, !id ? "skip" : { sorteoId: id as Id<"raffles"> });
-  // const purchaseTickets = useMutation(api.tickets.purchaseTickets);
+  // Memoizamos el mapa de estados para un rendimiento óptimo.
+  // Se recalcula solo cuando `nonAvailableTickets` cambia.
+  const ticketStatusMap = useMemo(() => {
+    const map = new Map<number, 'sold' | 'reserved'>();
+    if (nonAvailableTickets) {
+      for (const ticket of nonAvailableTickets) {
+        map.set(ticket.ticketNumber, ticket.status);
+      }
+    }
+    return map;
+  }, [nonAvailableTickets]);
 
-  // Usamos useLayoutEffect para actualizar el título del header de forma segura.
-  // Esto se ejecuta después de que los datos se cargan, pero antes de que la pantalla se pinte,
-  // evitando el warning de Reanimated sobre actualizar el estado durante el render.
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      title: raffle?.title ?? "Cargando...",
-      headerBackTitle: "Volver",
+  // Manejador para seleccionar/deseleccionar boletos
+  const handleTicketPress = useCallback((ticketNumber: number) => {
+    setSelectedTickets(prevSelected => {
+      const newSelected = new Set(prevSelected);
+      if (newSelected.has(ticketNumber)) {
+        newSelected.delete(ticketNumber);
+      } else {
+        newSelected.add(ticketNumber);
+      }
+      return newSelected;
     });
-  }, [navigation, raffle]);
+  }, []);
 
-  const handleSelectNumber = (number: number) => {
-    if (boughtTickets?.some(t => t.ticketNumber === number)) return;
-
-    setSelectedNumbers(prevSelected =>
-      prevSelected.includes(number)
-        ? prevSelected.filter(n => n !== number)
-        : [...prevSelected, number]
-    );
-  };
-
-  const handlePurchase = async () => {
-    if (selectedNumbers.length === 0) {
-      Alert.alert("Sin selección", "Por favor, selecciona al menos un número para comprar.");
-      return;
-    }
-    if (!id) return;
-    if (!isSignedIn) {
-      Alert.alert("Acción requerida", "Debes iniciar sesión para poder comprar boletos.");
-      return;
-    }
-
-    // setIsPurchasing(true);
-    // try {
-    //   await purchaseTickets({
-    //     raffleId: id,
-    //     ticketNumbers: selectedNumbers,
-    //   });
-
-    //   Alert.alert(
-    //     "¡Compra Exitosa!",
-    //     `Has comprado los boletos: ${selectedNumbers.sort((a, b) => a - b).join(', ')}`
-    //   );
-    //   setSelectedNumbers([]); // Limpiar la selección después de la compra
-    // } catch (error) {
-    //   console.error("Error al comprar boletos:", error);
-    //   Alert.alert("Error en la compra", (error as Error).message || "No se pudo completar la compra. Inténtalo de nuevo.");
-    // } finally {
-    //   setIsPurchasing(false);
-    // }
-  };
-
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
-
-  if (raffle === undefined || boughtTickets === undefined) {
+  // Muestra un indicador de carga mientras se obtienen los datos
+  if (!raffle || nonAvailableTickets === undefined) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
-        <ActivityIndicator size="large" color="#6366F1" />
+      <View className="flex-1 justify-center items-center bg-gray-50">
+        <ActivityIndicator size="large" color="#FE8C00" />
+        <Text className="mt-2 text-gray-600">Cargando rifa...</Text>
       </View>
     );
   }
 
-  if (raffle === null) {
-    return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
-        <Text className="text-xl font-quicksand-semibold text-gray-500">Sorteo no encontrado.</Text>
-      </View>
-    );
-  }
-
-  const { title, description, imageUrl, prize, ticketPrice, ticketsSold, totalTickets } = raffle;
-
-  const numbers = Array.from({ length: totalTickets }, (_, i) => i + 1);
-  const boughtTicketNumbers = boughtTickets?.map(t => t.ticketNumber) ?? [];
+  // Manejador para la reserva de boletos
+  const handleReserve = async () => {
+    if (selectedTickets.size === 0) {
+      Alert.alert("Sin selección", "Debes seleccionar al menos un boleto para reservar.");
+      return;
+    }
+    setIsReserving(true);
+    try {
+      const result = await reserveTicketsMutation({
+        raffleId: id as Id<'raffles'>,
+        ticketNumbers: Array.from(selectedTickets),
+      });
+      Alert.alert(
+        "¡Boletos Reservados!",
+        `Tus boletos han sido reservados por 30 minutos (Compra #${result.purchaseId}). Ve a 'Mis Boletos' para ver los detalles y confirmar tu compra.`,
+        [{ text: "OK", onPress: () => router.back() }]
+      );
+      setSelectedTickets(new Set());
+    } catch (error: any) {
+      console.error("Error al reservar boletos:", error);
+      Alert.alert("Error", error.data?.message || error.message || "No se pudieron reservar los boletos. Es posible que alguien más los haya tomado. Por favor, refresca.");
+    } finally {
+      setIsReserving(false);
+    }
+  };
 
   return (
-    <FlatList
-      data={numbers}
-      numColumns={5}
-      keyExtractor={(item) => item.toString()}
-      contentContainerStyle={{ paddingBottom: 24, backgroundColor: 'white' }}
-      columnWrapperStyle={{ justifyContent: 'center', paddingHorizontal: 8 }}
-      renderItem={({ item }) => (
-        <NumberCircle
-          number={item}
-          isSelected={selectedNumbers.includes(item)}
-          isBought={boughtTicketNumbers.includes(item)}
-          onSelect={handleSelectNumber}
-        />
-      )}
-      ListHeaderComponent={() => (
-        <>
-          <Image source={{ uri: imageUrl }} className="w-full h-64" resizeMode="cover" />
-          <View className="p-6">
-            <Text className="text-3xl font-quicksand-bold text-gray-800 mb-2">{title}</Text>
-            <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-2xl font-quicksand-bold text-primary">{formatCurrency(prize ?? 0)}</Text>
-              <Text className="text-xl font-quicksand-semibold text-green-600">{formatCurrency(ticketPrice ?? 0)} / Boleto</Text>
-            </View>
-            <Text className="text-base font-quicksand-regular text-gray-700 leading-6 mb-6">{description}</Text>
-            <View className="w-full bg-gray-200 rounded-full h-3 mb-2"><View className="bg-primary h-3 rounded-full" style={{ width: `${(ticketsSold / totalTickets) * 100}%` }} /></View>
-            <Text className="text-right text-gray-500 font-quicksand-medium mb-8">{ticketsSold} de {totalTickets} boletos vendidos</Text>
-            <Text className="text-2xl font-quicksand-bold text-center mb-2 text-gray-800">Selecciona tus Números</Text>
-          </View>
-        </>
-      )}
-      ListFooterComponent={() => (
-        <View className="mt-6 px-6 pb-8">
-          <Pressable onPress={handlePurchase} disabled={selectedNumbers.length === 0 || isPurchasing} className={`p-4 rounded-lg items-center transition-colors ${selectedNumbers.length > 0 ? 'bg-green-500' : 'bg-gray-400'} active:opacity-80`}>
+    <SafeAreaView className='flex-1'>
+      <ScrollView className="flex-1 bg-gray-50">
+        {raffle.imageUrl && <Image source={{ uri: "https://st3.depositphotos.com/6922808/15355/i/450/depositphotos_153557144-stock-illustration-colombian-money-on-a-white.jpg" }} className="w-full h-56" resizeMode="cover" />}
+        <View className="p-5 bg-white border-b border-gray-200 -mt-4 rounded-t-2xl">
+          <Text className="text-2xl font-quicksand-bold text-gray-800">{raffle.title}</Text>
+          <Text className="text-base text-gray-600 mt-2">{raffle.description}</Text>
+        </View>
+
+        <ColorLegend />
+
+        <View className="flex-row flex-wrap justify-center p-2.5">
+          {Array.from({ length: raffle.totalTickets }, (_, i) => i + 1).map((number) => (
+            <Ticket
+              key={number}
+              number={number}
+              status={ticketStatusMap.get(number) || 'available'}
+              isSelected={selectedTickets.has(number)}
+              onPress={() => handleTicketPress(number)}
+            />
+          ))}
+        </View>
+
+        <View className="p-5 mt-auto mb-6">
+          <Pressable
+            onPress={handleReserve}
+            disabled={isReserving || selectedTickets.size === 0}
+            className="bg-primary p-4 rounded-lg items-center active:opacity-80 disabled:opacity-50"
+          >
             <Text className="text-white font-quicksand-bold text-lg">
-              {isPurchasing
-                ? "Procesando..."
-                : `Comprar ${selectedNumbers.length > 0 ? `${selectedNumbers.length} Número(s)` : ''}`}
+              {isReserving ? 'Reservando...' : `Reservar ${selectedTickets.size} Boletos`}
             </Text>
           </Pressable>
         </View>
-      )}
-    />
+      </ScrollView>
+    </SafeAreaView>
   );
-};
-
-export default RaffleDetail;
+}
