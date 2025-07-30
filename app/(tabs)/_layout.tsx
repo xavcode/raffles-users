@@ -19,7 +19,9 @@ const _layout = () => {
   return (
     <Tabs screenOptions={{
       tabBarActiveTintColor: '#6366F1', // Color primario para el ícono activo
-    }}>
+      tabBarStyle: { height: 60, justifyContent: 'center' }, // Ajusta la altura del tabBar
+    }}
+    >
       <Tabs.Screen name="index"
         options={{
           title: 'Sorteos',

@@ -24,12 +24,13 @@ export const getOrCreateUser = mutation({
 
         // Si el usuario no existe, lo creamos
         const newUser = {
+            email: identity.email,
             firstName: identity.givenName ?? "",
             lastName: identity.familyName ?? "",
-            email: identity.email,
             clerkId: identity.subject,
             balance: 0, // Saldo inicial
-        };;
+            userType: "member" as "member", // Asegúrate de que sea un literal
+        };
         const newUserId = await ctx.db.insert("users", newUser);
         return await ctx.db.get(newUserId);
     },
@@ -57,7 +58,13 @@ export const getCurrent = query({
 });
 
 export const createUser = internalMutation({
-    args: { clerkId: v.string(), email: v.optional(v.string()), firstName: v.string(), lastName: v.string() },
+    args: {
+        clerkId: v.string(),
+        email: v.optional(v.string()),
+        firstName: v.string(),
+        lastName: v.string(),
+        userType: v.union(v.literal("admin"), v.literal("member")),
+    },
     handler: async (ctx, args) => {
         await ctx.db.insert("users", {
             clerkId: args.clerkId,
@@ -65,6 +72,7 @@ export const createUser = internalMutation({
             firstName: args.firstName,
             lastName: args.lastName,
             balance: 0,
+            userType: args.userType,
         });
     },
 });

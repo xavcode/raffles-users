@@ -19,7 +19,7 @@ const profile = () => {
                 ) : (
                     <View className="w-full items-center">
                         <Image source={{ uri: user?.imageUrl }} className="w-24 h-24 rounded-full mb-4 border-2 border-primary" />
-                        <Text className="text-2xl font-quicksand-bold text-gray-800">{convexUser?.name}</Text>
+                        <Text className="text-2xl font-quicksand-bold text-gray-800">{convexUser?.firstName} {convexUser?.lastName}</Text>
                         <Text className="text-base text-gray-500 mb-4">{convexUser?.email}</Text>
                         <Text className="text-base text-gray-500 mb-8">{convexUser?.phone ?? 'Sin número de teléfono'}</Text>
 

@@ -8,31 +8,43 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// 1. Define las clases de Tailwind para cada estado del boleto
-const TICKET_CLASSES = {
-  sold: 'bg-gray-400',      // Gris para boletos vendidos
-  reserved: 'bg-primary',   // Naranja (color primario del tema) para reservados
-  available: 'bg-green-500',// Verde para disponibles
-  selected: 'bg-blue-500',  // Azul para seleccionados por el usuario
+// 1. Estilos mejorados para los boletos, con mejor contraste y legibilidad
+const TICKET_STYLES = {
+  sold: {
+    container: 'bg-slate-300 border-slate-400',
+    text: 'text-slate-500',
+  },
+  reserved: {
+    container: 'bg-amber-400 border-amber-500',
+    text: 'text-white',
+  },
+  available: {
+    container: 'bg-white border-slate-300',
+    text: 'text-slate-700',
+  },
+  selected: {
+    container: 'bg-indigo-500 border-indigo-600',
+    text: 'text-white',
+  },
 };
 
 // 2. Componente para la leyenda de colores
 const ColorLegend = () => (
-  <View className="flex-row justify-around p-3 bg-white mx-4 my-3 rounded-lg shadow-md">
+  <View className="flex-row justify-around p-3 bg-white mx-4 my-3 rounded-lg shadow-sm">
     <View className="flex-row items-center">
-      <View className={`w-3.5 h-3.5 rounded-full mr-1.5 ${TICKET_CLASSES.available}`} />
+      <View className={`w-3.5 h-3.5 rounded-full mr-1.5 border ${TICKET_STYLES.available.container}`} />
       <Text className="text-xs font-quicksand">Disponible</Text>
     </View>
     <View className="flex-row items-center">
-      <View className={`w-3.5 h-3.5 rounded-full mr-1.5 ${TICKET_CLASSES.reserved}`} />
+      <View className={`w-3.5 h-3.5 rounded-full mr-1.5 ${TICKET_STYLES.reserved.container}`} />
       <Text className="text-xs font-quicksand">Reservado</Text>
     </View>
     <View className="flex-row items-center">
-      <View className={`w-3.5 h-3.5 rounded-full mr-1.5 ${TICKET_CLASSES.sold}`} />
+      <View className={`w-3.5 h-3.5 rounded-full mr-1.5 ${TICKET_STYLES.sold.container}`} />
       <Text className="text-xs font-quicksand">Vendido</Text>
     </View>
     <View className="flex-row items-center">
-      <View className={`w-3.5 h-3.5 rounded-full mr-1.5 ${TICKET_CLASSES.selected}`} />
+      <View className={`w-3.5 h-3.5 rounded-full mr-1.5 ${TICKET_STYLES.selected.container}`} />
       <Text className="text-xs font-quicksand">Seleccionado</Text>
     </View>
   </View>
@@ -45,16 +57,16 @@ const Ticket = React.memo(({ number, status, isSelected, onPress }: {
   isSelected: boolean;
   onPress: () => void;
 }) => {
-  const bgClass = isSelected ? TICKET_CLASSES.selected : TICKET_CLASSES[status];
+  const styles = isSelected ? TICKET_STYLES.selected : TICKET_STYLES[status];
   const isPressable = status === 'available';
 
   return (
     <Pressable
-      onPress={isPressable ? onPress : undefined}
-      className={`w-16 h-10 justify-center items-center m-1.5 rounded-lg shadow-md ${bgClass} ${!isPressable && 'opacity-70'}`}
+      onPress={isPressable ? onPress : undefined} // Solo se puede presionar si está disponible
+      className={`w-16 h-12 justify-center items-center m-1.5 rounded-lg border ${styles.container} ${!isPressable && 'opacity-70'} active:scale-95 transition-transform`}
       disabled={!isPressable}
     >
-      <Text className="text-white font-quicksand-bold text-base">{number.toString().padStart(3, '0')}</Text>
+      <Text className={`font-quicksand-bold text-lg ${styles.text}`}>{number.toString().padStart(3, '0')}</Text>
     </Pressable>
   );
 });
@@ -135,7 +147,7 @@ export default function RaffleDetailsScreen() {
   return (
     <SafeAreaView className='flex-1'>
       <ScrollView className="flex-1 bg-gray-50">
-        {raffle.imageUrl && <Image source={{ uri: "https://st3.depositphotos.com/6922808/15355/i/450/depositphotos_153557144-stock-illustration-colombian-money-on-a-white.jpg" }} className="w-full h-56" resizeMode="cover" />}
+        {raffle.imageUrl && <Image source={{ uri: raffle.imageUrl }} className="w-full h-56" resizeMode="cover" />}
         <View className="p-5 bg-white border-b border-gray-200 -mt-4 rounded-t-2xl">
           <Text className="text-2xl font-quicksand-bold text-gray-800">{raffle.title}</Text>
           <Text className="text-base text-gray-600 mt-2">{raffle.description}</Text>

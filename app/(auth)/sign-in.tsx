@@ -1,7 +1,7 @@
 import { Link } from "expo-router";
 import React from "react";
 import { Text, View } from "react-native";
-import { icons } from "../../constanst";
+import { icons } from "../../constants";
 import SocialButton from "../components/SocialButton";
 
 const SignIn = () => {
