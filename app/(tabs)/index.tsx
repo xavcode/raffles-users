@@ -77,11 +77,17 @@ const RafflesTab = () => {
     );
   }
 
+  // Agrupa los sorteos por estado: "active" primero y "finished" al final
+  const activeRaffles = raffles ? raffles.filter(raffle => raffle.status === "active") : [];
+  const finishedRaffles = raffles ? raffles.filter(raffle => raffle.status === "finished") : [];
+
+  // Combina los sorteos activos y finalizados
+  const sortedRaffles = [...activeRaffles, ...finishedRaffles];
+
   return (
 
     <SafeAreaView className="flex-1 bg-gray-50">
       <Stack.Screen options={{ headerShown: false }} />
-
       {/* Custom Header */}
       <View className="flex-row justify-between items-center px-4 pt-2 pb-4">
         <View>
@@ -103,7 +109,7 @@ const RafflesTab = () => {
       </View>
 
       <FlatList
-        data={raffles}
+        data={sortedRaffles}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
         renderItem={({ item }) => <RaffleItem item={item} />}
         keyExtractor={(item) => item._id.toString()}
