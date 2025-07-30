@@ -11,27 +11,33 @@ const _layout = () => {
   if (!isLoaded) {
     return (
       <View className="flex-1 items-center justify-center">
-        <ActivityIndicator size="large" color="#6366F1" />
+        <ActivityIndicator size="large" color="#FE8C00" />
       </View>
     )
   }
 
   return (
     <Tabs screenOptions={{
-      tabBarActiveTintColor: '#6366F1', // Color primario para el ícono activo
-      tabBarStyle: { height: 60, justifyContent: 'center' }, // Ajusta la altura del tabBar
+      tabBarActiveTintColor: '#FE8C00', // Color primario para el ícono activo
+      tabBarLabelStyle: { fontFamily: 'Quicksand-Bold', fontSize: 12 }, // Estilo de fuente para los títulos de las pestañas
     }}
     >
       <Tabs.Screen name="index"
         options={{
           title: 'Sorteos',
-          tabBarIcon: ({ color }) => <FontAwesome size={28} name="home" color={color} />,
+          tabBarIcon: ({ color }) => <FontAwesome size={24} name="home" color={color} />,
         }}
       />
       <Tabs.Screen name="profile"
         options={{
           title: 'Perfil',
-          tabBarIcon: ({ color }) => <FontAwesome size={28} name="user" color={color} />,
+          tabBarIcon: ({ color }) => <FontAwesome size={24} name="user" color={color} />,
+        }}
+      />
+      <Tabs.Screen name="my-tickets"
+        options={{
+          title: 'Mis Boletos',
+          tabBarIcon: ({ color }) => <FontAwesome size={24} name="ticket" color={color} />,
         }}
       />
     </Tabs>

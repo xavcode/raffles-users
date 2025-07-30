@@ -15,7 +15,7 @@ const TICKET_STYLES = {
     text: 'text-slate-500',
   },
   reserved: {
-    container: 'bg-amber-400 border-amber-500',
+    container: 'bg-orange-500 border-amber-500',
     text: 'text-white',
   },
   available: {
