@@ -44,7 +44,7 @@ const RaffleItem = ({ item }: { item: Pick<Doc<"raffles">, '_id' | 'prize' | 'ti
         <Link
           disabled={status === "finished"}
           href={{
-            pathname: "/screens/[id]",
+            pathname: "/(tabs)/[id]",
             params: { id: _id.toString() },
           }}
           asChild

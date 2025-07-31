@@ -34,6 +34,18 @@ const _layout = () => {
           tabBarIcon: ({ color }) => <FontAwesome size={28} name="user" color={color} />,
         }}
       />
+      <Tabs.Screen name="my-tickets"
+        options={{
+          title: 'Mis Boletos',
+          tabBarIcon: ({ color }) => <FontAwesome size={28} name="ticket" color={color} />,
+        }}
+      />
+      <Tabs.Screen name='[id]'
+        options={{
+          href: null,
+          title: 'Mis Boletos',
+        }}
+      />
     </Tabs>
   )
 }

@@ -23,7 +23,7 @@ const profile = () => {
                         <Text className="text-base text-gray-500 mb-4">{convexUser?.email}</Text>
                         <Text className="text-base text-gray-500 mb-8">{convexUser?.phone ?? 'Sin número de teléfono'}</Text>
 
-                        <Link href={"/screens/edit"} asChild>
+                        <Link href={"/(tabs)/edit-profile"} asChild>
                             <Pressable className="flex-row items-center justify-center bg-gray-200 p-3 rounded-lg w-full mb-4 active:opacity-80">
                                 <FontAwesome name="pencil" size={18} color="#4B5563" />
                                 <Text className="text-gray-700 font-quicksand-bold text-base ml-2">Editar Perfil</Text>
