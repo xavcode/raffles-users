@@ -85,6 +85,68 @@ export const reserveTickets = mutation({
   },
 });
 
+export const soldTickets = mutation({
+  args: {
+    ticketNumbers: v.array(v.number()),
+    raffleId: v.id("raffles"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Debes iniciar sesión para reservar boletos.");
+    }
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    if (!user) {
+      throw new Error("Usuario no encontrado.");
+    }
+
+    const raffle = await ctx.db.get(args.raffleId);
+    if (!raffle) {
+      throw new Error("Sorteo no encontrado.");
+    }
+
+    // Prevenir la reserva de boletos ya reservados o vendidos
+    const existingTickets = await ctx.db
+      .query("tickets")
+      .withIndex("by_raffle", (q) => q.eq("raffleId", args.raffleId))
+      .filter(q => q.neq(q.field("status"), "available"))
+      .collect();
+    const unavailableNumbers = new Set(existingTickets.map(t => t.ticketNumber));
+
+    for (const number of args.ticketNumbers) {
+      if (unavailableNumbers.has(number)) {
+        throw new Error(`El boleto número ${number} ya no está disponible.`);
+      }
+    }
+
+    // 1. Crear el registro de la compra (Purchase)
+    const purchaseId = await ctx.db.insert("purchases", {
+      userId: user._id,
+      raffleId: args.raffleId,
+      ticketCount: args.ticketNumbers.length,
+      totalAmount: raffle.ticketPrice * args.ticketNumbers.length,
+      status: "completed",
+    });
+
+    // 2. Crear y reservar los boletos, asociándolos a la compra
+    for (const number of args.ticketNumbers) {
+      await ctx.db.insert("tickets", {
+        raffleId: args.raffleId,
+        purchaseId: purchaseId,
+        ticketNumber: number,
+        userId: user._id,
+        status: "sold",
+      });
+    }
+
+    return { purchaseId };
+
+  }
+})
+
 export const getAll = query({
   handler: async (ctx) => {
     // Esta es una consulta simple para probar la conexión.

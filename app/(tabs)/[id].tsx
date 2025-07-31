@@ -77,6 +77,8 @@ export default function RaffleDetailsScreen() {
   const router = useRouter();
   const [selectedTickets, setSelectedTickets] = useState(new Set<number>());
   const [isReserving, setIsReserving] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const soldTickets = useMutation(api.tickets.soldTickets);
 
   // Hooks de Convex
   const raffle = useQuery(api.raffles.getById, { id: id as Id<'raffles'> });
@@ -118,6 +120,9 @@ export default function RaffleDetailsScreen() {
     );
   }
 
+
+
+
   // Manejador para la reserva de boletos
   const handleReserve = async () => {
     if (selectedTickets.size === 0) {
@@ -143,6 +148,31 @@ export default function RaffleDetailsScreen() {
       setIsReserving(false);
     }
   };
+  const handleSold = async () => {
+    if (selectedTickets.size === 0) {
+      Alert.alert("Sin selección", "Debes seleccionar al menos un boleto para comprar.");
+      return;
+    }
+    setIsReserving(true);
+    try {
+      const result = await soldTickets({
+        ticketNumbers: Array.from(selectedTickets),
+        raffleId: id as Id<'raffles'>,
+      });
+      Alert.alert(
+        "¡Boletos Comprados!",
+        `Felicidades. Compraste los boletos:${Array.from(selectedTickets).join(', ')}. Ve a 'Mis Boletos' para ver los detalles y confirmar tu compra.`,
+        [{ text: "OK", onPress: () => router.back() }]
+      );
+      setSelectedTickets(new Set());
+    } catch (error: any) {
+      console.error("Error al vender boletos:", error);
+      Alert.alert("Error", error.data?.message || error.message || "No se pudieron vender los boletos. Es posible que alguien más los haya tomado. Por favor, refresca.");
+    } finally {
+      setIsReserving(false);
+    }
+  }
+
 
   return (
     <SafeAreaView className='flex-1'>
@@ -169,16 +199,48 @@ export default function RaffleDetailsScreen() {
 
         <View className="p-5 mt-auto mb-6">
           <Pressable
-            onPress={handleReserve}
+            onPress={() => setIsModalVisible(true)}
             disabled={isReserving || selectedTickets.size === 0}
             className="bg-primary p-4 rounded-lg items-center active:opacity-80 disabled:opacity-50"
           >
             <Text className="text-white font-quicksand-bold text-lg">
-              {isReserving ? 'Reservando...' : `Reservar ${selectedTickets.size} Boletos`}
+              {isReserving ? 'Procesando...' : `Comprar ${selectedTickets.size} Boletos`}
             </Text>
           </Pressable>
         </View>
       </ScrollView>
+
+      {isModalVisible && (
+        <View className="absolute inset-0 bg-black/50 justify-center items-center">
+          <View className="bg-white p-6 rounded-lg w-80">
+            <Text className="text-lg font-quicksand-bold mb-4">Selecciona un método de pago</Text>
+            <Pressable
+              onPress={() => {
+                setIsModalVisible(false);
+                handleSold();
+              }}
+              className="bg-green-500 p-3 rounded-lg items-center mb-3"
+            >
+              <Text className="text-white font-quicksand-bold">Pagar con Saldo</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                setIsModalVisible(false);
+                handleReserve();
+              }}
+              className="bg-blue-500 p-3 rounded-lg items-center"
+            >
+              <Text className="text-white font-quicksand-bold">Pagar por Transferencia (Reservar)</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setIsModalVisible(false)}
+              className="mt-4"
+            >
+              <Text className="text-center text-gray-500">Cancelar</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }

@@ -65,6 +65,8 @@ const RaffleItem = ({ item }: { item: Pick<Doc<"raffles">, '_id' | 'prize' | 'ti
   );
 };
 
+
+
 const RafflesTab = () => {
   const raffles = useQuery(api.raffles.getAllRaffles);
   const convexUser = useQuery(api.users.getCurrent);
@@ -76,6 +78,15 @@ const RafflesTab = () => {
       </SafeAreaView>
     );
   }
+
+
+  const activeRaffles = raffles ? raffles.filter(raffle => raffle.status === "active") : [];
+  const finishedRaffles = raffles ? raffles.filter(raffle => raffle.status === "finished") : [];
+
+  // Combina los sorteos activos y finalizados
+  const sortedRaffles = [...activeRaffles, ...finishedRaffles];
+
+
 
   return (
 
@@ -103,7 +114,7 @@ const RafflesTab = () => {
       </View>
 
       <FlatList
-        data={raffles}
+        data={sortedRaffles}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
         renderItem={({ item }) => <RaffleItem item={item} />}
         keyExtractor={(item) => item._id.toString()}

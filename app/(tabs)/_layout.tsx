@@ -18,7 +18,7 @@ const _layout = () => {
 
   return (
     <Tabs screenOptions={{
-      tabBarActiveTintColor: '#6366F1', // Color primario para el ícono activo
+      tabBarActiveTintColor: '#FE8C00', // Color primario para el ícono activo
       tabBarStyle: { height: 60, justifyContent: 'center' }, // Ajusta la altura del tabBar
     }}
     >
@@ -45,6 +45,13 @@ const _layout = () => {
           href: null,
           title: 'Mis Boletos',
         }}
+      />
+      <Tabs.Screen name='edit-profile'
+        options={{
+          href: null,
+        }
+
+        }
       />
     </Tabs>
   )
