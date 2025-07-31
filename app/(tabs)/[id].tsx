@@ -120,9 +120,6 @@ export default function RaffleDetailsScreen() {
     );
   }
 
-
-
-
   // Manejador para la reserva de boletos
   const handleReserve = async () => {
     if (selectedTickets.size === 0) {
@@ -136,8 +133,8 @@ export default function RaffleDetailsScreen() {
         ticketNumbers: Array.from(selectedTickets),
       });
       Alert.alert(
-        "¡Boletos Reservados!",
-        `Tus boletos han sido reservados por 30 minutos (Compra #${result.purchaseId}). Ve a 'Mis Boletos' para ver los detalles y confirmar tu compra.`,
+        `Felicitaciones!`,
+        `Tus boletos ${Array.from(selectedTickets).join(', ')} han sido reservados por 30 minutos. Ve a 'Mis Boletos' para ver los detalles de tu compra.`,
         [{ text: "OK", onPress: () => router.back() }]
       );
       setSelectedTickets(new Set());
@@ -148,31 +145,30 @@ export default function RaffleDetailsScreen() {
       setIsReserving(false);
     }
   };
-  const handleSold = async () => {
-    if (selectedTickets.size === 0) {
-      Alert.alert("Sin selección", "Debes seleccionar al menos un boleto para comprar.");
-      return;
-    }
-    setIsReserving(true);
-    try {
-      const result = await soldTickets({
-        ticketNumbers: Array.from(selectedTickets),
-        raffleId: id as Id<'raffles'>,
-      });
-      Alert.alert(
-        "¡Boletos Comprados!",
-        `Felicidades. Compraste los boletos:${Array.from(selectedTickets).join(', ')}. Ve a 'Mis Boletos' para ver los detalles y confirmar tu compra.`,
-        [{ text: "OK", onPress: () => router.back() }]
-      );
-      setSelectedTickets(new Set());
-    } catch (error: any) {
-      console.error("Error al vender boletos:", error);
-      Alert.alert("Error", error.data?.message || error.message || "No se pudieron vender los boletos. Es posible que alguien más los haya tomado. Por favor, refresca.");
-    } finally {
-      setIsReserving(false);
-    }
-  }
-
+  // const handleSold = async () => {
+  //   if (selectedTickets.size === 0) {
+  //     Alert.alert("Sin selección", "Debes seleccionar al menos un boleto para comprar.");
+  //     return;
+  //   }
+  //   setIsReserving(true);
+  //   try {
+  //     const result = await soldTickets({
+  //       ticketNumbers: Array.from(selectedTickets),
+  //       raffleId: id as Id<'raffles'>,
+  //     });
+  //     Alert.alert(
+  //       "¡Boletos Comprados!",
+  //       `Felicidades. Compraste los boletos:${Array.from(selectedTickets).join(', ')}. Ve a 'Mis Boletos' para ver los detalles y confirmar tu compra.`,
+  //       [{ text: "OK", onPress: () => router.back() }]
+  //     );
+  //     setSelectedTickets(new Set());
+  //   } catch (error: any) {
+  //     console.error("Error al vender boletos:", error);
+  //     Alert.alert("Error", error.data?.message || error.message || "No se pudieron vender los boletos. Es posible que alguien más los haya tomado. Por favor, refresca.");
+  //   } finally {
+  //     setIsReserving(false);
+  //   }
+  // }
 
   return (
     <SafeAreaView className='flex-1'>
@@ -199,7 +195,7 @@ export default function RaffleDetailsScreen() {
 
         <View className="p-5 mt-auto mb-6">
           <Pressable
-            onPress={() => setIsModalVisible(true)}
+            onPress={handleReserve}
             disabled={isReserving || selectedTickets.size === 0}
             className="bg-primary p-4 rounded-lg items-center active:opacity-80 disabled:opacity-50"
           >
@@ -210,7 +206,7 @@ export default function RaffleDetailsScreen() {
         </View>
       </ScrollView>
 
-      {isModalVisible && (
+      {/* {isModalVisible && (
         <View className="absolute inset-0 bg-black/50 justify-center items-center">
           <View className="bg-white p-6 rounded-lg w-80">
             <Text className="text-lg font-quicksand-bold mb-4">Selecciona un método de pago</Text>
@@ -240,7 +236,7 @@ export default function RaffleDetailsScreen() {
             </Pressable>
           </View>
         </View>
-      )}
+      )} */}
     </SafeAreaView>
   );
 }

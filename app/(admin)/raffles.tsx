@@ -39,7 +39,7 @@ const RafflesPage = () => {
           renderItem={({ item }) => {
             const progress = item.totalTickets > 0 ? (item.ticketsSold / item.totalTickets) * 100 : 0;
             return (
-              <Link href={`/edit-raffle/${String(item._id)}`} asChild>
+              <Link href={`/${String(item._id)}`} asChild>
                 <Pressable className="bg-white mx-4 mb-4 rounded-2xl active:opacity-80 active:scale-[0.98] transition-transform">
                   <View className="p-4 flex-row items-center ">
                     <View className="flex-1">

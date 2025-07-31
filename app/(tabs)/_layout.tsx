@@ -49,9 +49,7 @@ const _layout = () => {
       <Tabs.Screen name='edit-profile'
         options={{
           href: null,
-        }
-
-        }
+        }}
       />
     </Tabs>
   )

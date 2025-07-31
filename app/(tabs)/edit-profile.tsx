@@ -1,10 +1,11 @@
+import { api } from '@/convex/_generated/api';
 import { useUser } from '@clerk/clerk-expo';
 import { useMutation, useQuery } from 'convex/react';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { api } from '../../convex/_generated/api';
+
 
 const EditProfileScreen = () => {
     const { user } = useUser();

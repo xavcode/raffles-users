@@ -8,8 +8,8 @@ import { api } from '../../convex/_generated/api';
 
 const profile = () => {
   const { signOut } = useAuth();
-  const { user } = useUser(); // De Clerk para la imagen
-  const convexUser = useQuery(api.users.getCurrent); // De Convex para los datos personalizados
+  const { user } = useUser();
+  const convexUser = useQuery(api.users.getCurrent);
 
   return (
     <View className="flex-1 items-center justify-center p-6 bg-gray-50">
@@ -23,7 +23,7 @@ const profile = () => {
             <Text className="text-base text-gray-500 mb-4">{convexUser?.email}</Text>
             <Text className="text-base text-gray-500 mb-8">{convexUser?.phone ?? 'Sin número de teléfono'}</Text>
 
-            <Link href={"./(tabs)/edit-profile"} asChild>
+            <Link href={"./edit-profile"} asChild>
               <Pressable className="flex-row items-center justify-center bg-gray-200 p-3 rounded-lg w-full mb-4 active:opacity-80">
                 <FontAwesome name="pencil" size={18} color="#4B5563" />
                 <Text className="text-gray-700 font-quicksand-bold text-base ml-2">Editar Perfil</Text>

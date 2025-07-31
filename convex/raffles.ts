@@ -4,7 +4,7 @@ import { mutation, query } from "./_generated/server";
 export const getAllRaffles = query({
     // args: {},
     handler: async (ctx) => {
-        return await ctx.db.query("raffles").collect()
+        return (await ctx.db.query("raffles").collect()).sort((a, b) => b._creationTime - a._creationTime);
     }
 })
 
