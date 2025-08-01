@@ -1,13 +1,10 @@
 // convex/tickets.ts
 
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
+import { internalMutation, mutation, query } from "./_generated/server";
 
-/**
- * Obtiene todos los boletos que NO están disponibles (reservados o vendidos) para un sorteo específico.
- * Esto es más eficiente que obtener todos los boletos si la mayoría están disponibles.
- * Devuelve un array de boletos con su número y estado, ideal para la UI.
- */
+
 export const getNonAvailableTickets = query({
   args: { raffleId: v.id("raffles") },
   handler: async (ctx, args) => {
@@ -27,6 +24,7 @@ export const reserveTickets = mutation({
     ticketNumbers: v.array(v.number()),
   },
   handler: async (ctx, args) => {
+    // Autenticación y validaciones
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error("Debes iniciar sesión para reservar boletos.");
@@ -44,7 +42,7 @@ export const reserveTickets = mutation({
       throw new Error("Sorteo no encontrado.");
     }
 
-    // Prevenir la reserva de boletos ya reservados o vendidos
+    // Verifica que los boletos estén disponibles
     const existingTickets = await ctx.db
       .query("tickets")
       .withIndex("by_raffle", (q) => q.eq("raffleId", args.raffleId))
@@ -58,8 +56,8 @@ export const reserveTickets = mutation({
       }
     }
 
-    // 1. Crear el registro de la compra (Purchase)
-    const reservationExpiry = Date.now() + 30 * 60 * 1000; // 30 mins
+    // Crea la compra
+    const reservationExpiry = Date.now() + 1 * 60 * 1000; // 30 minutos
     const purchaseId = await ctx.db.insert("purchases", {
       userId: user._id,
       raffleId: args.raffleId,
@@ -69,10 +67,10 @@ export const reserveTickets = mutation({
       expiresAt: reservationExpiry,
     });
 
-    // 2. Crear y reservar los boletos, asociándolos a la compra
+    // Reserva los boletos
     for (const number of args.ticketNumbers) {
       await ctx.db.insert("tickets", {
-        raffleId: args.raffleId, // TODO: Cambiar a raffleId
+        raffleId: args.raffleId,
         purchaseId: purchaseId,
         ticketNumber: number,
         userId: user._id,
@@ -81,71 +79,129 @@ export const reserveTickets = mutation({
       });
     }
 
+    // Programa la liberación automática 30 minutos después
+    await ctx.scheduler.runAfter(
+      1 * 60 * 1000, // 30 minutos en milisegundos
+      internal.tickets.releaseIfUnpaid,
+      { purchaseId }
+    );
+
     return { purchaseId };
   },
 });
 
-export const soldTickets = mutation({
-  args: {
-    ticketNumbers: v.array(v.number()),
-    raffleId: v.id("raffles"),
+export const releaseIfUnpaid = internalMutation({
+  args: { purchaseId: v.id("purchases") },
+  handler: async (ctx, args) => {
+    // Busca la compra
+    const purchase = await ctx.db.get(args.purchaseId);
+
+    // Si la compra no existe, o si ya fue completada (o expirada por otro medio), no hacemos nada.
+    // Solo procedemos si la compra sigue en estado 'pending_payment' o 'pending_confirmation'.
+    if (!purchase || (purchase.status !== "pending_payment" && purchase.status !== "pending_confirmation")) {
+      return;
+    }
+    // Marca la compra como expirada
+    await ctx.db.patch(args.purchaseId, { status: "expired" });
+
+    // Busca y libera los tickets asociados
+    const tickets = await ctx.db
+      .query("tickets")
+      .withIndex("by_purchase", (q) => q.eq("purchaseId", args.purchaseId))
+      .collect();
+
+    for (const ticket of tickets) {
+      // Guarda el historial antes de liberar
+      await ctx.db.insert("released_tickets", {
+        purchaseId: args.purchaseId,
+        ticketNumber: ticket.ticketNumber,
+        userId: ticket.userId!,
+        releasedAt: Date.now(),
+      });
+      // Libera el ticket
+      await ctx.db.patch(ticket._id, {
+        status: "available",
+        userId: undefined,
+        reservedUntil: undefined,
+        purchaseId: undefined,
+      });
+    }
   },
+});
+
+export const adminNotifyPayment = mutation({
+  args: { purchaseId: v.id("purchases") },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
-      throw new Error("Debes iniciar sesión para reservar boletos.");
+      throw new Error("Usuario no autenticado.");
     }
+
+    const purchase = await ctx.db.get(args.purchaseId);
+    if (!purchase) {
+      throw new Error("Compra no encontrada.");
+    }
+
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .unique();
-    if (!user) {
-      throw new Error("Usuario no encontrado.");
+
+    if (!user || user._id !== purchase.userId) {
+      throw new Error("No tienes permiso para realizar esta acción.");
     }
 
-    const raffle = await ctx.db.get(args.raffleId);
-    if (!raffle) {
-      throw new Error("Sorteo no encontrado.");
+    if (purchase.status !== 'pending_payment') {
+      throw new Error("Esta compra no está pendiente de pago.");
     }
 
-    // Prevenir la reserva de boletos ya reservados o vendidos
-    const existingTickets = await ctx.db
-      .query("tickets")
-      .withIndex("by_raffle", (q) => q.eq("raffleId", args.raffleId))
-      .filter(q => q.neq(q.field("status"), "available"))
-      .collect();
-    const unavailableNumbers = new Set(existingTickets.map(t => t.ticketNumber));
+    // 1. Actualiza el estado de la compra para que el admin la verifique
+    await ctx.db.patch(args.purchaseId, { status: "pending_confirmation" });
 
-    for (const number of args.ticketNumbers) {
-      if (unavailableNumbers.has(number)) {
-        throw new Error(`El boleto número ${number} ya no está disponible.`);
-      }
-    }
+    // 2. Crea una notificación para el administrador (para un futuro dashboard)
+    const raffle = await ctx.db.get(purchase.raffleId);
+    const message = `El usuario ${user.firstName} ha notificado el pago de ${purchase.ticketCount} boletos para el sorteo "${raffle?.title}".`;
 
-    // 1. Crear el registro de la compra (Purchase)
-    const purchaseId = await ctx.db.insert("purchases", {
+    await ctx.db.insert("notifications", {
+      type: "payment_confirmation_pending",
+      message: message,
+      isRead: false,
       userId: user._id,
-      raffleId: args.raffleId,
-      ticketCount: args.ticketNumbers.length,
-      totalAmount: raffle.ticketPrice * args.ticketNumbers.length,
-      status: "completed",
+      purchaseId: purchase._id,
+      raffleId: purchase.raffleId,
     });
 
-    // 2. Crear y reservar los boletos, asociándolos a la compra
-    for (const number of args.ticketNumbers) {
-      await ctx.db.insert("tickets", {
-        raffleId: args.raffleId,
-        purchaseId: purchaseId,
-        ticketNumber: number,
-        userId: user._id,
-        status: "sold",
-      });
+    return { success: true };
+  },
+});
+
+export const confirmPurchase = mutation({
+  args: { purchaseId: v.id("purchases") },
+  handler: async (ctx, args) => {
+    // Aquí deberías añadir una validación para asegurar que solo un admin puede ejecutar esto.
+
+    const purchase = await ctx.db.get(args.purchaseId);
+    if (!purchase) {
+      throw new Error("No se encontró la compra.");
+    }
+    if (purchase.status !== 'pending_confirmation') {
+      throw new Error("Esta compra no está esperando confirmación.");
     }
 
-    return { purchaseId };
+    // 1. Marcar la compra como completada
+    await ctx.db.patch(args.purchaseId, { status: "completed" });
 
+    // 2. Encontrar todos los boletos reservados de esta compra y marcarlos como vendidos
+    const ticketsToUpdate = await ctx.db
+      .query("tickets")
+      .withIndex("by_purchase", q => q.eq("purchaseId", args.purchaseId))
+      .collect();
+
+    for (const ticket of ticketsToUpdate) {
+      await ctx.db.patch(ticket._id, { status: "sold", reservedUntil: undefined });
+    }
   }
-})
+});
 
 export const getAll = query({
   handler: async (ctx) => {
@@ -154,33 +210,104 @@ export const getAll = query({
   },
 });
 
-export const userTicketHistory = query({
+export const getPurchases = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
-    // 1. Buscar todos los tickets del usuario
-    const tickets = await ctx.db
-      .query("tickets")
+    const purchases = await ctx.db
+      .query("purchases")
       .withIndex("by_user", q => q.eq("userId", args.userId))
-      .filter(q => q.eq(q.field("status"), "sold"))
+      .collect();
+    console.log(purchases)
+    return purchases;
+  }
+})
+
+export const getUserPurchasesWithDetails = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const purchases = await ctx.db
+      .query("purchases")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .order("desc")
       .collect();
 
-    // 2. Para cada ticket, obtener la compra y el sorteo
-    return await Promise.all(
-      tickets.map(async (ticket) => {
-        const purchase = await ctx.db.get(ticket.purchaseId);
-        const raffle = await ctx.db.get(ticket.raffleId);
+    const purchasesWithDetails = await Promise.all(
+      purchases.map(async (purchase) => {
+        const raffle = await ctx.db.get(purchase.raffleId);
+
+        // Tickets pagados/asociados a la compra
+        const paidTickets = await ctx.db
+          .query("tickets")
+          .withIndex("by_purchase", q => q.eq("purchaseId", purchase._id))
+          .collect();
+
+        // Tickets liberados de esta compra (de la tabla released_tickets)
+        const releasedTickets = await ctx.db
+          .query("released_tickets")
+          .filter(q => q.eq(q.field("purchaseId"), purchase._id))
+          .collect();
+
+        // Une ambos tipos de tickets, marcando el tipo
+        const allTickets = [
+          ...paidTickets.map(t => ({
+            ...t,
+            type: "paid",
+          })),
+          ...releasedTickets.map(rt => ({
+            ticketNumber: rt.ticketNumber,
+            status: "released",
+            userId: rt.userId,
+            releasedAt: rt.releasedAt,
+            type: "released",
+          })),
+        ];
+
         return {
-          ...ticket,
-          _id: ticket._id,
-          ticketNumber: ticket.ticketNumber,
-          status: ticket.status,
-          raffleTitle: raffle?.title,
-          raffleId: ticket.raffleId,
-          purchaseId: ticket.purchaseId,
-          creationTime: ticket._creationTime,
-          purchaseDate: purchase?._creationTime,
+          ...purchase,
+          raffleTitle: raffle?.title ?? "Sorteo no encontrado",
+          tickets: allTickets,
         };
       })
     );
+
+    return purchasesWithDetails;
   },
+});
+
+export const getPurchaseDetails = query({
+  args: { purchaseId: v.id("purchases") },
+  handler: async (ctx, args) => {
+    const purchase = await ctx.db.get(args.purchaseId);
+    if (!purchase) return null;
+
+    const raffle = await ctx.db.get(purchase.raffleId);
+
+    // Tickets pagados/asociados a la compra
+    const paidTickets = await ctx.db
+      .query("tickets")
+      .withIndex("by_purchase", q => q.eq("purchaseId", purchase._id))
+      .collect();
+
+    // Tickets liberados de esta compra
+    const releasedTickets = await ctx.db
+      .query("released_tickets")
+      .filter(q => q.eq(q.field("purchaseId"), purchase._id))
+      .collect();
+
+    const allTickets = [
+      ...paidTickets.map(t => ({
+        ...t,
+        type: "paid",
+      })),
+      ...releasedTickets.map(rt => ({
+        ticketNumber: rt.ticketNumber,
+        status: "released",
+        userId: rt.userId,
+        releasedAt: rt.releasedAt,
+        type: "released",
+      })),
+    ];
+
+    return { purchase, raffle, tickets: allTickets };
+  }
 });

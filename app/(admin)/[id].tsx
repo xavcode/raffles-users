@@ -34,6 +34,8 @@ const EditRafflePage = () => {
   const [winningTicket, setWinningTicket] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const FINISHED_STATUS = 'finished';
+
   // 4. Llenar el formulario cuando los datos del sorteo se cargan
   useEffect(() => {
     if (raffle) {
@@ -141,7 +143,7 @@ const EditRafflePage = () => {
           className="bg-blue-600 py-3 rounded-lg flex-row justify-center items-center disabled:opacity-50 active:opacity-80"
           onPress={handleSaveChanges}
           disabled={isLoading}>
-          {isLoading && raffle.status !== 'finished' ? (
+          {isLoading && raffle.status !== FINISHED_STATUS ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <Text className="text-white font-bold text-lg">Guardar Cambios</Text>
@@ -149,11 +151,16 @@ const EditRafflePage = () => {
         </Pressable>
 
         {/* Sección para finalizar el sorteo */}
-        {raffle.status !== 'finished' && (
+        {raffle.status !== FINISHED_STATUS && (
           <View className="mt-10 pt-6 border-t border-gray-200">
-            <Text className="text-xl font-bold mb-5 text-center text-gray-800">Finalizar Sorteo</Text>
+            <Text className="text-xl font-bold mb-5 text-center text-gray-800">
+              Finalizar Sorteo
+            </Text>
+
             <View className="mb-4">
-              <Text className="text-base font-semibold mb-2 text-gray-700">Número de Boleto Ganador</Text>
+              <Text className="text-base font-semibold mb-2 text-gray-700">
+                Número de Boleto Ganador
+              </Text>
               <TextInput
                 className="bg-white h-12 border border-gray-300 rounded-lg px-4 text-base"
                 placeholder="Ej: 123"
@@ -162,26 +169,32 @@ const EditRafflePage = () => {
                 keyboardType="number-pad"
               />
             </View>
+
             <Pressable
               className="bg-red-600 py-3 rounded-lg flex-row justify-center items-center disabled:opacity-50 active:opacity-80"
               onPress={handleFinishRaffle}
-              disabled={isLoading}>
-              {isLoading && raffle.status !== 'finished' ? (
+              disabled={isLoading}
+            >
+              {isLoading && raffle.status !== FINISHED_STATUS ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text className="text-white font-bold text-lg">Finalizar y Asignar Ganador</Text>
+                <Text className="text-white font-bold text-lg">
+                  Finalizar y Asignar Ganador
+                </Text>
               )}
             </Pressable>
           </View>
         )}
 
-        {/* Mostrar información si el sorteo ya está finalizado */}
-        {raffle.status === 'finished' && (
-          <View className="mt-10 p-5 bg-green-100 border border-green-200 rounded-lg items-center">
-            <Text className="text-lg font-bold text-green-800 mb-2">Sorteo Finalizado</Text>
-            <Text className="text-base text-green-700">
-              El boleto ganador es el número:
-              <Text className="font-extrabold"> {raffle.winningTicketNumber}</Text>
+        {/* // Alternativa usando operador ternario si quieres mostrar algo cuando esté finished: */}
+        {raffle.status !== FINISHED_STATUS ? (
+          <View className="mt-10 pt-6 border-t border-gray-200">
+            {/* ... resto del código ... */}
+          </View>
+        ) : (
+          <View className="mt-10 pt-6 border-t border-gray-200">
+            <Text className="text-xl font-bold mb-5 text-center text-green-600">
+              Sorteo Finalizado
             </Text>
           </View>
         )}

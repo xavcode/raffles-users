@@ -2,7 +2,8 @@ import { api } from '@/convex/_generated/api';
 import { useMutation } from 'convex/react';
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const CreateRafflePage = () => {
     const createRaffle = useMutation(api.raffles.createRaffle);
@@ -50,25 +51,55 @@ const CreateRafflePage = () => {
     };
 
     return (
-        <ScrollView className="flex-1 bg-neutral-50" contentContainerClassName="p-5">
-            <Stack.Screen options={{ title: 'Crear Sorteo' }} />
-            <Text className="text-2xl font-quicksand-bold mb-6 text-center text-neutral-800">Nuevo Sorteo</Text>
+        <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
+            <Stack.Screen options={{ title: 'Crear Nuevo Sorteo' }} />
+            <ScrollView contentContainerClassName="p-4">
+                <View className="bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50">
+                    <View className="mb-5">
+                        <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Título del Sorteo</Text>
+                        <TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: Rifa Pro-fondos" value={title} onChangeText={setTitle} />
+                    </View>
 
-            <TextInput className="bg-white h-12 border border-neutral-300 rounded-lg mb-4 px-4 text-base" placeholder="Título del Sorteo" value={title} onChangeText={setTitle} />
-            <TextInput className="bg-white h-24 border border-neutral-300 rounded-lg mb-4 px-4 text-base align-top" placeholder="Descripción" value={description} onChangeText={setDescription} multiline />
-            <TextInput className="bg-white h-12 border border-neutral-300 rounded-lg mb-4 px-4 text-base" placeholder="Premio (ej: 1000000)" value={prize} onChangeText={setPrize} keyboardType="numeric" />
-            <TextInput className="bg-white h-12 border border-neutral-300 rounded-lg mb-4 px-4 text-base" placeholder="URL de la imagen del premio" value={imageUrl} onChangeText={setImageUrl} keyboardType="url" autoCapitalize="none" />
-            <TextInput className="bg-white h-12 border border-neutral-300 rounded-lg mb-4 px-4 text-base" placeholder="Número total de boletos" value={totalTickets} onChangeText={setTotalTickets} keyboardType="numeric" />
-            <TextInput className="bg-white h-12 border border-neutral-300 rounded-lg mb-4 px-4 text-base" placeholder="Precio del boleto (ej: 10.50)" value={ticketPrice} onChangeText={setTicketPrice} keyboardType="decimal-pad" />
+                    <View className="mb-5">
+                        <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Descripción</Text>
+                        <TextInput className="bg-slate-100 border border-slate-200 h-28 rounded-lg px-4 text-base font-quicksand-medium align-top pt-3" placeholder="Describe los detalles del sorteo..." value={description} onChangeText={setDescription} multiline />
+                    </View>
 
-            {isLoading ? (
-                <ActivityIndicator size="large" color="#4f46e5" />
-            ) : (
-                <Pressable className="bg-secondary h-12 rounded-lg justify-center items-center active:bg-secondary-dark" onPress={handleCreateRaffle}>
-                    <Text className="text-white font-quicksand-bold text-base">Crear Sorteo</Text>
-                </Pressable>
-            )}
-        </ScrollView >
+                    <View className="mb-5">
+                        <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Premio (en COP)</Text>
+                        <TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: 1000000" value={prize} onChangeText={setPrize} keyboardType="numeric" />
+                    </View>
+
+                    <View className="mb-5">
+                        <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">URL de la Imagen del Premio</Text>
+                        <TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="https://ejemplo.com/imagen.png" value={imageUrl} onChangeText={setImageUrl} keyboardType="url" autoCapitalize="none" />
+                    </View>
+
+                    <View className="flex-row gap-x-4 mb-5">
+                        <View className="flex-1">
+                            <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Total Boletos</Text>
+                            <TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: 100" value={totalTickets} onChangeText={setTotalTickets} keyboardType="numeric" />
+                        </View>
+                        <View className="flex-1">
+                            <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Precio Boleto</Text>
+                            <TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: 5000" value={ticketPrice} onChangeText={setTicketPrice} keyboardType="decimal-pad" />
+                        </View>
+                    </View>
+
+                    <Pressable
+                        className="bg-indigo-600 h-12 rounded-lg justify-center items-center active:bg-indigo-700 disabled:bg-indigo-400"
+                        onPress={handleCreateRaffle}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <ActivityIndicator color="white" />
+                        ) : (
+                            <Text className="text-white font-quicksand-bold text-base">Crear Sorteo</Text>
+                        )}
+                    </Pressable>
+                </View>
+            </ScrollView>
+        </SafeAreaView>
     );
 };
 

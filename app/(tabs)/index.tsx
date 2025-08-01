@@ -1,13 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from "convex/react";
-import { Link, Stack } from "expo-router";
+import { Link } from "expo-router";
 import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../convex/_generated/api";
 import { Doc } from "../../convex/_generated/dataModel";
 
+
+const FINISHED_STATUS = 'finished';
+
 const RaffleItem = ({ item }: { item: Pick<Doc<"raffles">, '_id' | 'prize' | 'title' | 'status' | 'ticketPrice' | 'totalTickets' | 'ticketsSold' | 'imageUrl' | 'winningTicketNumber'> }) => {
   const { _id, prize, title, status, ticketPrice, totalTickets, ticketsSold, imageUrl, winningTicketNumber } = item;
+
 
   // Helper para formatear la moneda
   const formatCurrency = (value: number) => {
@@ -42,14 +46,14 @@ const RaffleItem = ({ item }: { item: Pick<Doc<"raffles">, '_id' | 'prize' | 'ti
           {ticketsSold} / {totalTickets} vendidos
         </Text>
         <Link
-          disabled={status === "finished"}
+          disabled={status === FINISHED_STATUS}
           href={{
-            pathname: "/(tabs)/[id]",
+            pathname: "/[id]",
             params: { id: _id.toString() },
           }}
           asChild
         >
-          {status === "finished" ? (
+          {status === FINISHED_STATUS ? (
             <View className="bg-green-100 p-3 rounded-lg items-center flex-row justify-center">
               <Ionicons name="trophy" size={20} color="#15803d" />
               <Text className="text-green-800 font-quicksand-bold text-base ml-2">Ganador: #{winningTicketNumber}</Text>
@@ -81,7 +85,7 @@ const RafflesTab = () => {
 
 
   const activeRaffles = raffles ? raffles.filter(raffle => raffle.status === "active") : [];
-  const finishedRaffles = raffles ? raffles.filter(raffle => raffle.status === "finished") : [];
+  const finishedRaffles = raffles ? raffles.filter(raffle => raffle.status === FINISHED_STATUS) : [];
 
   // Combina los sorteos activos y finalizados
   const sortedRaffles = [...activeRaffles, ...finishedRaffles];
@@ -91,27 +95,8 @@ const RafflesTab = () => {
   return (
 
     <SafeAreaView className="flex-1 bg-gray-50">
-      <Stack.Screen options={{ headerShown: false }} />
-
       {/* Custom Header */}
-      <View className="flex-row justify-between items-center px-4 pt-2 pb-4">
-        <View>
-          <Text className="text-lg font-quicksand-medium text-gray-500">Bienvenido,</Text>
-          <Text className="text-2xl font-quicksand-bold text-gray-800">{convexUser?.firstName || 'Usuario'}</Text>
-          <View className='flex-row items-center mt-1'>
-            <Ionicons name="wallet-outline" size={16} color="#475569" />
-            <Text className='text-base font-quicksand-semibold text-slate-600 ml-1.5'>Saldo: {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(convexUser?.balance ?? 0)}</Text>
-          </View>
-        </View>
-        {convexUser?.userType === "admin" && (
-          <Link href="/raffles" asChild>
-            <Pressable className="flex-row items-center bg-white p-3 rounded-full shadow-lg shadow-gray-300/50 active:bg-gray-100">
-              <Ionicons name="shield-checkmark-outline" size={24} color="#4f46e5" />
-              <Text className="text-primary font-quicksand-bold ml-2">Admin</Text>
-            </Pressable>
-          </Link>
-        )}
-      </View>
+
 
       <FlatList
         data={sortedRaffles}

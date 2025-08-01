@@ -78,7 +78,7 @@ export default function RaffleDetailsScreen() {
   const [selectedTickets, setSelectedTickets] = useState(new Set<number>());
   const [isReserving, setIsReserving] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const soldTickets = useMutation(api.tickets.soldTickets);
+  // const soldTickets = useMutation(api.tickets.soldTickets);
 
   // Hooks de Convex
   const raffle = useQuery(api.raffles.getById, { id: id as Id<'raffles'> });
@@ -135,7 +135,7 @@ export default function RaffleDetailsScreen() {
       Alert.alert(
         `Felicitaciones!`,
         `Tus boletos ${Array.from(selectedTickets).join(', ')} han sido reservados por 30 minutos. Ve a 'Mis Boletos' para ver los detalles de tu compra.`,
-        [{ text: "OK", onPress: () => router.back() }]
+        [{ text: "OK", }]
       );
       setSelectedTickets(new Set());
     } catch (error: any) {
@@ -175,8 +175,12 @@ export default function RaffleDetailsScreen() {
       <ScrollView className="flex-1 bg-gray-50">
         {raffle.imageUrl && <Image source={{ uri: raffle.imageUrl }} className="w-full h-56" resizeMode="cover" />}
         <View className="p-5 bg-white border-b border-gray-200 -mt-4 rounded-t-2xl">
-          <Text className="text-2xl font-quicksand-bold text-gray-800">{raffle.title}</Text>
+          <View className='flex-row items-center justify-between'>
+            <Text className="text-2xl font-quicksand-bold text-gray-800">{raffle.title}</Text>
+            <Text className="text-3xl  font-quicksand-bold text-primary mt-2">{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(raffle.prize ?? 0)} </Text>
+          </View>
           <Text className="text-base text-gray-600 mt-2">{raffle.description}</Text>
+          <Text className="text-base text-gray-600 mt-2">{raffle.winCondition}</Text>
         </View>
 
         <ColorLegend />

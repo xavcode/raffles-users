@@ -98,3 +98,4 @@ export const updateRaffle = mutation({
         return true;
     },
 });
+

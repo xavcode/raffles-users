@@ -8,6 +8,7 @@ export default defineSchema({
         endTime: v.float64(),
         imageUrl: v.string(),
         startTime: v.float64(),
+        winCondition: v.optional(v.string()),
         status: v.string(),
         ticketPrice: v.float64(),
         ticketsSold: v.float64(),
@@ -22,11 +23,12 @@ export default defineSchema({
 
     tickets: defineTable({
         raffleId: v.id("raffles"),
-        purchaseId: v.id("purchases"), // ID de la compra a la que pertenece
+        purchaseId: v.optional(v.id("purchases")), // ID de la compra a la que pertenece
         ticketNumber: v.float64(),
         userId: v.optional(v.id("users")), // El userId es opcional hasta que se confirma la compra
         status: v.union(
             v.literal("available"),
+            v.literal("expired"),
             v.literal("reserved"),
             v.literal("sold")
         ),
@@ -36,6 +38,13 @@ export default defineSchema({
         .index("by_raffle", ["raffleId"])
         .index("by_purchase", ["purchaseId"]) // Nuevo índice para buscar boletos por compra
         .index("by_raffle_status", ["raffleId", "status"]),
+
+    released_tickets: defineTable({
+        purchaseId: v.id("purchases"),
+        ticketNumber: v.float64(),
+        userId: v.id("users"),
+        releasedAt: v.float64(),
+    }),
 
     transactions: defineTable({
         amount: v.float64(),
@@ -53,7 +62,7 @@ export default defineSchema({
         raffleId: v.id("raffles"),
         ticketCount: v.float64(),
         totalAmount: v.float64(),
-        status: v.union(v.literal("pending_payment"), v.literal("completed"), v.literal("expired")),
+        status: v.union(v.literal("pending_payment"), v.literal(`pending_confirmation`), v.literal("completed"), v.literal("expired")),
         expiresAt: v.optional(v.float64()), // Timestamp de cuando expira la reserva
     })
         .index("by_user", ["userId"])
@@ -72,4 +81,15 @@ export default defineSchema({
     })
         .index("by_clerk_id", ["clerkId"])
         .index("by_email", ["email"]),
+
+
+    notifications: defineTable({
+        type: v.string(), // e.g., "payment_confirmation_pending"
+        message: v.string(),
+        isRead: v.boolean(),
+        userId: v.optional(v.id("users")),
+        purchaseId: v.optional(v.id("purchases")),
+        raffleId: v.optional(v.id("raffles")),
+    }).index("by_isRead", ["isRead"]),
+
 });
