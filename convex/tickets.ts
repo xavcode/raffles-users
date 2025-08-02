@@ -158,18 +158,23 @@ export const adminNotifyPayment = mutation({
     // 1. Actualiza el estado de la compra para que el admin la verifique
     await ctx.db.patch(args.purchaseId, { status: "pending_confirmation" });
 
-    // 2. Crea una notificación para el administrador (para un futuro dashboard)
+    // 2. Busca a todos los administradores para notificarles
+    const admins = await ctx.db.query("users").filter(q => q.eq(q.field("userType"), "admin")).collect();
     const raffle = await ctx.db.get(purchase.raffleId);
     const message = `El usuario ${user.firstName} ha notificado el pago de ${purchase.ticketCount} boletos para el sorteo "${raffle?.title}".`;
 
-    await ctx.db.insert("notifications", {
-      type: "payment_confirmation_pending",
-      message: message,
-      isRead: false,
-      userId: user._id,
-      purchaseId: purchase._id,
-      raffleId: purchase.raffleId,
-    });
+    // 3. Crea una notificación para cada administrador
+    for (const admin of admins) {
+      await ctx.db.insert("notifications", {
+        type: "payment_confirmation_pending",
+        message: message,
+        isRead: false,
+        userId: admin._id, // La notificación es PARA el admin
+        purchaseId: purchase._id,
+        raffleId: purchase.raffleId,
+        target: "admin", // Un campo para identificar el tipo de notificación
+      });
+    }
 
     return { success: true };
   },
@@ -201,6 +206,43 @@ export const confirmPurchase = mutation({
       await ctx.db.patch(ticket._id, { status: "sold", reservedUntil: undefined });
     }
   }
+});
+
+export const rejectPurchase = mutation({
+  args: { purchaseId: v.id("purchases") },
+  handler: async (ctx, args) => {
+    // TODO: En un futuro, añade una validación para asegurar que solo un admin puede ejecutar esto.
+
+    const purchase = await ctx.db.get(args.purchaseId);
+    if (!purchase) {
+      throw new Error("Compra no encontrada.");
+    }
+
+    // Solo se pueden rechazar las compras que están pendientes de confirmación
+    if (purchase.status !== 'pending_confirmation') {
+      throw new Error("Esta compra no puede ser rechazada en su estado actual.");
+    }
+
+    // 1. Marcar la compra como expirada
+    await ctx.db.patch(args.purchaseId, { status: "expired" });
+
+    // 2. Buscar y liberar los boletos asociados
+    const tickets = await ctx.db
+      .query("tickets")
+      .withIndex("by_purchase", (q) => q.eq("purchaseId", args.purchaseId))
+      .collect();
+
+    for (const ticket of tickets) {
+      await ctx.db.patch(ticket._id, {
+        status: "available",
+        userId: undefined,
+        reservedUntil: undefined,
+        purchaseId: undefined,
+      });
+    }
+
+    return { success: true };
+  },
 });
 
 export const getAll = query({
@@ -281,6 +323,7 @@ export const getPurchaseDetails = query({
     if (!purchase) return null;
 
     const raffle = await ctx.db.get(purchase.raffleId);
+    const user = await ctx.db.get(purchase.userId); // <-- Añadimos la info del usuario
 
     // Tickets pagados/asociados a la compra
     const paidTickets = await ctx.db
@@ -308,6 +351,32 @@ export const getPurchaseDetails = query({
       })),
     ];
 
-    return { purchase, raffle, tickets: allTickets };
+    return { purchase, raffle, tickets: allTickets, user };
   }
+});
+
+export const getPendingConfirmationPurchases = query({
+  handler: async (ctx) => {
+    // Opcional: Añadir validación para asegurar que solo un admin puede ejecutar esto.
+
+    const purchases = await ctx.db
+      .query("purchases")
+      .withIndex("by_status", (q) => q.eq("status", "pending_confirmation"))
+      .order("desc")
+      .collect();
+
+    const purchasesWithDetails = await Promise.all(
+      purchases.map(async (purchase) => {
+        const raffle = await ctx.db.get(purchase.raffleId);
+        const user = await ctx.db.get(purchase.userId);
+        return {
+          ...purchase,
+          raffleTitle: raffle?.title ?? "Sorteo no encontrado",
+          userFirstName: user?.firstName ?? "Usuario desconocido",
+        };
+      })
+    );
+
+    return purchasesWithDetails;
+  },
 });

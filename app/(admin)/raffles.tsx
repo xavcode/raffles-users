@@ -40,7 +40,7 @@ const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
         </View>
       </View>
       <View className="bg-slate-50/70 px-4 py-3 flex-row justify-end">
-        <Link href={`/${String(raffle._id)}`} asChild>
+        <Link href={`/(admin)/${String(raffle._id)}`} asChild>
           <Pressable className="flex-row items-center bg-indigo-100 px-3 py-1.5 rounded-lg active:opacity-70">
             <Ionicons name="create-outline" size={16} color="#4338ca" />
             <Text className="text-sm font-quicksand-bold text-indigo-800 ml-1.5">Editar</Text>
@@ -67,18 +67,9 @@ const RafflesPage = () => {
   const finishedRaffles = raffles?.filter(r => r.status !== 'active');
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
-      <Stack.Screen options={{ headerShown: false }} />
-      <View className="p-4 flex-row justify-between items-center border-b border-slate-200 bg-slate-50">
-        <Text className="text-2xl font-quicksand-bold text-slate-900">Gestionar Sorteos</Text>
-        <Link href="/create-raffle" asChild>
-          <Pressable className="bg-indigo-600 p-2.5 rounded-full active:bg-indigo-700">
-            <Ionicons name="add" size={24} color="white" />
-          </Pressable>
-        </Link>
-      </View>
-
-      <ScrollView contentContainerClassName="p-4">
+    <SafeAreaView className="flex-1 bg-slate-50">
+      <Stack.Screen options={{ title: 'Sorteos' }} />
+      <ScrollView contentContainerClassName="p-4 pb-8">
         {raffles === undefined && <ActivityIndicator size="large" color="#4f46e5" className="mt-16" />}
 
         {activeRaffles && activeRaffles.length > 0 && (

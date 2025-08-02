@@ -22,6 +22,7 @@ const PENDING_PAYMENT = 'pending_payment';
 const PurchaseDetailsPage = () => {
   const { purchaseId } = useLocalSearchParams<{ purchaseId: string }>();
   const [isConfirming, setIsConfirming] = React.useState(false);
+  const [isApproving, setIsApproving] = React.useState(false);
 
   const purchaseDetails = useQuery(
     api.tickets.getPurchaseDetails,
@@ -29,6 +30,9 @@ const PurchaseDetailsPage = () => {
   );
   const notifyPaymentMutation = useMutation(api.tickets.adminNotifyPayment);
 
+  // Obtenemos el usuario actual para saber si es admin o el dueño
+  const convexUser = useQuery(api.users.getCurrent);
+  const confirmPurchaseMutation = useMutation(api.tickets.confirmPurchase);
   const handleConfirmPayment = async () => {
     if (!purchaseId) return;
     setIsConfirming(true);
@@ -39,6 +43,19 @@ const PurchaseDetailsPage = () => {
       console.error("Error notifying payment:", error);
     } finally {
       setIsConfirming(false);
+    }
+  };
+
+  const handleApprovePayment = async () => {
+    if (!purchaseId) return;
+    setIsApproving(true);
+    try {
+      await confirmPurchaseMutation({ purchaseId: purchaseId as Id<'purchases'> });
+    } catch (error) {
+      alert('Hubo un error al aprobar el pago. Por favor, inténtalo de nuevo.');
+      console.error("Error approving payment:", error);
+    } finally {
+      setIsApproving(false);
     }
   };
 
@@ -63,8 +80,22 @@ const PurchaseDetailsPage = () => {
     );
   }
 
+  // --- INICIO DE LA VALIDACIÓN DE SEGURIDAD ---
+  if (convexUser === undefined) {
+    return <View className="flex-1 bg-slate-50 justify-center items-center"><ActivityIndicator size="large" color="#4f46e5" /></View>;
+  }
+
   const { purchase, raffle, tickets } = purchaseDetails;
-  const statusStyle = PURCHASE_STATUS_STYLES[purchase.status as keyof typeof PURCHASE_STATUS_STYLES];
+
+  // Si el usuario no es el dueño de la compra NI es un admin, no puede ver la página.
+  if (convexUser?._id !== purchase.userId && convexUser?.userType !== 'admin') {
+    return <SafeAreaView className="flex-1 bg-slate-50 justify-center items-center p-4"><Text className="text-center font-quicksand-medium text-slate-600">No tienes permiso para ver los detalles de esta compra.</Text></SafeAreaView>;
+  }
+  // --- FIN DE LA VALIDACIÓN DE SEGURIDAD ---
+
+  const statusStyle = PURCHASE_STATUS_STYLES[purchase.status as keyof typeof PURCHASE_STATUS_STYLES] || {
+    label: 'Desconocido', bg: 'bg-slate-100', text: 'text-slate-700', icon: 'help-circle-outline' as const
+  };
   const purchaseDate = format(new Date(purchase._creationTime), "d 'de' MMMM, yyyy 'a las' h:mm a", { locale: es });
   const formattedAmount = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(purchase.totalAmount);
 
@@ -92,7 +123,8 @@ const PurchaseDetailsPage = () => {
           </View>
         </View>
 
-        {purchase.status === PENDING_PAYMENT && (
+        {/* Botón para el USUARIO: Solo si es el dueño y la compra está pendiente */}
+        {convexUser?._id === purchase.userId && purchase.status === PENDING_PAYMENT && (
           <View className="mt-8 items-center">
             <TouchableOpacity
               onPress={handleConfirmPayment}
@@ -110,6 +142,35 @@ const PurchaseDetailsPage = () => {
               )}
             </TouchableOpacity>
             <Text className="text-center text-slate-500 font-quicksand-medium text-xs mt-3 px-4">Al presionar, notificarás al administrador para que verifique la transferencia y apruebe tu compra.</Text>
+          </View>
+        )}
+
+        {/* Mensaje de espera y botón para el ADMIN */}
+        {purchase.status === 'pending_confirmation' && (
+          <View className="mt-8">
+            <View className="bg-blue-100 p-4 rounded-xl flex-row items-center">
+              <Ionicons name="hourglass-outline" size={24} color="#2563eb" />
+              <Text className="text-blue-800 font-quicksand-medium text-sm ml-3 flex-1">El pago está siendo verificado por un administrador. Recibirás una notificación cuando sea aprobado.</Text>
+            </View>
+
+            {/* Botón para el ADMIN: Solo si es admin y la compra está pendiente de confirmación */}
+            {convexUser?.userType === 'admin' && (
+              <TouchableOpacity
+                onPress={handleApprovePayment}
+                disabled={isApproving}
+                className="bg-indigo-600 flex-row items-center justify-center p-4 rounded-xl shadow-lg shadow-indigo-500/30 w-full mt-4"
+                activeOpacity={0.8}
+              >
+                {isApproving ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <>
+                    <Ionicons name="shield-checkmark-outline" size={22} color="white" />
+                    <Text className="text-white font-quicksand-bold text-base ml-2">Aprobar Pago y Vender Boletos</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
         )}
 

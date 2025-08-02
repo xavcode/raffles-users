@@ -90,6 +90,7 @@ export default defineSchema({
         userId: v.optional(v.id("users")),
         purchaseId: v.optional(v.id("purchases")),
         raffleId: v.optional(v.id("raffles")),
+        target: v.optional(v.string()),
     }).index("by_isRead", ["isRead"]),
 
 });

@@ -67,7 +67,7 @@ export const updateRaffle = mutation({
         ticketPrice: v.optional(v.float64()),
         totalTickets: v.optional(v.float64()),
         imageUrl: v.optional(v.string()),
-        // Campos específicos para finalizar el sorteo
+        prize: v.optional(v.float64()),
         status: v.optional(v.string()),
         winningTicketNumber: v.optional(v.float64()),
     },
