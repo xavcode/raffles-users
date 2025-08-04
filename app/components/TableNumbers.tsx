@@ -1,118 +1,151 @@
+import { api } from '@/convex/_generated/api';
+import { Id } from '@/convex/_generated/dataModel';
+import { useMutation } from 'convex/react';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, FlatList, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, Text, View } from 'react-native';
 
 const NumberCircle = ({ number, isSelected, isBought, onSelect }: { number: number, isSelected: boolean, isBought: boolean, onSelect: (num: number) => void }) => {
-    // Define los estilos basados en el estado del número
-    const circleClassName = isBought
-        ? 'bg-gray-300 border-gray-400' // Estilo para números comprados
-        : isSelected
-            ? 'bg-primary border-indigo-700' // Estilo para números seleccionados por el usuario
-            : 'bg-white border-gray-200 active:opacity-70'; // Estilo para números disponibles
+  // Define los estilos basados en el estado del número
+  const circleClassName = isBought
+    ? 'bg-slate-200 border-slate-300' // Estilo para números comprados
+    : isSelected
+      ? 'bg-primary border-indigo-700' // Estilo para números seleccionados por el usuario
+      : 'bg-white border-gray-200 active:opacity-70'; // Estilo para números disponibles
 
-    const textClassName = isBought
-        ? 'text-gray-500'
-        : isSelected
-            ? 'text-white'
-            : 'text-gray-700';
+  const textClassName = isBought
+    ? 'text-gray-500'
+    : isSelected
+      ? 'text-white'
+      : 'text-gray-700';
 
-    return (
-        <Pressable
-            onPress={() => onSelect(number)}
-            disabled={isBought} // Deshabilita el botón si el número ya fue comprado
-            className={`
+  return (
+    <Pressable
+      onPress={() => onSelect(number)}
+      disabled={isBought} // Deshabilita el botón si el número ya fue comprado
+      className={`
                 w-14 h-14 rounded-full items-center justify-center m-1 border-2
                 ${circleClassName}
             `}
-        >
-            <Text
-                className={`
+    >
+      <Text
+        className={`
                     font-quicksand-bold text-lg
                     ${textClassName}
                 `}
-            >
-                {number}
-            </Text>
-        </Pressable>
-    );
+      >
+        {number.toString().padStart(3, '0')}
+      </Text>
+    </Pressable>
+  );
 };
 
 type TableNumbersProps = {
-    totalTickets: number;
-    boughtTickets: number[];
+  totalTickets: number;
+  ticketPrice: number;
+  raffleId: Id<'raffles'>;
+  nonAvailableTickets: { ticketNumber: number; status: 'sold' | 'reserved' }[];
 };
 
-const TableNumbers = ({ totalTickets, boughtTickets }: TableNumbersProps) => {
-    const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
-    const numbers = Array.from({ length: totalTickets }, (_, i) => i + 1);
+const TableNumbers = ({ totalTickets, ticketPrice, raffleId, nonAvailableTickets }: TableNumbersProps) => {
+  const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
+  const [isReserving, setIsReserving] = useState(false);
+  const router = useRouter();
+  const reserveTickets = useMutation(api.tickets.reserveTickets);
 
-    const handleSelectNumber = (number: number) => {
-        // Evita que se pueda seleccionar un número ya comprado
-        if (boughtTickets.includes(number)) return;
+  // Usamos un Set para una búsqueda de boletos no disponibles mucho más rápida.
+  const nonAvailableSet = new Set(nonAvailableTickets.map(t => t.ticketNumber));
+  const numbers = Array.from({ length: totalTickets }, (_, i) => i + 1);
 
-        setSelectedNumbers(prevSelected => {
-            if (prevSelected.includes(number)) {
-                // Deseleccionar el número
-                return prevSelected.filter(n => n !== number);
-            } else {
-                // Seleccionar el número
-                return [...prevSelected, number];
-            }
-        });
-    };
+  const handleSelectNumber = (number: number) => {
+    if (nonAvailableSet.has(number)) return;
 
-    const handlePurchase = () => {
-        if (selectedNumbers.length === 0) {
-            Alert.alert("Sin selección", "Por favor, selecciona al menos un número para comprar.");
-            return;
-        }
-        // Aquí es donde llamarías a una mutación de Convex para procesar la compra.
-        // Por ahora, mostramos una alerta de confirmación.
-        Alert.alert(
-            "Confirmar Compra",
-            `Vas a comprar los números: ${selectedNumbers.sort((a, b) => a - b).join(', ')}`,
-            [
-                { text: "Cancelar", style: "cancel" },
-                { text: "Comprar", onPress: () => console.log("Comprando números:", selectedNumbers) }
-            ]
-        );
-    };
-
-    return (
-        <View className="w-full px-2 py-4 bg-gray-100 rounded-lg shadow-inner">
-            <Text className="text-2xl font-quicksand-bold text-center mb-4 text-gray-800">
-                Selecciona tus Números
-            </Text>
-            <FlatList
-                data={numbers}
-                renderItem={({ item }) => (
-                    <NumberCircle
-                        number={item}
-                        isSelected={selectedNumbers.includes(item)}
-                        isBought={boughtTickets.includes(item)}
-                        onSelect={handleSelectNumber}
-                    />
-                )}
-                keyExtractor={item => item.toString()}
-                numColumns={5} // 5 columnas se ven bien en la mayoría de móviles
-                columnWrapperStyle={{ justifyContent: 'center' }}
-                contentContainerStyle={{ alignItems: 'center' }}
-            />
-            <View className="mt-6 px-4">
-                <Pressable
-                    onPress={handlePurchase}
-                    disabled={selectedNumbers.length === 0}
-                    className={`
-                        p-4 rounded-lg items-center transition-colors
-                        ${selectedNumbers.length > 0 ? 'bg-green-500' : 'bg-gray-400'} active:opacity-80
-                    `}
-                >
-                    <Text className="text-white font-quicksand-bold text-lg">
-                        Comprar {selectedNumbers.length > 0 ? `${selectedNumbers.length} Número(s)` : ''}
-                    </Text>
-                </Pressable>
-            </View>
-        </View>
+    setSelectedNumbers(prevSelected =>
+      prevSelected.includes(number)
+        ? prevSelected.filter(n => n !== number)
+        : [...prevSelected, number]
     );
+  };
+
+  const handlePurchase = async () => {
+    if (selectedNumbers.length === 0) {
+      Alert.alert("Sin selección", "Por favor, selecciona al menos un número para reservar.");
+      return;
+    }
+
+    setIsReserving(true);
+    try {
+      const result = await reserveTickets({
+        raffleId: raffleId,
+        ticketNumbers: selectedNumbers,
+      });
+
+      Alert.alert(
+        "¡Boletos Reservados!",
+        "Tus boletos han sido reservados. Completa el pago para asegurarlos.",
+        [{ text: "Ir a Pagar", onPress: () => router.push(`/purchase/${result.purchaseId}`) }]
+      );
+      setSelectedNumbers([]); // Limpiar selección
+
+    } catch (error: any) {
+      console.error("Error al reservar boletos:", error);
+      Alert.alert("Error", error.data?.message || "No se pudieron reservar los boletos. Alguien pudo haberlos tomado antes que tú.");
+    } finally {
+      setIsReserving(false);
+    }
+  };
+
+  const totalAmount = selectedNumbers.length * ticketPrice;
+  const formattedAmount = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(totalAmount);
+
+  return (
+    <View className="w-full px-2 py-4 bg-slate-100 rounded-lg shadow-inner">
+      <Text className="text-2xl font-quicksand-bold text-center mb-4 text-slate-800">
+        Selecciona tus Números
+      </Text>
+      <FlatList
+        data={numbers}
+        renderItem={({ item }) => (
+          <NumberCircle
+            number={item}
+            isSelected={selectedNumbers.includes(item)}
+            isBought={nonAvailableSet.has(item)}
+            onSelect={handleSelectNumber}
+          />
+        )}
+        keyExtractor={item => item.toString()}
+        numColumns={5} // 5 columnas se ven bien en la mayoría de móviles
+        columnWrapperStyle={{ justifyContent: 'center' }}
+        contentContainerStyle={{ alignItems: 'center' }}
+      />
+      <View className="mt-6 px-4">
+        <Pressable
+          onPress={handlePurchase}
+          disabled={selectedNumbers.length === 0 || isReserving}
+          className={`
+                        p-4 rounded-xl items-center justify-center transition-colors h-16
+                        ${selectedNumbers.length > 0 ? 'bg-green-500 active:bg-green-600' : 'bg-slate-400'}
+                        disabled:opacity-60
+                    `}
+        >
+          {isReserving ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <View className="items-center">
+              <Text className="text-white font-quicksand-bold text-lg">
+                Reservar {selectedNumbers.length > 0 ? `${selectedNumbers.length} Número(s)` : ''}
+              </Text>
+              {selectedNumbers.length > 0 && (
+                <Text className="text-white font-quicksand-medium text-sm">
+                  Total: {formattedAmount}
+                </Text>
+              )}
+            </View>
+          )}
+        </Pressable>
+      </View>
+    </View>
+  );
 };
 
 export default TableNumbers;

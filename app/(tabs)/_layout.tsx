@@ -1,10 +1,12 @@
-import { useAuth } from '@clerk/clerk-expo'
-import { FontAwesome } from '@expo/vector-icons'
-import { Tabs } from 'expo-router'
-import React from 'react'
-import { ActivityIndicator, Text, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import GlobalHeader from '../components/GlobalHeader'
+import { useAuth } from '@clerk/clerk-expo';
+import { FontAwesome } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
+import React from 'react';
+import { ActivityIndicator, View } from 'react-native';
+// 1. Importamos 'Animated' de react-native-reanimated
+import Animated from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import GlobalHeader from '../components/GlobalHeader';
 
 type TabBarIconProps = {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -13,11 +15,15 @@ type TabBarIconProps = {
   focused: boolean;
 };
 
+// 2. Creamos una versión animada de FontAwesome que puede manejar props animadas.
+const AnimatedFontAwesome = Animated.createAnimatedComponent(FontAwesome);
+
 const TabBarIcon = ({ name, color, title, focused }: TabBarIconProps) => (
   // Simplificamos el componente. El contenedor padre se encargará del centrado.
   <View className="flex-1 min-w-24 items-center pt-2 gap-y-1">
-    <FontAwesome size={24} name={name} color={color} />
-    <Text style={{ color, }} className={`text-sm ${focused ? 'font-quicksand-bold' : 'font-quicksand-medium'}`}>{title}</Text>
+    {/* 3. Usamos los componentes animados. El color ahora se pasa correctamente. */}
+    <AnimatedFontAwesome size={24} name={name} color={color} />
+    <Animated.Text style={{ color }} className={`text-sm ${focused ? 'font-quicksand-bold' : 'font-quicksand-medium'}`}>{title}</Animated.Text>
   </View>
 );
 
@@ -42,24 +48,22 @@ const _layout = () => {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarActiveTintColor: '#FE8C00',
-        tabBarInactiveTintColor: '#98989A', // Un gris más claro para mejor contraste sobre fondo oscuro
-        // AQUÍ ESTÁ LA MAGIA: Le decimos a cada "slot" de la pestaña que centre su contenido.
+        tabBarInactiveTintColor: '#5D5F6D',
         tabBarItemStyle: {
           justifyContent: 'center',
         },
         tabBarStyle: {
           position: 'absolute',
-          bottom: 25, // Un poco más de espacio inferior para mejor balance
-          left: 20,
-          right: 20,
-          height: 70,
-          elevation: 8, // Sombra más pronunciada para Android
-          backgroundColor: '#1C1C1E', // Un fondo oscuro, elegante y moderno
-          borderRadius: 35, // La mitad de la altura para una forma de píldora perfecta
-          shadowColor: '#1a1a1a', // Un negro más suave para la sombra
+          bottom: 20,
+          marginHorizontal: 20,
+          height: 60,
+          elevation: 8,
+          backgroundColor: '#f0f0f0',
+          borderRadius: 20,
+          shadowColor: '#1a1a1a',
           shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.08, // Sombra más sutil
-          shadowRadius: 12, // Sombra más difusa y elegante
+          shadowOpacity: 0.08,
+          shadowRadius: 12,
         }
       }}
       >

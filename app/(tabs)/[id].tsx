@@ -171,7 +171,7 @@ export default function RaffleDetailsScreen() {
   // }
 
   return (
-    <SafeAreaView className='flex-1'>
+    <SafeAreaView className='flex-1 mb-10'>
       <ScrollView className="flex-1 bg-gray-50">
         {raffle.imageUrl && <Image source={{ uri: raffle.imageUrl }} className="w-full h-56" resizeMode="cover" />}
         <View className="p-5 bg-white border-b border-gray-200 -mt-4 rounded-t-2xl">

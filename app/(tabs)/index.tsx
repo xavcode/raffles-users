@@ -4,13 +4,16 @@ import { Link } from "expo-router";
 import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../convex/_generated/api";
-import { Doc } from "../../convex/_generated/dataModel";
+import { Doc, Id } from "../../convex/_generated/dataModel";
 
 
 const FINISHED_STATUS = 'finished';
 
 const RaffleItem = ({ item }: { item: Pick<Doc<"raffles">, '_id' | 'prize' | 'title' | 'status' | 'ticketPrice' | 'totalTickets' | 'ticketsSold' | 'imageUrl' | 'winningTicketNumber'> }) => {
-  const { _id, prize, title, status, ticketPrice, totalTickets, ticketsSold, imageUrl, winningTicketNumber } = item;
+  const { _id, prize, title, status, ticketPrice, totalTickets, imageUrl, winningTicketNumber } = item;
+
+  const nonAvailableTickets = useQuery(api.tickets.getNonAvailableTickets, { raffleId: _id as Id<'raffles'> });
+  const ticketsSold = nonAvailableTickets?.length
 
 
   // Helper para formatear la moneda
@@ -39,11 +42,11 @@ const RaffleItem = ({ item }: { item: Pick<Doc<"raffles">, '_id' | 'prize' | 'ti
         <View className="w-full bg-slate-200 rounded-full h-2 mb-1">
           <View
             className="bg-primary h-2 rounded-full"
-            style={{ width: `${(ticketsSold / totalTickets) * 100}%` }}
+            style={{ width: `${(parseInt(ticketsSold?.toString() ?? '0') / parseInt(totalTickets.toString())) * 100}%` }}
           />
         </View>
         <Text className="text-right text-slate-500 font-quicksand-medium text-xs mb-4">
-          {ticketsSold} / {totalTickets} vendidos
+          {ticketsSold?.toString() ?? 0} / {totalTickets} vendidos
         </Text>
         <Link
           disabled={status === FINISHED_STATUS}
@@ -89,8 +92,6 @@ const RafflesTab = () => {
 
   // Combina los sorteos activos y finalizados
   const sortedRaffles = [...activeRaffles, ...finishedRaffles];
-
-
 
   return (
 

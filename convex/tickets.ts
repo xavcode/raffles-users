@@ -259,7 +259,6 @@ export const getPurchases = query({
       .query("purchases")
       .withIndex("by_user", q => q.eq("userId", args.userId))
       .collect();
-    console.log(purchases)
     return purchases;
   }
 })

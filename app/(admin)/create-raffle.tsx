@@ -2,7 +2,8 @@ import { api } from '@/convex/_generated/api';
 import { useMutation } from 'convex/react';
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, Text, TextInput, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const CreateRafflePage = () => {
@@ -53,7 +54,8 @@ const CreateRafflePage = () => {
     return (
         <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
             <Stack.Screen options={{ title: 'Crear Nuevo Sorteo' }} />
-            <ScrollView contentContainerClassName="p-4">
+            {/* Reemplazamos KeyboardAvoidingView y ScrollView por este componente inteligente */}
+            <KeyboardAwareScrollView contentContainerClassName="p-4" extraScrollHeight={20} enableOnAndroid={true}>
                 <View className="bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50">
                     <View className="mb-5">
                         <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Título del Sorteo</Text>
@@ -98,7 +100,7 @@ const CreateRafflePage = () => {
                         )}
                     </Pressable>
                 </View>
-            </ScrollView>
+            </KeyboardAwareScrollView>
         </SafeAreaView>
     );
 };

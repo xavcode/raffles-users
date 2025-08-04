@@ -4,7 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, Text, TextInput, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const EditRafflePage = () => {
@@ -120,7 +121,7 @@ const EditRafflePage = () => {
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
       <Stack.Screen options={{ title: 'Editar Sorteo' }} />
-      <ScrollView contentContainerClassName="p-4 pb-8">
+      <KeyboardAwareScrollView contentContainerClassName="p-4 pb-8" extraScrollHeight={20} enableOnAndroid={true}>
         <View className="bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50">
           <Text className="text-lg font-quicksand-bold text-slate-800 mb-4">Información General</Text>
           <View className="space-y-5">
@@ -157,7 +158,7 @@ const EditRafflePage = () => {
             </Pressable>
           </View>
         )}
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 };
