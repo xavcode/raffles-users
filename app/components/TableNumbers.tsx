@@ -2,10 +2,10 @@ import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { useMutation } from 'convex/react';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, Text, View } from 'react-native';
 
-const NumberCircle = ({ number, isSelected, isBought, onSelect }: { number: number, isSelected: boolean, isBought: boolean, onSelect: (num: number) => void }) => {
+const NumberCircle = React.memo(({ number, isSelected, isBought, onSelect }: { number: number, isSelected: boolean, isBought: boolean, onSelect: (num: number) => void }) => {
   // Define los estilos basados en el estado del número
   const circleClassName = isBought
     ? 'bg-slate-200 border-slate-300' // Estilo para números comprados
@@ -38,7 +38,7 @@ const NumberCircle = ({ number, isSelected, isBought, onSelect }: { number: numb
       </Text>
     </Pressable>
   );
-};
+});
 
 type TableNumbersProps = {
   totalTickets: number;
@@ -53,11 +53,11 @@ const TableNumbers = ({ totalTickets, ticketPrice, raffleId, nonAvailableTickets
   const router = useRouter();
   const reserveTickets = useMutation(api.tickets.reserveTickets);
 
-  // Usamos un Set para una búsqueda de boletos no disponibles mucho más rápida.
-  const nonAvailableSet = new Set(nonAvailableTickets.map(t => t.ticketNumber));
+  // Usamos useMemo para evitar recalcular el Set en cada render, y para estabilizar la referencia para useCallback.
+  const nonAvailableSet = useMemo(() => new Set(nonAvailableTickets.map(t => t.ticketNumber)), [nonAvailableTickets]);
   const numbers = Array.from({ length: totalTickets }, (_, i) => i + 1);
 
-  const handleSelectNumber = (number: number) => {
+  const handleSelectNumber = useCallback((number: number) => {
     if (nonAvailableSet.has(number)) return;
 
     setSelectedNumbers(prevSelected =>
@@ -65,7 +65,7 @@ const TableNumbers = ({ totalTickets, ticketPrice, raffleId, nonAvailableTickets
         ? prevSelected.filter(n => n !== number)
         : [...prevSelected, number]
     );
-  };
+  }, [nonAvailableSet]); // La función solo se recreará si los boletos no disponibles cambian.
 
   const handlePurchase = async () => {
     if (selectedNumbers.length === 0) {

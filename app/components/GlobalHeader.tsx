@@ -18,10 +18,10 @@ const GlobalHeader = () => {
             <View>
               <Text className="text-lg font-quicksand-medium text-gray-500">Bienvenido,</Text>
               <Text className="text-2xl font-quicksand-bold text-gray-800">{convexUser?.firstName} {convexUser?.lastName}</Text>
-              <View className='flex-row items-center mt-1'>
+              {/* <View className='flex-row items-center mt-1'>
                 <Ionicons name="wallet-outline" size={16} color="#475569" />
                 <Text className='text-base font-quicksand-semibold text-slate-600 ml-1.5'>Saldo: {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(convexUser?.balance ?? 0)}</Text>
-              </View>
+              </View> */}
             </View>
           }
         </View>

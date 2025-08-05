@@ -102,6 +102,12 @@ const _layout = () => {
           }}
         />
 
+        <Tabs.Screen name='oauth-native-callback'
+          options={{
+            href: null,
+          }}
+        />
+
       </Tabs>
     </SafeAreaView>
   )

@@ -9,8 +9,15 @@ import { ConvexProviderWithClerk } from "convex/react-clerk";
 
 import { useEffect } from "react";
 import { View } from "react-native";
+import { configureReanimatedLogger } from "react-native-reanimated";
 import './global.css';
 
+// Deshabilita la advertencia de "strict mode" de Reanimated que aparece en la consola.
+// Esta advertencia es útil para depurar, pero en este caso, es causada por cómo
+// Expo Router maneja los colores animados en la barra de pestañas y no indica un problema real.
+configureReanimatedLogger({
+  strict: false,
+});
 
 export default function RootLayout() {
 

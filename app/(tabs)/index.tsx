@@ -9,7 +9,7 @@ import { Doc, Id } from "../../convex/_generated/dataModel";
 
 const FINISHED_STATUS = 'finished';
 
-const RaffleItem = ({ item }: { item: Pick<Doc<"raffles">, '_id' | 'prize' | 'title' | 'status' | 'ticketPrice' | 'totalTickets' | 'ticketsSold' | 'imageUrl' | 'winningTicketNumber'> }) => {
+const RaffleItem = ({ item }: { item: Pick<Doc<"raffles">, '_id' | 'prize' | 'title' | 'status' | 'ticketPrice' | 'totalTickets' | 'imageUrl' | 'winningTicketNumber'> }) => {
   const { _id, prize, title, status, ticketPrice, totalTickets, imageUrl, winningTicketNumber } = item;
 
   const nonAvailableTickets = useQuery(api.tickets.getNonAvailableTickets, { raffleId: _id as Id<'raffles'> });
@@ -26,44 +26,52 @@ const RaffleItem = ({ item }: { item: Pick<Doc<"raffles">, '_id' | 'prize' | 'ti
   };
 
   return (
-    <View className="bg-white rounded-2xl shadow-sm shadow-slate-300/50 overflow-hidden mb-6">
-      <Image
+    <View className="bg-white rounded-2xl shadow-md shadow-slate-200/70 overflow-hidden mb-6 border border-slate-100">
+      {/* Contenedor con aspect ratio para asegurar consistencia en las imágenes */}
+      <View className="aspect-video bg-slate-200">
+        <Image
+          source={{ uri: imageUrl }}
+          className="w-full h-full"
+          resizeMode="cover"
+        />
+      </View>
+      <View className="p-4">
+        <Text className="text-lg font-quicksand-bold text-slate-800 mb-2" numberOfLines={2}>{title}</Text>
 
-        source={{ uri: "https://st3.depositphotos.com/6922808/15355/i/450/depositphotos_153557144-stock-illustration-colombian-money-on-a-white.jpg" }}
-        className="w-full h-48"
-        resizeMode="cover"
-      />
-      <View className="p-5">
-        <Text className="text-xl font-quicksand-bold text-slate-800 mb-2" numberOfLines={2}>{title}</Text>
-        <View className="flex-row justify-between items-center mb-3">
-          <Text className="text-2xl font-quicksand-bold text-primary">{formatCurrency(prize ?? 0)}</Text>
-          <Text className="text-base font-quicksand-semibold text-green-600">{formatCurrency(ticketPrice ?? 0)} / Boleto</Text>
+        <View className="flex-row justify-between items-baseline mb-4">
+          <View>
+            <Text className="text-xs font-quicksand-medium text-slate-500">Premio</Text>
+            <Text className="text-2xl font-quicksand-bold text-indigo-600">{formatCurrency(prize ?? 0)}</Text>
+          </View>
+          <View className="items-end">
+            <Text className="text-xs font-quicksand-medium text-slate-500">Por Boleto</Text>
+            <Text className="text-lg font-quicksand-semibold text-emerald-600">{formatCurrency(ticketPrice ?? 0)}</Text>
+          </View>
         </View>
-        <View className="w-full bg-slate-200 rounded-full h-2 mb-1">
-          <View
-            className="bg-primary h-2 rounded-full"
-            style={{ width: `${(parseInt(ticketsSold?.toString() ?? '0') / parseInt(totalTickets.toString())) * 100}%` }}
-          />
+
+        <View className="mb-4">
+          <View className="flex-row justify-between items-center mb-1">
+            <Text className="text-xs font-quicksand-semibold text-slate-600">Progreso</Text>
+            <Text className="text-xs font-quicksand-bold text-slate-600">{ticketsSold?.toString() ?? 0} / {totalTickets}</Text>
+          </View>
+          <View className="w-full bg-slate-200 rounded-full h-2.5">
+            <View className="bg-indigo-600 h-2.5 rounded-full" style={{ width: `${((ticketsSold ?? 0) / totalTickets) * 100}%` }} />
+          </View>
         </View>
-        <Text className="text-right text-slate-500 font-quicksand-medium text-xs mb-4">
-          {ticketsSold?.toString() ?? 0} / {totalTickets} vendidos
-        </Text>
+
         <Link
           disabled={status === FINISHED_STATUS}
-          href={{
-            pathname: "/[id]",
-            params: { id: _id.toString() },
-          }}
+          href={{ pathname: "/[id]", params: { id: _id.toString() } }}
           asChild
         >
           {status === FINISHED_STATUS ? (
-            <View className="bg-green-100 p-3 rounded-lg items-center flex-row justify-center">
-              <Ionicons name="trophy" size={20} color="#15803d" />
-              <Text className="text-green-800 font-quicksand-bold text-base ml-2">Ganador: #{winningTicketNumber}</Text>
+            <View className="bg-slate-100 p-3 rounded-lg items-center flex-row justify-center border border-slate-200">
+              <Ionicons name="trophy-outline" size={20} color="#475569" />
+              <Text className="text-slate-700 font-quicksand-bold text-base ml-2">Ganador: #{winningTicketNumber}</Text>
             </View>
           ) : (
-            <Pressable className="bg-primary p-3 rounded-lg items-center active:opacity-80">
-              <Text className="text-white font-quicksand-bold text-base">Ver Sorteo</Text>
+            <Pressable className="bg-indigo-600 p-3 rounded-lg items-center active:bg-indigo-700">
+              <Text className="text-white font-quicksand-bold text-base">Participar en el Sorteo</Text>
             </Pressable>
           )}
         </Link>
@@ -71,8 +79,6 @@ const RaffleItem = ({ item }: { item: Pick<Doc<"raffles">, '_id' | 'prize' | 'ti
     </View>
   );
 };
-
-
 
 const RafflesTab = () => {
   const raffles = useQuery(api.raffles.getAllRaffles);
@@ -86,26 +92,31 @@ const RafflesTab = () => {
     );
   }
 
-
   const activeRaffles = raffles ? raffles.filter(raffle => raffle.status === "active") : [];
   const finishedRaffles = raffles ? raffles.filter(raffle => raffle.status === FINISHED_STATUS) : [];
 
-  // Combina los sorteos activos y finalizados
   const sortedRaffles = [...activeRaffles, ...finishedRaffles];
 
   return (
-
     <SafeAreaView className="flex-1 bg-gray-50">
-      {/* Custom Header */}
-
-
       <FlatList
         data={sortedRaffles}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 80, paddingTop: 8 }}
         renderItem={({ item }) => <RaffleItem item={item} />}
         keyExtractor={(item) => item._id.toString()}
-        ListHeaderComponent={() => (<Text className="text-3xl font-quicksand-bold text-center pb-4 text-gray-800">Sorteos Disponibles</Text>)}
-        ListEmptyComponent={() => (<View className="flex-1 items-center justify-center mt-20"><Text className="text-xl font-quicksand-semibold text-gray-500">No hay sorteos disponibles.</Text></View>)}
+        ListHeaderComponent={() => (
+          <View className="pb-4">
+            <Text className="text-3xl font-quicksand-bold text-slate-900">Sorteos Activos</Text>
+            <Text className="text-base font-quicksand-medium text-slate-500">Participa para ganar premios increíbles.</Text>
+          </View>
+        )}
+        ListEmptyComponent={() => (
+          <View className="flex-1 items-center justify-center mt-20 p-8 bg-slate-100 rounded-2xl">
+            <Ionicons name="gift-outline" size={48} color="#94a3b8" />
+            <Text className="text-xl font-quicksand-semibold text-slate-600 mt-4">No hay sorteos disponibles</Text>
+            <Text className="text-base font-quicksand-medium text-slate-500 text-center mt-1">Vuelve pronto para ver nuevas oportunidades.</Text>
+          </View>
+        )}
       />
     </SafeAreaView>
   );
