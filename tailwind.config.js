@@ -5,21 +5,9 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: "#FE8C00",
-        white: {
-          DEFAULT: "#ffffff",
-          100: "#fafafa",
-          200: "#FE8C00",
-        },
-        gray: {
-          100: "#878787",
-          200: "#878787",
-        },
-        dark: {
-          100: "#181C2E",
-        },
-        error: "#F14141",
-        success: "#2F9B65",
+        // Aquí definimos nuestro color principal.
+        primary: '#4f46e5', // Corresponde a 'indigo-600'
+        secondary: '#10b981', // Corresponde a 'emerald-600' para los precios
       },
       fontFamily: {
         quicksand: ["Quicksand-Regular", "sans-serif"],

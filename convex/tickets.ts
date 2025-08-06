@@ -306,6 +306,8 @@ export const getUserPurchasesWithDetails = query({
         return {
           ...purchase,
           raffleTitle: raffle?.title ?? "Sorteo no encontrado",
+          raffleImageUrl: raffle?.imageUrl, // Añadimos la URL de la imagen para la UI
+          raffleStatus: raffle?.status, // Y el estado, para saber si fue archivado
           tickets: allTickets,
         };
       })

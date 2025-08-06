@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "rifas",
-    "slug": "rifas",
+    "name": "Rifas",
+    "slug": "Raffles",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -30,7 +30,7 @@
         {
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
-          "resizeMode": "contain",
+          "resizeMode": "cover",
           "backgroundColor": "#ffffff"
         }
       ]

@@ -5,12 +5,12 @@ import { useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, Text, View } from 'react-native';
 
-const NumberCircle = React.memo(({ number, isSelected, isBought, onSelect }: { number: number, isSelected: boolean, isBought: boolean, onSelect: (num: number) => void }) => {
+const NumberCircle = ({ number, isSelected, isBought, onSelect }: { number: number, isSelected: boolean, isBought: boolean, onSelect: (num: number) => void }) => {
   // Define los estilos basados en el estado del número
   const circleClassName = isBought
     ? 'bg-slate-200 border-slate-300' // Estilo para números comprados
     : isSelected
-      ? 'bg-primary border-indigo-700' // Estilo para números seleccionados por el usuario
+      ? 'bg-indigo-600 border-indigo-700' // Estilo para números seleccionados por el usuario
       : 'bg-white border-gray-200 active:opacity-70'; // Estilo para números disponibles
 
   const textClassName = isBought
@@ -38,7 +38,7 @@ const NumberCircle = React.memo(({ number, isSelected, isBought, onSelect }: { n
       </Text>
     </Pressable>
   );
-});
+};
 
 type TableNumbersProps = {
   totalTickets: number;

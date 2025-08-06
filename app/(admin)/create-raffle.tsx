@@ -150,7 +150,7 @@ const CreateRafflePage = () => {
                     </View>
 
                     <Pressable
-                        className="bg-indigo-600 h-12 rounded-lg justify-center items-center active:bg-indigo-700 disabled:bg-indigo-400"
+                        className="bg-primary h-12 rounded-lg justify-center items-center active:opacity-80 disabled:bg-primary/60"
                         onPress={handleCreateRaffle}
                         disabled={isLoading}
                     >

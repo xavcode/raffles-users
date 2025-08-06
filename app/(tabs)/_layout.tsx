@@ -47,7 +47,7 @@ const _layout = () => {
       <Tabs screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarActiveTintColor: '#FE8C00',
+        tabBarActiveTintColor: '#4f46e5', // Usamos el valor hexadecimal de 'primary'
         tabBarInactiveTintColor: '#5D5F6D',
         tabBarItemStyle: {
           justifyContent: 'center',

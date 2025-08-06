@@ -17,6 +17,8 @@ const EditRafflePage = () => {
   });
 
   const updateRaffle = useMutation(api.raffles.updateRaffle);
+  const cancelRaffle = useMutation(api.raffles.cancelRaffle);
+  const deleteRaffle = useMutation(api.raffles.deleteRaffle);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -28,6 +30,7 @@ const EditRafflePage = () => {
 
   const [isSaving, setIsSaving] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (raffle) {
@@ -107,6 +110,54 @@ const EditRafflePage = () => {
     }
   };
 
+  const handleCancelRaffle = () => {
+    Alert.alert(
+      "Cancelar Sorteo",
+      "¿Estás seguro de que quieres cancelar este sorteo? Esta acción no se puede deshacer y el sorteo aparecerá como 'Cancelado' para todos los usuarios.",
+      [
+        { text: "No, mantener", style: "cancel" },
+        {
+          text: "Sí, Cancelar", style: "destructive", onPress: async () => {
+            setIsDeleting(true);
+            try {
+              await cancelRaffle({ id: id as Id<'raffles'> });
+              Alert.alert('Éxito', 'El sorteo ha sido cancelado.');
+              router.back();
+            } catch (error: any) {
+              Alert.alert('Error', error.data?.message || 'No se pudo cancelar el sorteo. Tiene boletos vendidos o reservados.');
+            } finally {
+              setIsDeleting(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleDeleteRaffle = () => {
+    Alert.alert(
+      "Eliminar Sorteo Permanentemente",
+      "Esta acción es IRREVERSIBLE. Solo funcionará si el sorteo no tiene boletos vendidos. ¿Estás seguro?",
+      [
+        { text: "No, mantener", style: "cancel" },
+        {
+          text: "Sí, Eliminar", style: "destructive", onPress: async () => {
+            setIsDeleting(true);
+            try {
+              await deleteRaffle({ id: id as Id<'raffles'> });
+              Alert.alert('Éxito', 'El sorteo ha sido eliminado permanentemente.');
+              router.back();
+            } catch (error: any) {
+              Alert.alert('Error', error.data?.message || 'No se pudo eliminar el sorteo.');
+            } finally {
+              setIsDeleting(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   if (raffle === undefined) {
     return <View className="flex-1 justify-center items-center bg-slate-50"><ActivityIndicator size="large" color="#4f46e5" /></View>;
   }
@@ -116,7 +167,7 @@ const EditRafflePage = () => {
   }
 
   const isFinished = raffle.status === 'finished';
-  const isLoading = isSaving || isFinishing;
+  const isLoading = isSaving || isFinishing || isDeleting;
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
@@ -135,7 +186,7 @@ const EditRafflePage = () => {
             </View>
           </View>
           {!isFinished && (
-            <Pressable className="bg-indigo-600 h-12 rounded-lg justify-center items-center mt-6 active:bg-indigo-700 disabled:bg-indigo-400" onPress={handleSaveChanges} disabled={isLoading}>
+            <Pressable className="bg-primary h-12 rounded-lg justify-center items-center mt-6 active:opacity-80 disabled:bg-primary/60" onPress={handleSaveChanges} disabled={isLoading}>
               {isSaving ? <ActivityIndicator color="white" /> : <Text className="text-white font-quicksand-bold text-base">Guardar Cambios</Text>}
             </Pressable>
           )}
@@ -156,6 +207,20 @@ const EditRafflePage = () => {
             <Pressable className="bg-red-600 h-12 rounded-lg justify-center items-center mt-4 active:bg-red-700 disabled:bg-red-400" onPress={handleFinishRaffle} disabled={isLoading}>
               {isFinishing ? <ActivityIndicator color="white" /> : <Text className="text-white font-quicksand-bold text-base">Finalizar y Asignar Ganador</Text>}
             </Pressable>
+          </View>
+        )}
+
+        {!isFinished && (
+          <View className="mt-6 bg-red-50 p-5 rounded-2xl border border-red-200">
+            <Text className="text-lg font-quicksand-bold text-red-800 mb-2">Zona de Peligro</Text>
+            <View className="space-y-3">
+              <Pressable onPress={handleCancelRaffle} disabled={isLoading} className="bg-amber-500 h-11 rounded-lg justify-center items-center active:bg-amber-600 disabled:bg-amber-300">
+                <Text className="text-white font-quicksand-bold text-base">Cancelar Sorteo</Text>
+              </Pressable>
+              <Pressable onPress={handleDeleteRaffle} disabled={isLoading} className="bg-red-600 h-11 rounded-lg justify-center items-center active:bg-red-700 disabled:bg-red-300">
+                {isDeleting ? <ActivityIndicator color="white" /> : <Text className="text-white font-quicksand-bold text-base">Eliminar Sorteo</Text>}
+              </Pressable>
+            </View>
           </View>
         )}
       </KeyboardAwareScrollView>

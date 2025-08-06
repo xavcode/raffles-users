@@ -8,6 +8,7 @@ import { Doc, Id } from "../../convex/_generated/dataModel";
 
 
 const FINISHED_STATUS = 'finished';
+const CANCELLED_STATUS = 'cancelled';
 
 const RaffleItem = ({ item }: { item: Pick<Doc<"raffles">, '_id' | 'prize' | 'title' | 'status' | 'ticketPrice' | 'totalTickets' | 'imageUrl' | 'winningTicketNumber'> }) => {
   const { _id, prize, title, status, ticketPrice, totalTickets, imageUrl, winningTicketNumber } = item;
@@ -41,21 +42,21 @@ const RaffleItem = ({ item }: { item: Pick<Doc<"raffles">, '_id' | 'prize' | 'ti
         <View className="flex-row justify-between items-baseline mb-4">
           <View>
             <Text className="text-xs font-quicksand-medium text-slate-500">Premio</Text>
-            <Text className="text-2xl font-quicksand-bold text-indigo-600">{formatCurrency(prize ?? 0)}</Text>
+            <Text className="text-2xl font-quicksand-bold text-primary">{formatCurrency(prize ?? 0)}</Text>
           </View>
           <View className="items-end">
             <Text className="text-xs font-quicksand-medium text-slate-500">Por Boleto</Text>
-            <Text className="text-lg font-quicksand-semibold text-emerald-600">{formatCurrency(ticketPrice ?? 0)}</Text>
+            <Text className="text-lg font-quicksand-semibold text-secondary">{formatCurrency(ticketPrice ?? 0)}</Text>
           </View>
         </View>
 
         <View className="mb-4">
           <View className="flex-row justify-between items-center mb-1">
-            <Text className="text-xs font-quicksand-semibold text-slate-600">Progreso</Text>
+            <Text className="text-xs font-quicksand-semibold text-slate-600">Vendidos</Text>
             <Text className="text-xs font-quicksand-bold text-slate-600">{ticketsSold?.toString() ?? 0} / {totalTickets}</Text>
           </View>
           <View className="w-full bg-slate-200 rounded-full h-2.5">
-            <View className="bg-indigo-600 h-2.5 rounded-full" style={{ width: `${((ticketsSold ?? 0) / totalTickets) * 100}%` }} />
+            <View className="bg-primary h-2.5 rounded-full" style={{ width: `${((ticketsSold ?? 0) / totalTickets) * 100}%` }} />
           </View>
         </View>
 
@@ -64,13 +65,18 @@ const RaffleItem = ({ item }: { item: Pick<Doc<"raffles">, '_id' | 'prize' | 'ti
           href={{ pathname: "/[id]", params: { id: _id.toString() } }}
           asChild
         >
-          {status === FINISHED_STATUS ? (
+          {status === FINISHED_STATUS || status === CANCELLED_STATUS ? (
             <View className="bg-slate-100 p-3 rounded-lg items-center flex-row justify-center border border-slate-200">
-              <Ionicons name="trophy-outline" size={20} color="#475569" />
-              <Text className="text-slate-700 font-quicksand-bold text-base ml-2">Ganador: #{winningTicketNumber}</Text>
+              {status === FINISHED_STATUS ?
+                <View className='flex-row items-center'>
+                  <Ionicons name="trophy-outline" size={20} color="#475569" />
+                  <Text className="text-slate-700 font-quicksand-bold text-base ml-2">Ganador: {winningTicketNumber}</Text>
+                </View>
+                : <Text className="text-slate-700 font-quicksand-bold text-base ml-2">Cancelado</Text>
+              }
             </View>
           ) : (
-            <Pressable className="bg-indigo-600 p-3 rounded-lg items-center active:bg-indigo-700">
+            <Pressable className="bg-primary p-3 rounded-lg items-center active:opacity-80">
               <Text className="text-white font-quicksand-bold text-base">Participar en el Sorteo</Text>
             </Pressable>
           )}
@@ -87,15 +93,16 @@ const RafflesTab = () => {
   if (raffles === undefined || convexUser === undefined) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-gray-50">
-        <ActivityIndicator size="large" color="#6366F1" />
+        <ActivityIndicator size="large" color="#4f46e5" />
       </SafeAreaView>
     );
   }
 
   const activeRaffles = raffles ? raffles.filter(raffle => raffle.status === "active") : [];
   const finishedRaffles = raffles ? raffles.filter(raffle => raffle.status === FINISHED_STATUS) : [];
+  const cancelledRaffles = raffles ? raffles.filter(raffle => raffle.status === CANCELLED_STATUS) : [];
 
-  const sortedRaffles = [...activeRaffles, ...finishedRaffles];
+  const sortedRaffles = [...activeRaffles, ...finishedRaffles, ...cancelledRaffles];
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
