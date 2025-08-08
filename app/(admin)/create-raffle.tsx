@@ -4,7 +4,7 @@ import { useMutation } from 'convex/react';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -55,20 +55,28 @@ const CreateRafflePage = () => {
             }
 
             const formData = new FormData();
-            // El 'as any' es necesario para que TypeScript no se queje con la estructura del archivo en React Native
-            formData.append('file', {
-                uri: imageAsset.uri,
-                type: imageAsset.mimeType ?? 'image/jpeg', // Usamos el mimeType real, con un fallback
-                name: imageAsset.fileName ?? 'upload.jpg',
-            } as any);
             formData.append('upload_preset', uploadPreset);
+
+            // La forma de adjuntar el archivo es diferente en web y en nativo.
+            if (Platform.OS === 'web') {
+                // En web, obtenemos el blob de la URI y lo adjuntamos.
+                const response = await fetch(imageAsset.uri);
+                const blob = await response.blob();
+                formData.append('file', blob, imageAsset.fileName ?? 'upload.jpg');
+            } else {
+                // En nativo, usamos el formato de objeto específico de React Native.
+                formData.append('file', {
+                    uri: imageAsset.uri,
+                    type: imageAsset.mimeType ?? 'image/jpeg',
+                    name: imageAsset.fileName ?? 'upload.jpg',
+                } as any);
+            }
 
             const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
                 method: 'POST',
                 body: formData,
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+                // NOTA: No establecemos el header 'Content-Type'. El navegador (en web)
+                // o la librería de red (en nativo) lo harán automáticamente con el boundary correcto.
             });
 
             const data = await response.json();

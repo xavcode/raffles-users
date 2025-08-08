@@ -27,7 +27,7 @@ const TabBarIcon = ({ name, color, title, focused }: TabBarIconProps) => (
   </View>
 );
 
-const _layout = () => {
+const TabsLayout = () => {
   const { isLoaded, isSignedIn } = useAuth()
 
   // Muestra un indicador de carga mientras Clerk verifica la sesión.
@@ -113,4 +113,4 @@ const _layout = () => {
   )
 }
 
-export default _layout
+export default TabsLayout

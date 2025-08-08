@@ -8,15 +8,17 @@
     "scheme": "rifas",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true
-    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "googleServicesFile": "./google-services.json",
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS"
+      ],
+      "package": "com.javier9015.Raffles"
     },
     "web": {
       "bundler": "metro",
@@ -24,6 +26,13 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#4f46e5"
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",
@@ -37,6 +46,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3700fc83-17e6-4569-8a69-60e33a6573cb"
+      }
+    },
+    "owner": "javier9015"
   }
 }

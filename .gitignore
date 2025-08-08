@@ -37,3 +37,11 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
+raffles-app-4d15d-firebase-adminsdk-fbsvc-deb08e376f.json
+google-services.json
+
+/ios
+/android
+# Firebase / Google Services
+google-services.json
+GoogleService-Info.plist

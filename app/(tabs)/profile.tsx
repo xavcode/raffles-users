@@ -1,10 +1,10 @@
+import { api } from '@/convex/_generated/api';
 import { SignedIn, SignedOut, useAuth, useUser } from '@clerk/clerk-expo';
 import { FontAwesome } from '@expo/vector-icons';
 import { useQuery } from 'convex/react';
 import { Link } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
-import { api } from '../../convex/_generated/api';
 
 const profile = () => {
   const { signOut } = useAuth();

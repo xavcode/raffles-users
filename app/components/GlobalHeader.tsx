@@ -1,14 +1,29 @@
 import { api } from '@/convex/_generated/api';
+import { registerForPushNotificationsAsync } from "@/libs/notifications";
 import { SignedIn } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { Link } from 'expo-router';
+import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 const ADMIN = 'admin'
 
 const GlobalHeader = () => {
   const convexUser = useQuery(api.users.getCurrent);
+  const storePushToken = useMutation(api.users.storePushToken);
+
+  useEffect(() => {
+    // Se ejecuta cuando el usuario de Convex se carga.
+    if (convexUser) {
+      registerForPushNotificationsAsync().then(token => {
+        // Si obtenemos un token del dispositivo y es diferente al que tenemos guardado (o no tenemos ninguno), lo actualizamos.
+        if (token && token !== convexUser.pushToken) {
+          storePushToken({ token });
+        }
+      });
+    }
+  }, [convexUser]); // Dependemos solo de `convexUser` para que se ejecute cuando se carga.
 
   return (
     <View className="flex-row justify-between items-center px-4 pt-2 pb-4">

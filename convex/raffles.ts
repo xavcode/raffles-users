@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 
 export const getAllRaffles = query({
@@ -49,6 +50,11 @@ export const createRaffle = mutation({
             creatorId: user._id,
             ticketsSold: 0,
             status: "active",
+        });
+
+        await ctx.scheduler.runAfter(0, internal.notifications.sendToAllUsers, {
+            title: "🎉 ¡Nuevo Sorteo Disponible!",
+            message: `¡No te pierdas la oportunidad de ganar en nuestro nuevo sorteo: "${args.title}"!`,
         });
 
         return newRaffleId;
