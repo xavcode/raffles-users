@@ -23,10 +23,10 @@ const GlobalHeader = () => {
         }
       });
     }
-  }, [convexUser]); // Dependemos solo de `convexUser` para que se ejecute cuando se carga.
+  }, [convexUser]);
 
   return (
-    <View className="flex-row justify-between items-center px-4 pt-2 pb-4">
+    <View className="flex-row justify-between items-center px-4 pt-2 mb-2 ">
       <SignedIn>
         <View>
           {convexUser &&

@@ -17,7 +17,7 @@ const RaffleCard = ({ item }: { item: Doc<'raffles'> }) => {
   return (
     <Link href={`/${item._id}`} asChild>
       {/* Hacemos que toda la tarjeta se vea deshabilitada si no está activa */}
-      <Pressable className={`bg-white mx-4 mb-5 rounded-2xl shadow-sm shadow-slate-300/50 ${isActive ? 'active:opacity-80' : 'opacity-70'}`} disabled={!isActive}>
+      <Pressable className={`bg-white mx-4 mb-25 rounded-2xl shadow-sm shadow-slate-300/50 ${isActive ? 'active:opacity-80' : 'opacity-70'}`} disabled={!isActive}>
         <Image
           source={{ uri: item.imageUrl }}
           className="w-full h-40 rounded-t-2xl bg-slate-200"
