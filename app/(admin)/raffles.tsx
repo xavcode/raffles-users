@@ -105,6 +105,15 @@ const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
 
 const RafflesPage = () => {
   const convexUser = useQuery(api.users.getCurrent);
+
+  if (convexUser === undefined) {
+    return <View className="flex-1 bg-slate-50 justify-center items-center"><ActivityIndicator size="large" color="#4f46e5" /></View>;
+  }
+
+  if (convexUser && convexUser.userType !== "admin") {
+    return <Redirect href="/(tabs)" />;
+  }
+
   const {
     results: raffles,
     status,
@@ -116,14 +125,6 @@ const RafflesPage = () => {
     { initialNumItems: 5 }
   );
 
-
-  if (convexUser === undefined) {
-    return <View className="flex-1 bg-slate-50 justify-center items-center"><ActivityIndicator size="large" color="#4f46e5" /></View>;
-  }
-
-  if (convexUser && convexUser.userType !== "admin") {
-    return <Redirect href="/(tabs)" />;
-  }
 
   // useMemo para evitar recalcular las secciones en cada render
   const sections = useMemo(() => {

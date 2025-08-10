@@ -8,6 +8,7 @@ module.exports = {
         // Aquí definimos nuestro color principal.
         primary: '#4f46e5', // Corresponde a 'indigo-600'
         secondary: '#10b981', // Corresponde a 'emerald-600' para los precios
+        muted: '#440'
       },
       fontFamily: {
         quicksand: ["Quicksand-Regular", "sans-serif"],

@@ -132,10 +132,14 @@ export default function RaffleDetailsScreen() {
   // Memoizamos el mapa de estados para un rendimiento óptimo.
   // Se recalcula solo cuando `nonAvailableTickets` cambia.
   const ticketStatusMap = useMemo(() => {
+    // Creamos un mapa que SOLO contendrá los boletos vendidos o reservados.
     const map = new Map<number, 'sold' | 'reserved'>();
     if (nonAvailableTickets) {
       for (const ticket of nonAvailableTickets) {
-        map.set(ticket.ticketNumber, ticket.status);
+        // Ignoramos cualquier otro estado como 'expired', ya que no es relevante para esta pantalla.
+        if (ticket.status === 'sold' || ticket.status === 'reserved') {
+          map.set(ticket.ticketNumber, ticket.status);
+        }
       }
     }
     return map;
@@ -193,21 +197,14 @@ export default function RaffleDetailsScreen() {
         onPress: () => router.push(`/purchase/${result.purchaseId}`),
         position: 'bottom',
         swipeable: true,
-        visibilityTime: 10000,
-
-
-
+        visibilityTime: 8000,
         text1Style: {
           fontSize: 12,
           color: '#444'
-
         },
         text2Style: {
           color: '#777'
-
         },
-
-
       })
       setSelectedTickets(new Set());
     } catch (error: any) {
@@ -223,30 +220,6 @@ export default function RaffleDetailsScreen() {
       setIsReserving(false);
     }
   };
-  // const handleSold = async () => {
-  //   if (selectedTickets.size === 0) {
-  //     Alert.alert("Sin selección", "Debes seleccionar al menos un boleto para comprar.");
-  //     return;
-  //   }
-  //   setIsReserving(true);
-  //   try {
-  //     const result = await soldTickets({
-  //       ticketNumbers: Array.from(selectedTickets),
-  //       raffleId: id as Id<'raffles'>,
-  //     });
-  //     Alert.alert(
-  //       "¡Boletos Comprados!",
-  //       `Felicidades. Compraste los boletos:${Array.from(selectedTickets).join(', ')}. Ve a 'Mis Boletos' para ver los detalles y confirmar tu compra.`,
-  //       [{ text: "OK", onPress: () => router.back() }]
-  //     );
-  //     setSelectedTickets(new Set());
-  //   } catch (error: any) {
-  //     console.error("Error al vender boletos:", error);
-  //     Alert.alert("Error", error.data?.message || error.message || "No se pudieron vender los boletos. Es posible que alguien más los haya tomado. Por favor, refresca.");
-  //   } finally {
-  //     setIsReserving(false);
-  //   }
-  // }
 
   return (
     <SafeAreaView className='flex-1 mb-10'>
@@ -296,38 +269,6 @@ export default function RaffleDetailsScreen() {
           )}
         </View>
       </ScrollView>
-
-      {/* {isModalVisible && (
-        <View className="absolute inset-0 bg-black/50 justify-center items-center">
-          <View className="bg-white p-6 rounded-lg w-80">
-            <Text className="text-lg font-quicksand-bold mb-4">Selecciona un método de pago</Text>
-            <Pressable
-              onPress={() => {
-                setIsModalVisible(false);
-                handleSold();
-              }}
-              className="bg-green-500 p-3 rounded-lg items-center mb-3"
-            >
-              <Text className="text-white font-quicksand-bold">Pagar con Saldo</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => {
-                setIsModalVisible(false);
-                handleReserve();
-              }}
-              className="bg-blue-500 p-3 rounded-lg items-center"
-            >
-              <Text className="text-white font-quicksand-bold">Pagar por Transferencia (Reservar)</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setIsModalVisible(false)}
-              className="mt-4"
-            >
-              <Text className="text-center text-gray-500">Cancelar</Text>
-            </Pressable>
-          </View>
-        </View>
-      )} */}
     </SafeAreaView>
   );
 }
