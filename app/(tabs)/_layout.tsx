@@ -35,6 +35,7 @@ const TabsLayout = () => {
     return (
       <View className="flex-1 items-center justify-center">
         <ActivityIndicator size="large" color="#FE8C00" />
+        <ActivityIndicator size="large" color="#FE8C00" />
       </View>
     )
   }
