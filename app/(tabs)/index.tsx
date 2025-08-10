@@ -1,132 +1,98 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from "convex/react";
-import { Link } from "expo-router";
-import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { api } from "../../convex/_generated/api";
-import { Doc, Id } from "../../convex/_generated/dataModel";
+import { api } from '@/convex/_generated/api';
+import { Doc } from '@/convex/_generated/dataModel';
+import { usePaginatedQuery } from 'convex/react';
+import { Link, router, Stack } from 'expo-router';
+import React from 'react';
+import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-
-const FINISHED_STATUS = 'finished';
-const CANCELLED_STATUS = 'cancelled';
-
-const RaffleItem = ({ item }: { item: Pick<Doc<"raffles">, '_id' | 'prize' | 'title' | 'status' | 'ticketPrice' | 'totalTickets' | 'imageUrl' | 'winningTicketNumber'> }) => {
-  const { _id, prize, title, status, ticketPrice, totalTickets, imageUrl, winningTicketNumber } = item;
-
-  const nonAvailableTickets = useQuery(api.tickets.getNonAvailableTickets, { raffleId: _id as Id<'raffles'> });
-  const ticketsSold = nonAvailableTickets?.length
-
-
-  // Helper para formatear la moneda
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
+const RaffleCard = ({ item }: { item: Doc<'raffles'> }) => {
+  const formattedPrice = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(item.ticketPrice);
+  const progress = item.totalTickets > 0 ? (item.ticketsSold / item.totalTickets) * 100 : 0;
 
   return (
-    <View className="bg-white rounded-2xl shadow-md shadow-slate-200/70 overflow-hidden mb-6 border border-slate-100">
-      {/* Contenedor con aspect ratio para asegurar consistencia en las imágenes */}
-      <View className="aspect-video bg-slate-200">
+    <Link href={`/${item._id}`} asChild>
+      <Pressable className="bg-white mx-4 mb-5 rounded-2xl shadow-sm shadow-slate-300/50 active:opacity-80">
         <Image
-          source={{ uri: imageUrl }}
-          className="w-full h-full"
-          resizeMode="cover"
+          source={{ uri: item.imageUrl }}
+          className="w-full h-40 rounded-t-2xl bg-slate-200"
         />
-      </View>
-      <View className="p-4">
-        <Text className="text-lg font-quicksand-bold text-slate-800 mb-2" numberOfLines={2}>{title}</Text>
-
-        <View className="flex-row justify-between items-baseline mb-4">
-          <View>
-            <Text className="text-xs font-quicksand-medium text-slate-500">Premio</Text>
-            <Text className="text-2xl font-quicksand-bold text-primary">{formatCurrency(prize ?? 0)}</Text>
-          </View>
-          <View className="items-end">
-            <Text className="text-xs font-quicksand-medium text-slate-500">Por Boleto</Text>
-            <Text className="text-lg font-quicksand-semibold text-secondary">{formatCurrency(ticketPrice ?? 0)}</Text>
-          </View>
-        </View>
-
-        <View className="mb-4">
-          <View className="flex-row justify-between items-center mb-1">
-            <Text className="text-xs font-quicksand-semibold text-slate-600">Vendidos</Text>
-            <Text className="text-xs font-quicksand-bold text-slate-600">{ticketsSold?.toString() ?? 0} / {totalTickets}</Text>
-          </View>
-          <View className="w-full bg-slate-200 rounded-full h-2.5">
-            <View className="bg-primary h-2.5 rounded-full" style={{ width: `${((ticketsSold ?? 0) / totalTickets) * 100}%` }} />
-          </View>
-        </View>
-
-        <Link
-          disabled={status === FINISHED_STATUS}
-          href={{ pathname: "/[id]", params: { id: _id.toString() } }}
-          asChild
-        >
-          {status === FINISHED_STATUS || status === CANCELLED_STATUS ? (
-            <View className="bg-slate-100 p-3 rounded-lg items-center flex-row justify-center border border-slate-200">
-              {status === FINISHED_STATUS ?
-                <View className='flex-row items-center'>
-                  <Ionicons name="trophy-outline" size={20} color="#475569" />
-                  <Text className="text-slate-700 font-quicksand-bold text-base ml-2">Ganador: {winningTicketNumber}</Text>
-                </View>
-                : <Text className="text-slate-700 font-quicksand-bold text-base ml-2">Cancelado</Text>
-              }
+        <View className="p-4">
+          <Text className="text-base font-quicksand-bold text-slate-800" numberOfLines={2}>{item.title}</Text>
+          <Text className="text-sm font-quicksand-medium text-slate-500 mt-1" numberOfLines={1}>Gana hasta ${item?.prize?.toLocaleString('es-CO')}</Text>
+          <View className="mt-4">
+            <View className="w-full bg-slate-200 rounded-full h-2">
+              <View className="bg-primary h-2 rounded-full" style={{ width: `${progress}%` }} />
             </View>
-          ) : (
-            <Pressable className="bg-primary p-3 rounded-lg items-center active:opacity-80">
-              <Text className="text-white font-quicksand-bold text-base">Participar en el Sorteo</Text>
-            </Pressable>
-          )}
-        </Link>
-      </View>
-    </View>
+            <View className="flex-row justify-between mt-1.5">
+              <Text className="text-xs font-quicksand-semibold text-slate-500">{item.ticketsSold?.toString() ?? 0} / {item.totalTickets} vendidos</Text>
+              <Text className="text-sm font-quicksand-bold text-primary">{formattedPrice}</Text>
+            </View>
+          </View>
+          <Pressable className="bg-primary p-3 rounded-lg items-center active:opacity-80"
+            onPress={() => { router.push(`/${item._id}`) }}
+          >
+            <Text className="text-white font-quicksand-bold text-base">Participar en el Sorteo</Text>
+          </Pressable>
+        </View>
+      </Pressable>
+    </Link>
   );
 };
 
-const RafflesTab = () => {
-  const raffles = useQuery(api.raffles.getAllRaffles);
-  const convexUser = useQuery(api.users.getCurrent);
-
-  if (raffles === undefined || convexUser === undefined) {
-    return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-gray-50">
-        <ActivityIndicator size="large" color="#4f46e5" />
-      </SafeAreaView>
-    );
-  }
-
-  const activeRaffles = raffles ? raffles.filter(raffle => raffle.status === "active") : [];
-  const finishedRaffles = raffles ? raffles.filter(raffle => raffle.status === FINISHED_STATUS) : [];
-  const cancelledRaffles = raffles ? raffles.filter(raffle => raffle.status === CANCELLED_STATUS) : [];
-
-  const sortedRaffles = [...activeRaffles, ...finishedRaffles, ...cancelledRaffles];
+const IndexPage = () => {
+  const {
+    results: raffles,
+    status,
+    loadMore,
+  } = usePaginatedQuery(
+    api.raffles.getRaffles,
+    { status: 'active' },
+    { initialNumItems: 5 }
+  );
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-slate-50">
+      <Stack.Screen
+        options={{
+          headerLargeTitle: true,
+          headerTitle: 'Sorteos',
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: '#f8fafc' },
+          headerTitleStyle: { fontFamily: 'Quicksand-Bold' },
+        }}
+      />
       <FlatList
-        data={sortedRaffles}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 80, paddingTop: 8 }}
-        renderItem={({ item }) => <RaffleItem item={item} />}
-        keyExtractor={(item) => item._id.toString()}
-        ListHeaderComponent={() => (
-          <View className="pb-4">
-            <Text className="text-3xl font-quicksand-bold text-slate-900">Sorteos Activos</Text>
-            <Text className="text-base font-quicksand-medium text-slate-500">Participa para ganar premios increíbles.</Text>
-          </View>
-        )}
+        data={raffles}
+        renderItem={({ item }) => <RaffleCard item={item} />}
+        keyExtractor={(item) => item._id}
+        contentContainerClassName="pt-4 pb-8"
+        onEndReached={() => {
+          if (status === 'CanLoadMore') {
+            loadMore(3);
+          }
+        }}
+        onEndReachedThreshold={0.5}
         ListEmptyComponent={() => (
-          <View className="flex-1 items-center justify-center mt-20 p-8 bg-slate-100 rounded-2xl">
-            <Ionicons name="gift-outline" size={48} color="#94a3b8" />
-            <Text className="text-xl font-quicksand-semibold text-slate-600 mt-4">No hay sorteos disponibles</Text>
-            <Text className="text-base font-quicksand-medium text-slate-500 text-center mt-1">Vuelve pronto para ver nuevas oportunidades.</Text>
-          </View>
+          status !== 'LoadingFirstPage' && (
+            <View className="flex-1 justify-center items-center mt-32">
+              <Text className="text-lg font-quicksand-semibold text-slate-500">No hay sorteos activos</Text>
+              <Text className="text-sm font-quicksand-medium text-slate-400">Vuelve más tarde</Text>
+            </View>
+          )
         )}
+        ListFooterComponent={() => {
+          if (status === 'LoadingMore') {
+            return <ActivityIndicator size="large" color="#4f46e5" className="my-8" />;
+          }
+          return null;
+        }}
+        // Opcional: Pull to refresh
+        refreshing={status === 'LoadingFirstPage'}
+
       />
     </SafeAreaView>
   );
-}
+};
 
-export default RafflesTab;
+export default IndexPage;

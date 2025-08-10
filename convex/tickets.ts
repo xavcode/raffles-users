@@ -1,5 +1,6 @@
 // convex/tickets.ts
 
+import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { internalMutation, mutation, query } from "./_generated/server";
@@ -8,13 +9,25 @@ import { internalMutation, mutation, query } from "./_generated/server";
 export const getNonAvailableTickets = query({
   args: { raffleId: v.id("raffles") },
   handler: async (ctx, args) => {
-    const tickets = await ctx.db
+    const reservedTickets = await ctx.db
       .query("tickets")
-      .withIndex("by_raffle_status", (q) => q.eq("raffleId", args.raffleId))
-      .filter((q) => q.neq(q.field("status"), "available"))
-      .collect();
+      .withIndex("by_raffle_status", q => q.eq("raffleId", args.raffleId).eq("status", "reserved"))
+      .collect()
 
-    return tickets.map((ticket) => ({ ticketNumber: ticket.ticketNumber, status: ticket.status as 'sold' | 'reserved' }));
+    const soldTickets = await ctx.db
+      .query("tickets")
+      .withIndex("by_raffle_status", q => q.eq("raffleId", args.raffleId).eq("status", "sold"))
+      .collect()
+
+    const tickets = reservedTickets.concat(soldTickets)
+
+    const items_return = tickets.map((ticket) => ({
+      ticketNumber: ticket.ticketNumber,
+      status: ticket.status
+    }))
+
+    return items_return
+
   },
 });
 
@@ -205,6 +218,12 @@ export const confirmPurchase = mutation({
     for (const ticket of ticketsToUpdate) {
       await ctx.db.patch(ticket._id, { status: "sold", reservedUntil: undefined });
     }
+
+    // 3. Actualizar el contador de boletos vendidos en el sorteo
+    const raffle = await ctx.db.get(purchase.raffleId);
+    if (raffle) {
+      await ctx.db.patch(raffle._id, { ticketsSold: raffle.ticketsSold + purchase.ticketCount });
+    }
   }
 });
 
@@ -264,56 +283,48 @@ export const getPurchases = query({
 })
 
 export const getUserPurchasesWithDetails = query({
-  args: { userId: v.id("users") },
+  args: {
+    userId: v.id("users"),
+    paginationOpts: paginationOptsValidator,
+  },
   handler: async (ctx, args) => {
-    const purchases = await ctx.db
+    const paginatedPurchases = await ctx.db
       .query("purchases")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .order("desc")
-      .collect();
+      .paginate(args.paginationOpts);
 
-    const purchasesWithDetails = await Promise.all(
-      purchases.map(async (purchase) => {
-        const raffle = await ctx.db.get(purchase.raffleId);
+    const { page: purchases, isDone, continueCursor } = paginatedPurchases;
 
-        // Tickets pagados/asociados a la compra
-        const paidTickets = await ctx.db
-          .query("tickets")
-          .withIndex("by_purchase", q => q.eq("purchaseId", purchase._id))
-          .collect();
+    if (purchases.length === 0) return { page: [], isDone: true, continueCursor };
 
-        // Tickets liberados de esta compra (de la tabla released_tickets)
-        const releasedTickets = await ctx.db
-          .query("released_tickets")
-          .filter(q => q.eq(q.field("purchaseId"), purchase._id))
-          .collect();
+    // OPTIMIZACIÓN: En lugar de hacer consultas dentro del bucle (problema N+1),
+    // obtenemos todos los datos necesarios en lotes.
 
-        // Une ambos tipos de tickets, marcando el tipo
-        const allTickets = [
-          ...paidTickets.map(t => ({
-            ...t,
-            type: "paid",
-          })),
-          ...releasedTickets.map(rt => ({
-            ticketNumber: rt.ticketNumber,
-            status: "released",
-            userId: rt.userId,
-            releasedAt: rt.releasedAt,
-            type: "released",
-          })),
-        ];
+    // 1. Obtenemos los IDs de todos los sorteos de una vez.
+    const raffleIds = [...new Set(purchases.map(p => p.raffleId))];
 
-        return {
-          ...purchase,
-          raffleTitle: raffle?.title ?? "Sorteo no encontrado",
-          raffleImageUrl: raffle?.imageUrl, // Añadimos la URL de la imagen para la UI
-          raffleStatus: raffle?.status, // Y el estado, para saber si fue archivado
-          tickets: allTickets,
-        };
-      })
-    );
+    // 2. Hacemos una sola tanda de consultas para obtener todos los sorteos.
+    const raffles = await Promise.all(raffleIds.map(id => ctx.db.get(id)));
+    const rafflesById = new Map(raffles.filter(Boolean).map(r => [r!._id, r]));
 
-    return purchasesWithDetails;
+    // 3. Construimos la respuesta con los datos ya obtenidos, sin más consultas a la BD.
+    //    Devolvemos un objeto "resumen" mucho más ligero, sin la lista de boletos.
+    const purchasesWithDetails = purchases.map((purchase) => {
+      const raffle = rafflesById.get(purchase.raffleId);
+      return {
+        ...purchase,
+        raffleTitle: raffle?.title ?? "Sorteo no encontrado",
+        raffleImageUrl: raffle?.imageUrl,
+        raffleStatus: raffle?.status,
+      };
+    });
+
+    return {
+      page: purchasesWithDetails,
+      isDone,
+      continueCursor,
+    };
   },
 });
 
@@ -357,27 +368,41 @@ export const getPurchaseDetails = query({
 });
 
 export const getPendingConfirmationPurchases = query({
-  handler: async (ctx) => {
-    // Opcional: Añadir validación para asegurar que solo un admin puede ejecutar esto.
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (ctx, args) => {
 
-    const purchases = await ctx.db
+    const paginatedPurchases = await ctx.db
       .query("purchases")
       .withIndex("by_status", (q) => q.eq("status", "pending_confirmation"))
       .order("desc")
-      .collect();
+      .paginate(args.paginationOpts);
 
-    const purchasesWithDetails = await Promise.all(
-      purchases.map(async (purchase) => {
-        const raffle = await ctx.db.get(purchase.raffleId);
-        const user = await ctx.db.get(purchase.userId);
-        return {
-          ...purchase,
-          raffleTitle: raffle?.title ?? "Sorteo no encontrado",
-          userFirstName: user?.firstName ?? "Usuario desconocido",
-        };
-      })
-    );
+    const { page: purchases, isDone, continueCursor } = paginatedPurchases;
 
-    return purchasesWithDetails;
+    if (purchases.length === 0) return { page: [], isDone: true, continueCursor };
+
+    // OPTIMIZACIÓN: Solucionamos el problema N+1 obteniendo todos los datos en lotes.
+    const raffleIds = [...new Set(purchases.map(p => p.raffleId))];
+    const userIds = [...new Set(purchases.map(p => p.userId))];
+
+    const [raffles, users] = await Promise.all([
+      Promise.all(raffleIds.map(id => ctx.db.get(id))),
+      Promise.all(userIds.map(id => ctx.db.get(id)))
+    ]);
+
+    const rafflesById = new Map(raffles.filter(Boolean).map(r => [r!._id, r]));
+    const usersById = new Map(users.filter(Boolean).map(u => [u!._id, u]));
+
+    const purchasesWithDetails = purchases.map((purchase) => {
+      const raffle = rafflesById.get(purchase.raffleId);
+      const user = usersById.get(purchase.userId);
+      return {
+        ...purchase,
+        raffleTitle: raffle?.title ?? "Sorteo no encontrado",
+        userFirstName: user?.firstName ?? "Usuario desconocido",
+      };
+    });
+
+    return { page: purchasesWithDetails, isDone, continueCursor };
   },
 });

@@ -2,11 +2,13 @@
 
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
+import { useUser } from '@clerk/clerk-expo';
 import { useMutation, useQuery } from 'convex/react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 
 // 1. Estilos mejorados para los boletos, con mejor contraste y legibilidad
 const TICKET_STYLES = {
@@ -80,10 +82,52 @@ export default function RaffleDetailsScreen() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   // const soldTickets = useMutation(api.tickets.soldTickets);
 
+  // 1. Importamos useUser para saber si el usuario está logueado.
+  const { isSignedIn } = useUser();
+
   // Hooks de Convex
   const raffle = useQuery(api.raffles.getById, { id: id as Id<'raffles'> });
   const nonAvailableTickets = useQuery(api.tickets.getNonAvailableTickets, { raffleId: id as Id<'raffles'> });
   const reserveTicketsMutation = useMutation(api.tickets.reserveTickets);
+
+  useEffect(() => {
+    // Cuando el ID de la rifa cambia (al navegar entre diferentes rifas),
+    // limpiamos los boletos seleccionados. Esto asegura que la selección
+    // de una rifa no se "filtre" a la siguiente que se visite.
+    setSelectedTickets(new Set());
+  }, [id]);
+
+  // Sincroniza la selección local con el estado del servidor.
+  // Si un boleto seleccionado deja de estar disponible, se elimina de la selección.
+  useEffect(() => {
+    if (selectedTickets.size === 0 || !nonAvailableTickets) {
+      return; // No hay nada que sincronizar
+    }
+
+    const nonAvailableSet = new Set(nonAvailableTickets.map(t => t.ticketNumber));
+    let selectionUpdated = false;
+
+    // Creamos una copia para poder modificarla
+    const updatedSelectedTickets = new Set(selectedTickets);
+
+    for (const ticketNumber of updatedSelectedTickets) {
+      if (nonAvailableSet.has(ticketNumber)) {
+        // Este boleto fue tomado por otro usuario, lo eliminamos de la selección local.
+        updatedSelectedTickets.delete(ticketNumber);
+        selectionUpdated = true;
+      }
+    }
+
+    if (selectionUpdated) {
+      setSelectedTickets(updatedSelectedTickets);
+      Toast.show({
+        type: 'info',
+        text1: 'Algunos boletos ya no están disponibles',
+        text2: 'Se han quitado de tu selección actual.',
+        position: 'bottom',
+      });
+    }
+  }, [nonAvailableTickets]); // Este efecto se ejecuta cada vez que la lista de boletos no disponibles cambia.
 
   // Memoizamos el mapa de estados para un rendimiento óptimo.
   // Se recalcula solo cuando `nonAvailableTickets` cambia.
@@ -126,21 +170,55 @@ export default function RaffleDetailsScreen() {
       Alert.alert("Sin selección", "Debes seleccionar al menos un boleto para reservar.");
       return;
     }
+
+    // 2. Lógica mejorada: revisamos en el frontend ANTES de llamar al backend.
+    if (!isSignedIn) {
+      Toast.show({
+        type: 'error',
+        text1: 'Acción Requerida',
+        text2: 'Debes iniciar sesión para reservar boletos.'
+      });
+      return; // Detenemos la ejecución aquí.
+    }
     setIsReserving(true);
     try {
       const result = await reserveTicketsMutation({
         raffleId: id as Id<'raffles'>,
         ticketNumbers: Array.from(selectedTickets),
       });
-      Alert.alert(
-        `Felicitaciones!`,
-        `Tus boletos ${Array.from(selectedTickets).join(', ')} han sido reservados por 30 minutos. Ve a 'Mis Boletos' para ver los detalles de tu compra.`,
-        [{ text: "OK", }]
-      );
+      Toast.show({
+        type: 'success',
+        text1: 'Tus boletos han sido reservados por 30 minutos.',
+        text2: 'Toca para ir al pago.',
+        onPress: () => router.push(`/purchase/${result.purchaseId}`),
+        position: 'bottom',
+        swipeable: true,
+        visibilityTime: 10000,
+
+
+
+        text1Style: {
+          fontSize: 12,
+          color: '#444'
+
+        },
+        text2Style: {
+          color: '#777'
+
+        },
+
+
+      })
       setSelectedTickets(new Set());
     } catch (error: any) {
-      console.error("Error al reservar boletos:", error);
-      Alert.alert("Error", error.data?.message || error.message || "No se pudieron reservar los boletos. Es posible que alguien más los haya tomado. Por favor, refresca.");
+      // 3. En el catch, manejamos el error del backend como un respaldo.
+      // Esto se activará si la sesión expira entre que la app carga y el usuario presiona el botón.
+      const errorMessage = error.data?.message || error.message || "No se pudieron reservar los boletos. Intenta de nuevo.";
+      Toast.show({
+        type: "error",
+        text1: "Ocurrió un error",
+        text2: errorMessage,
+      });
     } finally {
       setIsReserving(false);
     }
@@ -198,15 +276,24 @@ export default function RaffleDetailsScreen() {
         </View>
 
         <View className="p-5 mt-auto mb-6">
-          <Pressable
-            onPress={handleReserve}
-            disabled={isReserving || selectedTickets.size === 0}
-            className="bg-primary p-4 rounded-lg items-center active:opacity-80 disabled:opacity-50"
-          >
-            <Text className="text-white font-quicksand-bold text-lg">
-              {isReserving ? 'Procesando...' : `Comprar ${selectedTickets.size} Boletos`}
-            </Text>
-          </Pressable>
+          {isSignedIn ? (
+            <Pressable
+              onPress={handleReserve}
+              disabled={isReserving || selectedTickets.size === 0}
+              className="bg-primary p-4 rounded-lg items-center active:opacity-80 disabled:opacity-50"
+            >
+              <Text className="text-white font-quicksand-bold text-lg">
+                {isReserving ? 'Procesando...' : `Reservar ${selectedTickets.size} Boletos`}
+              </Text>
+            </Pressable>
+          ) : (
+            <View className="bg-slate-100 p-4 rounded-lg items-center border border-slate-200">
+              <Text className="text-slate-600 font-quicksand-semibold text-center mb-3">Debes iniciar sesión para poder comprar boletos.</Text>
+              <Pressable onPress={() => router.push('/(auth)/sign-in')} className="bg-primary px-8 py-2.5 rounded-lg active:opacity-80">
+                <Text className="text-white font-quicksand-bold">Iniciar Sesión</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
       </ScrollView>
 

@@ -12,6 +12,9 @@ import { View } from "react-native";
 import { configureReanimatedLogger } from "react-native-reanimated";
 import './global.css';
 
+import Toast from 'react-native-toast-message';
+import toastConfig from "./components/ToastConfig";
+
 // Deshabilita la advertencia de "strict mode" de Reanimated que aparece en la consola.
 // Esta advertencia es útil para depurar, pero en este caso, es causada por cómo
 // Expo Router maneja los colores animados en la barra de pestañas y no indica un problema real.
@@ -51,6 +54,7 @@ export default function RootLayout() {
           <ClerkLoaded>
             <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
               <Slot />
+              <Toast config={toastConfig} />
             </ConvexProviderWithClerk>
           </ClerkLoaded>
         </ClerkProvider>

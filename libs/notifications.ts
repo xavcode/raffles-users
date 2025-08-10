@@ -23,8 +23,10 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
         await Notifications.setNotificationChannelAsync('default', {
             name: 'default',
             importance: Notifications.AndroidImportance.MAX,
+            enableVibrate: true,
             vibrationPattern: [0, 250, 250, 250],
             lightColor: '#FF231F7C',
+            sound: 'default',
         });
     }
 

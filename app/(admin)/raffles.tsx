@@ -1,23 +1,19 @@
 import { api } from '@/convex/_generated/api';
 import { Doc, Id } from '@/convex/_generated/dataModel';
 import { Ionicons } from '@expo/vector-icons';
-import { useMutation, useQuery } from 'convex/react';
+import { useMutation, usePaginatedQuery, useQuery } from 'convex/react';
 import { Link, Redirect, Stack } from 'expo-router';
-import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, SectionList, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type RaffleWithSales = Doc<'raffles'>;
 const STATUS_ACTIVE = 'active';
 
-
 const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
   const [winningTicket, setWinningTicket] = useState('');
   const [isFinishing, setIsFinishing] = useState(false);
   const updateRaffle = useMutation(api.raffles.updateRaffle);
-
-  const nonAvailableTickets = useQuery(api.tickets.getNonAvailableTickets, { raffleId: raffle._id as Id<'raffles'> });
-  const ticketsSold = nonAvailableTickets?.length
 
   const handleFinishRaffle = async () => {
     const winningNumber = parseInt(winningTicket, 10);
@@ -48,7 +44,7 @@ const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
     }
   };
 
-  const progress = raffle.totalTickets > 0 ? (raffle.ticketsSold / raffle.totalTickets) * 100 : 0;
+  const progress = raffle.totalTickets > 0 ? ((raffle.ticketsSold ?? 0) / raffle.totalTickets) * 100 : 0;
   const formattedPrice = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(raffle.ticketPrice);
   const formattedPrize = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(raffle.prize as number);
 
@@ -73,10 +69,10 @@ const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
         <View className="mb-4">
           <View className="flex-row justify-between items-center mb-1">
             <Text className="text-xs font-quicksand-semibold text-slate-600">Vendidos</Text>
-            <Text className="text-xs font-quicksand-bold text-slate-600">{ticketsSold?.toString() ?? 0} / {raffle.totalTickets}</Text>
+            <Text className="text-xs font-quicksand-bold text-slate-600">{raffle.ticketsSold?.toString() ?? 0} / {raffle.totalTickets}</Text>
           </View>
           <View className="w-full bg-slate-200 rounded-full h-2.5">
-            <View className="bg-primary h-2.5 rounded-full" style={{ width: `${((ticketsSold ?? 0) / raffle.totalTickets) * 100}%` }} />
+            <View className="bg-primary h-2.5 rounded-full" style={{ width: `${progress}%` }} />
           </View>
         </View>
 
@@ -108,48 +104,69 @@ const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
 };
 
 const RafflesPage = () => {
-  const raffles = useQuery(api.raffles.getAllRaffles);
   const convexUser = useQuery(api.users.getCurrent);
+  const {
+    results: raffles,
+    status,
+    loadMore,
+  } = usePaginatedQuery(
+    api.raffles.getRaffles,
+    // Correcto: No pasamos 'status' para obtener todos los sorteos para el admin.
+    {},
+    { initialNumItems: 5 }
+  );
+
 
   if (convexUser === undefined) {
     return <View className="flex-1 bg-slate-50 justify-center items-center"><ActivityIndicator size="large" color="#4f46e5" /></View>;
   }
 
-  if (!convexUser || convexUser.userType !== "admin") {
+  if (convexUser && convexUser.userType !== "admin") {
     return <Redirect href="/(tabs)" />;
   }
 
-  const activeRaffles = raffles?.filter(r => r.status === 'active');
-  const finishedRaffles = raffles?.filter(r => r.status !== 'active');
+  // useMemo para evitar recalcular las secciones en cada render
+  const sections = useMemo(() => {
+    if (!raffles) return [];
+    const activeRaffles = raffles.filter(r => r.status === 'active');
+    const finishedRaffles = raffles.filter(r => r.status !== 'active');
+
+    const data = [];
+    if (activeRaffles.length > 0) {
+      data.push({ title: 'Sorteos Activos', data: activeRaffles });
+    }
+    if (finishedRaffles.length > 0) {
+      data.push({ title: 'Sorteos Finalizados', data: finishedRaffles });
+    }
+    return data;
+  }, [raffles]);
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
       <Stack.Screen options={{ title: 'Sorteos' }} />
-      <ScrollView contentContainerClassName="p-4 pb-8">
-        {raffles === undefined && <ActivityIndicator size="large" color="#4f46e5" className="mt-16" />}
-
-        {activeRaffles && activeRaffles.length > 0 && (
-          <View className="mb-8">
-            <Text className="text-lg font-quicksand-bold text-slate-700 mb-3">Sorteos Activos</Text>
-            {activeRaffles.map(raffle => <RaffleCard key={raffle._id} raffle={raffle} />)}
-          </View>
+      <SectionList
+        sections={sections}
+        keyExtractor={(item) => item._id}
+        renderItem={({ item }) => <RaffleCard raffle={item} />}
+        renderSectionHeader={({ section: { title } }) => (
+          <Text className="text-lg font-quicksand-bold text-slate-700 mb-3 px-4 pt-4 bg-slate-50">{title}</Text>
         )}
-
-        {finishedRaffles && finishedRaffles.length > 0 && (
-          <View>
-            <Text className="text-lg font-quicksand-bold text-slate-700 mb-3">Sorteos Finalizados</Text>
-            {finishedRaffles.map(raffle => <RaffleCard key={raffle._id} raffle={raffle} />)}
-          </View>
-        )}
-
-        {raffles && raffles.length === 0 && (
+        contentContainerClassName="pb-8"
+        stickySectionHeadersEnabled={false}
+        onEndReached={() => {
+          if (status === 'CanLoadMore') loadMore(5);
+        }}
+        onEndReachedThreshold={0.5}
+        ListHeaderComponent={() => status === 'LoadingFirstPage' ? <ActivityIndicator size="large" color="#4f46e5" className="mt-16" /> : null}
+        ListFooterComponent={() => status === 'LoadingMore' ? <ActivityIndicator className="my-8" /> : null}
+        ListEmptyComponent={() => status !== 'LoadingFirstPage' && (
           <View className="mt-24 items-center justify-center">
             <Ionicons name="journal-outline" size={64} color="#cbd5e1" />
             <Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">No hay sorteos</Text>
             <Text className="text-sm font-quicksand-medium text-slate-400">Crea el primero para empezar.</Text>
           </View>
         )}
-      </ScrollView>
+      />
     </SafeAreaView>
   );
 };

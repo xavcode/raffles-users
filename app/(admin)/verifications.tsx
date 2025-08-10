@@ -1,9 +1,8 @@
 import { api } from '@/convex/_generated/api';
 import { Doc } from '@/convex/_generated/dataModel';
+import { formatUtcToLocal } from '@/utils/date';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from 'convex/react';
-import { formatDistanceToNow } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { usePaginatedQuery } from 'convex/react';
 import { Link, Stack } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
@@ -15,11 +14,11 @@ type PurchaseWithDetails = Doc<'purchases'> & {
     userFirstName: string;
 };
 
+const LOADING_FIRST_PAGE = 'LoadingFirstPage';
+
 const VerificationCard = ({ item }: { item: PurchaseWithDetails }) => {
-    const timeAgo = formatDistanceToNow(new Date(item._creationTime), {
-        addSuffix: true,
-        locale: es,
-    });
+    const timeAgo = formatUtcToLocal(item._creationTime, "d 'de' MMMM, yyyy 'a las' h:mm a");
+
     const formattedAmount = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(item.totalAmount);
 
     return (
@@ -44,23 +43,41 @@ const VerificationCard = ({ item }: { item: PurchaseWithDetails }) => {
 };
 
 const VerificationsPage = () => {
-    const pendingPurchases = useQuery(api.tickets.getPendingConfirmationPurchases);
+    const {
+        results: pendingPurchases,
+        status,
+        loadMore,
+    } = usePaginatedQuery(
+        api.tickets.getPendingConfirmationPurchases,
+        {}, // Argumentos de la query (vacío en este caso)
+        { initialNumItems: 10 } // Opciones de paginación
+    );
 
     return (
         <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
             <Stack.Screen options={{ title: 'Verificaciones', }} />
-            {pendingPurchases === undefined && (
+            {status === LOADING_FIRST_PAGE && (
                 <View className="flex-1 justify-center items-center"><ActivityIndicator size="large" color="#4f46e5" /></View>
             )}
-            {pendingPurchases && (
+            {status !== LOADING_FIRST_PAGE && (
                 <FlatList
                     data={pendingPurchases}
                     renderItem={({ item }) => <VerificationCard item={item} />}
                     keyExtractor={(item) => item._id}
                     contentContainerClassName="p-4"
+                    onEndReached={() => {
+                        if (status === 'CanLoadMore') {
+                            loadMore(10); // Carga los siguientes 10
+                        }
+                    }}
+                    onEndReachedThreshold={0.5}
                     ListEmptyComponent={
                         <View className="mt-24 items-center justify-center p-4"><Ionicons name="shield-checkmark-outline" size={64} color="#cbd5e1" /><Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">Todo en orden</Text><Text className="text-sm font-quicksand-medium text-slate-400 text-center">No hay pagos pendientes de verificación en este momento.</Text></View>
                     }
+                    ListFooterComponent={() => {
+                        if (status === 'LoadingMore') { return <ActivityIndicator className="my-8" color="#4f46e5" />; }
+                        return null;
+                    }}
                 />
             )}
         </SafeAreaView>

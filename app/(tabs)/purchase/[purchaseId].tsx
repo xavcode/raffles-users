@@ -18,6 +18,8 @@ const PURCHASE_STATUS_STYLES = {
 };
 
 const PENDING_PAYMENT = 'pending_payment';
+const PENDING_CONFIRMATION = 'pending_confirmation'
+const IS_ADMIN = 'admin'
 
 const PurchaseDetailsPage = () => {
   const { purchaseId } = useLocalSearchParams<{ purchaseId: string }>();
@@ -146,7 +148,7 @@ const PurchaseDetailsPage = () => {
         )}
 
         {/* Mensaje de espera y botón para el ADMIN */}
-        {purchase.status === 'pending_confirmation' && (
+        {purchase.status === PENDING_CONFIRMATION && (
           <View className="mt-8">
             <View className="bg-blue-100 p-4 rounded-xl flex-row items-center">
               <Ionicons name="hourglass-outline" size={24} color="#2563eb" />
@@ -154,7 +156,7 @@ const PurchaseDetailsPage = () => {
             </View>
 
             {/* Botón para el ADMIN: Solo si es admin y la compra está pendiente de confirmación */}
-            {convexUser?.userType === 'admin' && (
+            {convexUser?.userType === IS_ADMIN && (
               <TouchableOpacity
                 onPress={handleApprovePayment}
                 disabled={isApproving}

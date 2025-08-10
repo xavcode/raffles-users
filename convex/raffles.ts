@@ -1,15 +1,28 @@
+import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 
-export const getAllRaffles = query({
-    handler: async (ctx) => {
-        // Devuelve todos los sorteos. El frontend se encargará de ordenarlos
-        // y mostrarlos según su estado (activo, finalizado, cancelado).
-        const raffles = await ctx.db.query("raffles").collect();
-        return raffles.sort((a, b) => b._creationTime - a._creationTime);
+export const getRaffles = query({
+    args: {
+        // Hacemos el filtro de estado opcional para poder obtener
+        // todos los sorteos (para el admin) o solo los activos (para usuarios).
+        status: v.optional(v.string()),
+        paginationOpts: paginationOptsValidator,
+    },
+    handler: async (ctx, args) => {
+        let queryBuilder;
+        // Si se provee un estado, usamos el índice para una búsqueda eficiente.
+        if (args.status) {
+            queryBuilder = ctx.db
+                .query("raffles")
+                .withIndex("by_status", (q) => q.eq("status", args.status as any));
+        } else {
+            queryBuilder = ctx.db.query("raffles");
+        }
+        return await queryBuilder.order("desc").paginate(args.paginationOpts);
     }
-})
+});
 
 export const getById = query({
     args: { id: v.id("raffles") },
@@ -29,6 +42,7 @@ export const createRaffle = mutation({
         startTime: v.float64(),
         endTime: v.float64(),
         imageUrl: v.string(),
+        winCondition: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();

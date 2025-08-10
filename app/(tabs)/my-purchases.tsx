@@ -1,12 +1,11 @@
 import { api } from '@/convex/_generated/api';
 import { Doc } from '@/convex/_generated/dataModel';
+import { formatUtcToLocal } from '@/utils/date';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from 'convex/react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { Link, Stack } from 'expo-router';
+import { usePaginatedQuery, useQuery } from 'convex/react';
+import { Link, router, Stack } from 'expo-router';
 import React from 'react';
-import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Helper para el estado de la compra
@@ -41,7 +40,7 @@ type PurchaseWithDetails = Doc<'purchases'> & { raffleTitle: string };
 
 const PurchaseListItem = ({ purchase }: { purchase: PurchaseWithDetails }) => {
   const statusStyle = PURCHASE_STATUS_STYLES[purchase.status as keyof typeof PURCHASE_STATUS_STYLES];
-  const purchaseDate = format(new Date(purchase._creationTime), "d 'de' MMMM, yyyy 'a las' h:mm a", { locale: es });
+  const purchaseDate = formatUtcToLocal(purchase._creationTime, "d 'de' MMMM, yyyy 'a las' h:mm a");
   const formattedAmount = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(purchase.totalAmount);
 
   return (
@@ -76,29 +75,72 @@ const PurchaseListItem = ({ purchase }: { purchase: PurchaseWithDetails }) => {
 
 const MyPurchases = () => {
   const convexUser = useQuery(api.users.getCurrent);
-  const userPurchases = useQuery(
+  const {
+    results: userPurchases,
+    status,
+    loadMore,
+  } = usePaginatedQuery(
     api.tickets.getUserPurchasesWithDetails,
-    convexUser ? { userId: convexUser._id } : 'skip'
+    // Solo ejecutamos la query si tenemos el ID del usuario
+    convexUser ? { userId: convexUser._id } : 'skip',
+    // Opciones de paginación: cargamos 10 items al inicio
+    { initialNumItems: 10 }
   );
 
-  if (convexUser === undefined || userPurchases === undefined) {
+  // Estado de carga (mientras se obtiene el usuario o las compras iniciales)
+  if (convexUser === undefined || (convexUser && status === 'LoadingFirstPage')) {
     return (
-      <View className="flex-1 bg-slate-50 justify-center items-center">
-        <ActivityIndicator size="large" color="#4f46e5" />
-      </View>
+      <SafeAreaView className="flex-1 bg-slate-50">
+        <Stack.Screen options={{ headerTitle: 'Mis Compras', headerLargeTitle: true, headerShadowVisible: false, headerStyle: { backgroundColor: '#f8fafc' }, headerTitleStyle: { fontFamily: 'Quicksand-Bold' } }} />
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color="#4f46e5" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Estado cuando el usuario no está autenticado
+  if (convexUser === null) {
+    return (
+      <SafeAreaView className="flex-1 bg-slate-50">
+        <Stack.Screen options={{ headerTitle: 'Mis Compras', headerLargeTitle: true, headerShadowVisible: false, headerStyle: { backgroundColor: '#f8fafc' }, headerTitleStyle: { fontFamily: 'Quicksand-Bold' } }} />
+        <View className="flex-1 justify-center items-center px-8">
+          <Ionicons name="lock-closed-outline" size={64} color="#cbd5e1" />
+          <Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">Inicia sesión para ver tus compras</Text>
+          <Text className="text-sm font-quicksand-medium text-slate-400 text-center mt-1 mb-6">Aquí encontrarás el historial de todos los boletos que has reservado y comprado.</Text>
+          <Pressable onPress={() => router.push('/(auth)/sign-in')} className="bg-primary px-8 py-3 rounded-lg active:opacity-80">
+            <Text className="text-white font-quicksand-bold text-base">Iniciar Sesión</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
       <Stack.Screen options={{ headerTitle: 'Mis Compras', headerLargeTitle: true, headerShadowVisible: false, headerStyle: { backgroundColor: '#f8fafc' }, headerTitleStyle: { fontFamily: 'Quicksand-Bold' } }} />
-      <FlatList data={userPurchases} keyExtractor={(item) => item._id.toString()}
+      <FlatList
+        data={userPurchases}
+        keyExtractor={(item) => item._id.toString()}
         renderItem={({ item }) => <PurchaseListItem purchase={item} />} contentContainerClassName="pt-4 pb-8"
-        ListEmptyComponent={<View className="mt-24 items-center justify-center px-8">
-          <Ionicons name="receipt-outline" size={64} color="#cbd5e1" />
-          <Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">No tienes compras</Text>
-          <Text className="text-sm font-quicksand-medium text-slate-400 text-center">Cuando reserves o compres boletos, tus compras aparecerán aquí.</Text>
-        </View>} />
+        onEndReached={() => {
+          // Cuando el usuario llega al final, si podemos cargar más, lo hacemos.
+          if (status === 'CanLoadMore') {
+            loadMore(5); // Cargamos los siguientes 5 items
+          }
+        }}
+        onEndReachedThreshold={0.5} // Llama a onEndReached cuando el final está a media pantalla de distancia
+        ListEmptyComponent={
+          <View className="mt-24 items-center justify-center px-8">
+            <Ionicons name="receipt-outline" size={64} color="#cbd5e1" />
+            <Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">No tienes compras</Text>
+            <Text className="text-sm font-quicksand-medium text-slate-400 text-center">Cuando reserves o compres boletos, tus compras aparecerán aquí.</Text>
+          </View>}
+        ListFooterComponent={() => {
+          // Muestra un indicador de carga en el pie de la lista mientras se cargan más items
+          if (status === 'LoadingMore') { return <ActivityIndicator className="my-8" color="#4f46e5" />; }
+          return null;
+        }} />
     </SafeAreaView>
   );
 };

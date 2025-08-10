@@ -1,7 +1,7 @@
 // convex/notifications.ts
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
-import { internalAction, mutation } from "./_generated/server";
+import { internalAction } from "./_generated/server";
 
 // Acción interna para enviar la notificación usando el servicio de Expo
 export const send = internalAction({
@@ -22,6 +22,9 @@ export const send = internalAction({
     // Construye el cuerpo de la solicitud
     const requestBody = {
       to: pushToken,
+      // Aquí especificamos el nombre del archivo de sonido que añadimos en assets/sounds.
+      // Expo se encargará de encontrarlo y usarlo en la notificación.
+      // sound: "notification.wav",
       sound: "default",
       title: title,
       body: message,
@@ -45,33 +48,12 @@ export const send = internalAction({
       if (result.data.status === 'error') {
         console.error(`Error sending notification: ${result.data.message}`);
       }
-
     } catch (error) {
       console.error("Failed to send push notification:", error);
     }
   },
 });
 
-// Mutación que el cliente puede llamar para iniciar el proceso de envío
-export const sendTestNotification = mutation({
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Usuario no autenticado.");
-
-    const user = await ctx.db.query("users").withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject)).unique();
-    if (!user) throw new Error("Usuario no encontrado.");
-    if (!user.pushToken) throw new Error("El usuario no tiene un token de notificación registrado.");
-
-    // Programa la acción para que se ejecute en el backend de forma segura
-    await ctx.scheduler.runAfter(0, internal.notifications.send, {
-      pushToken: user.pushToken,
-      title: "🔔 Notificación de Prueba",
-      message: `Hola ${user.firstName}, ¡la configuración de notificaciones funciona!`,
-    });
-
-    return { success: true };
-  },
-});
 
 export const sendToAllUsers = internalAction({
   args: {
