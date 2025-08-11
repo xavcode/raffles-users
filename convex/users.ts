@@ -140,3 +140,26 @@ export const getUsersWithPushTokens = internalQuery({
     return await ctx.db.query("users").filter((q) => q.neq(q.field("pushToken"), undefined)).collect();
   },
 });
+
+export const getByEmail = query({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.query('users').withIndex('by_email', q => q.eq('email', args.email)).unique();
+    return user ?? null;
+  }
+});
+
+export const updateRole = mutation({
+  args: { email: v.string(), role: v.union(v.literal('admin'), v.literal('member')) },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error('No autenticado');
+    const requester = await ctx.db.query('users').withIndex('by_clerk_id', q => q.eq('clerkId', identity.subject)).unique();
+    if (!requester || requester.userType !== 'admin') throw new Error('Permisos insuficientes');
+
+    const user = await ctx.db.query('users').withIndex('by_email', q => q.eq('email', args.email)).unique();
+    if (!user) throw new Error('Usuario no encontrado');
+    await ctx.db.patch(user._id, { userType: args.role });
+    return true;
+  }
+});

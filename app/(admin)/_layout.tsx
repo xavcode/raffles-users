@@ -19,12 +19,14 @@ export default function AdminLayout() {
 
   return (
     <Tabs
+      initialRouteName="index"
       screenOptions={{
         tabBarActiveTintColor: '#4f46e5', // indigo-600
         tabBarInactiveTintColor: '#64748b', // slate-500
         tabBarStyle: {
           backgroundColor: '#ffffff',
           borderTopColor: '#e2e8f0', // slate-200
+          height: 10,
         },
         tabBarLabelStyle: {
           fontFamily: 'Quicksand-Bold',
@@ -64,6 +66,13 @@ export default function AdminLayout() {
           </Pressable>
         )
       }}>
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Inicio',
+          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" color={color} size={size} />,
+        }}
+      />
       <Tabs.Screen
         name="raffles"
         options={{

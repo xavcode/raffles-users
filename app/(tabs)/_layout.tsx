@@ -18,14 +18,21 @@ type TabBarIconProps = {
 // 2. Creamos una versión animada de FontAwesome que puede manejar props animadas.
 const AnimatedFontAwesome = Animated.createAnimatedComponent(FontAwesome);
 
-const TabBarIcon = ({ name, color, title, focused }: TabBarIconProps) => (
-  // Simplificamos el componente. El contenedor padre se encargará del centrado.
-  <View className="flex-1 min-w-24 items-center pt-2 gap-y-1">
-    {/* 3. Usamos los componentes animados. El color ahora se pasa correctamente. */}
-    <AnimatedFontAwesome size={24} name={name} color={color} />
-    <Animated.Text style={{ color }} className={`text-sm ${focused ? 'font-quicksand-bold' : 'font-quicksand-medium'}`}>{title}</Animated.Text>
+const TabBarIcon = ({ name, color, title }: TabBarIconProps) => (
+  <View style={{ minWidth: 96 }} className="items-center justify-center px-2">
+    <AnimatedFontAwesome size={22} name={name} color={color} />
+    <Animated.Text
+      numberOfLines={1}
+      ellipsizeMode="tail"
+      style={{ color }}
+      className={`text-xs mt-1 font-quicksand-medium`}
+    >
+      {title}
+    </Animated.Text>
   </View>
 );
+
+// Eliminamos TabBarButton personalizado para volver al comportamiento previo
 
 const TabsLayout = () => {
   const { isLoaded, isSignedIn } = useAuth()
@@ -48,30 +55,38 @@ const TabsLayout = () => {
       <Tabs screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarActiveTintColor: '#4f46e5', // Usamos el valor hexadecimal de 'primary'
-        tabBarInactiveTintColor: '#5D5F6D',
-        tabBarItemStyle: {
-          justifyContent: 'center',
-        },
+        tabBarActiveTintColor: '#4f46e5',
+        tabBarInactiveTintColor: '#94a3b8',
+        tabBarHideOnKeyboard: true,
+        tabBarItemStyle: { justifyContent: 'center', paddingVertical: 8 },
         tabBarStyle: {
           position: 'absolute',
-          bottom: 20,
-          marginHorizontal: 20,
+          left: 16,
+          right: 16,
+          bottom: 12,
           height: 60,
-          elevation: 8,
-          backgroundColor: '#f0f0f0',
-          borderRadius: 20,
-          shadowColor: '#1a1a1a',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.08,
-          shadowRadius: 12,
-        }
+          elevation: 12,
+          backgroundColor: '#ffffff',
+          borderRadius: 24,
+          borderWidth: 1,
+          borderColor: '#e2e8f0',
+          shadowColor: '#0f172a',
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.1,
+          shadowRadius: 16,
+        },
+        sceneStyle: { backgroundColor: '#ffffff' },
       }}
       >
         <Tabs.Screen name="index"
           options={{
             title: 'Sorteos',
             tabBarIcon: ({ color, focused }) => <TabBarIcon name="home" color={color} title="Sorteos" focused={focused} />,
+          }}
+        />
+        <Tabs.Screen name='[id]'
+          options={{
+            href: null,
           }}
         />
         <Tabs.Screen name="profile"
@@ -84,11 +99,6 @@ const TabsLayout = () => {
           options={{
             title: 'Mis Compras',
             tabBarIcon: ({ color, focused }) => <TabBarIcon name="ticket" color={color} title="Mis Compras" focused={focused} />,
-          }}
-        />
-        <Tabs.Screen name='[id]'
-          options={{
-            href: null,
           }}
         />
         <Tabs.Screen name='edit-profile'

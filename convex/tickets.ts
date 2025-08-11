@@ -37,6 +37,11 @@ export const reserveTickets = mutation({
     ticketNumbers: v.array(v.number()),
   },
   handler: async (ctx, args) => {
+    // Bloqueo global de compras
+    const settings = await ctx.db.query('settings').first();
+    if (settings && settings.purchasesEnabled === false) {
+      throw new Error('Las compras están temporalmente deshabilitadas por el administrador. Intente más tarde.');
+    }
     // Autenticación y validaciones
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
@@ -70,7 +75,8 @@ export const reserveTickets = mutation({
     }
 
     // Crea la compra
-    const reservationExpiry = Date.now() + 1 * 60 * 1000; // 30 minutos
+    const releaseMinutes = settings?.releaseTime ?? 30;
+    const reservationExpiry = Date.now() + releaseMinutes * 60 * 1000; // en minutos
     const purchaseId = await ctx.db.insert("purchases", {
       userId: user._id,
       raffleId: args.raffleId,
@@ -92,9 +98,9 @@ export const reserveTickets = mutation({
       });
     }
 
-    // Programa la liberación automática 30 minutos después
+    // Programa la liberación automática
     await ctx.scheduler.runAfter(
-      1 * 60 * 1000, // 30 minutos en milisegundos
+      releaseMinutes * 60 * 1000,
       internal.tickets.releaseIfUnpaid,
       { purchaseId }
     );

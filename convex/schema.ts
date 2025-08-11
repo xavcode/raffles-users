@@ -96,6 +96,8 @@ export default defineSchema({
 
   settings: defineTable({
     releaseTime: v.number(),
+    purchasesEnabled: v.boolean(),
+    maintenanceMessage: v.optional(v.string()),
 
   })
 

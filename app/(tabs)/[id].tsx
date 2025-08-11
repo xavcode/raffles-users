@@ -7,7 +7,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 // 1. Estilos mejorados para los boletos, con mejor contraste y legibilidad
@@ -84,6 +84,8 @@ export default function RaffleDetailsScreen() {
 
   // 1. Importamos useUser para saber si el usuario está logueado.
   const { isSignedIn } = useUser();
+  const insets = useSafeAreaInsets();
+  const settings = useQuery(api.admin.getSettings);
 
   // Hooks de Convex
   const raffle = useQuery(api.raffles.getById, { id: id as Id<'raffles'> });
@@ -223,20 +225,29 @@ export default function RaffleDetailsScreen() {
 
   return (
     <SafeAreaView className='flex-1 mb-10'>
-      <ScrollView className="flex-1 bg-gray-50">
-        {raffle.imageUrl && <Image source={{ uri: raffle.imageUrl }} className="w-full h-56" resizeMode="cover" />}
-        <View className="p-5 bg-white border-b border-gray-200 -mt-4 rounded-t-2xl">
-          <View className='flex-row items-center justify-between'>
-            <Text className="text-2xl font-quicksand-bold text-gray-800">{raffle.title}</Text>
-            <Text className="text-3xl  font-quicksand-bold text-primary mt-2">{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(raffle.prize ?? 0)} </Text>
-          </View>
-          <Text className="text-base text-gray-600 mt-2">{raffle.description}</Text>
-          <Text className="text-base text-gray-600 mt-2">{raffle.winCondition}</Text>
+      <ScrollView className="flex-1 bg-gray-50 relative">
+        {/* Hero con overlay */}
+        <View>
+          {raffle.imageUrl && (
+            <View>
+              <Image source={{ uri: raffle.imageUrl }} className="w-full h-56" resizeMode="cover" />
+              <View className="absolute bottom-0 left-0 right-0 p-4 bg-black/40">
+                <Text className="text-white font-quicksand-bold text-xl" numberOfLines={1}>{raffle.title}</Text>
+                <Text className="text-white font-quicksand-semibold text-sm mt-1">Gana {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(raffle.prize ?? 0)}</Text>
+              </View>
+            </View>
+          )}
+        </View>
+        <View className="p-5 bg-white border-b border-gray-200 -mt-2 rounded-t-2xl">
+          <Text className="text-base text-gray-600">{raffle.description}</Text>
+          {raffle.winCondition ? (
+            <Text className="text-sm text-gray-500 mt-2">{raffle.winCondition}</Text>
+          ) : null}
         </View>
 
         <ColorLegend />
 
-        <View className="flex-row flex-wrap justify-center p-2.5">
+        <View className="flex-row flex-wrap justify-center p-2.5 pb-56">
           {Array.from({ length: raffle.totalTickets }, (_, i) => i + 1).map((number) => (
             <Ticket
               key={number}
@@ -247,28 +258,34 @@ export default function RaffleDetailsScreen() {
             />
           ))}
         </View>
-
-        <View className="p-5 mt-auto mb-6">
+      </ScrollView>
+      {/* Contenedor centrado para el botón flotante, evitando tapar el grid y la TabBar */}
+      {/* Dock inferior por encima de la TabBar, sin cubrir el grid */}
+      <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: insets.bottom + 12 }}>
+        <View className="mx-4 bg-white rounded-2xl border border-slate-200 shadow-lg p-3">
           {isSignedIn ? (
             <Pressable
               onPress={handleReserve}
-              disabled={isReserving || selectedTickets.size === 0}
-              className="bg-primary p-4 rounded-lg items-center active:opacity-80 disabled:opacity-50"
+              disabled={isReserving || selectedTickets.size === 0 || settings?.purchasesEnabled === false}
+              className={`rounded-xl py-3 items-center active:opacity-80 disabled:opacity-50 ${settings?.purchasesEnabled === false ? 'bg-slate-300' : 'bg-primary'}`}
             >
-              <Text className="text-white font-quicksand-bold text-lg">
-                {isReserving ? 'Procesando...' : `Reservar ${selectedTickets.size} Boletos`}
+              <Text className="text-white font-quicksand-bold">
+                {settings?.purchasesEnabled === false
+                  ? 'Compras deshabilitadas'
+                  : isReserving
+                    ? 'Procesando...'
+                    : selectedTickets.size > 0
+                      ? `Reservar ${selectedTickets.size} boletos`
+                      : 'Selecciona boletos para continuar'}
               </Text>
             </Pressable>
           ) : (
-            <View className="bg-slate-100 p-4 rounded-lg items-center border border-slate-200">
-              <Text className="text-slate-600 font-quicksand-semibold text-center mb-3">Debes iniciar sesión para poder comprar boletos.</Text>
-              <Pressable onPress={() => router.push('/(auth)/sign-in')} className="bg-primary px-8 py-2.5 rounded-lg active:opacity-80">
-                <Text className="text-white font-quicksand-bold">Iniciar Sesión</Text>
-              </Pressable>
-            </View>
+            <Pressable onPress={() => router.push('/(auth)/sign-in')} className="bg-primary rounded-xl py-3 items-center active:opacity-80">
+              <Text className="text-white font-quicksand-bold">Iniciar sesión</Text>
+            </Pressable>
           )}
         </View>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
