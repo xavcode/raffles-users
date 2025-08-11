@@ -1,12 +1,14 @@
+import { PURCHASE_STATUS } from '@/constants/status';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
+import { formatCOP } from '@/utils/format';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
@@ -17,7 +19,7 @@ const PURCHASE_STATUS_STYLES = {
   expired: { label: 'Expirado', bg: 'bg-red-100', text: 'text-red-700', icon: 'close-circle-outline' as const }
 };
 
-const PENDING_CONFIRMATION = 'pending_confirmation'
+const PENDING_CONFIRMATION = PURCHASE_STATUS.PENDING_CONFIRMATION
 
 const AdminPurchaseDetailsPage = () => {
   const { purchaseId } = useLocalSearchParams<{ purchaseId: string }>();
@@ -54,31 +56,18 @@ const AdminPurchaseDetailsPage = () => {
     }
   };
 
-  const handleRejection = () => {
-    Alert.alert(
-      "Confirmar Rechazo",
-      "¿Estás seguro de que quieres rechazar este pago? Los boletos serán liberados.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Sí, Rechazar",
-          style: "destructive",
-          onPress: async () => {
-            setIsProcessing(true);
-            try {
-              await rejectPurchase({ purchaseId: purchaseId as Id<'purchases'> });
-              Alert.alert('Éxito', 'El pago ha sido rechazado y los boletos liberados.');
-              router.back();
-            } catch (error) {
-              console.error("Error rejecting payment:", error);
-              Alert.alert('Error', 'No se pudo rechazar el pago.');
-            } finally {
-              setIsProcessing(false);
-            }
-          }
-        }
-      ]
-    );
+  const handleRejection = async () => {
+    setIsProcessing(true);
+    try {
+      await rejectPurchase({ purchaseId: purchaseId as Id<'purchases'> });
+      Toast.show({ type: 'success', text1: 'Éxito', text2: 'El pago ha sido rechazado y los boletos liberados.' });
+      router.back();
+    } catch (error) {
+      console.error("Error rejecting payment:", error);
+      Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo rechazar el pago.' });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (purchaseDetails === undefined) {
@@ -91,7 +80,7 @@ const AdminPurchaseDetailsPage = () => {
 
   const { purchase, raffle, tickets, user } = purchaseDetails;
   const statusStyle = PURCHASE_STATUS_STYLES[purchase.status as keyof typeof PURCHASE_STATUS_STYLES] || { label: 'Desconocido', bg: 'bg-slate-100', text: 'text-slate-700', icon: 'help-circle-outline' as const };
-  const formattedAmount = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(purchase.totalAmount);
+  const formattedAmount = formatCOP(purchase.totalAmount);
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>

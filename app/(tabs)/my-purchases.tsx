@@ -7,6 +7,7 @@ import { Link, router, Stack } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import GlobalHeader from '../components/GlobalHeader';
 
 // Helper para el estado de la compra
 const PURCHASE_STATUS_STYLES = {
@@ -118,6 +119,7 @@ const MyPurchases = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
+      <GlobalHeader />
       <Stack.Screen options={{ headerTitle: 'Mis Compras', headerLargeTitle: true, headerShadowVisible: false, headerStyle: { backgroundColor: '#f8fafc' }, headerTitleStyle: { fontFamily: 'Quicksand-Bold' } }} />
       <FlatList
         data={userPurchases}

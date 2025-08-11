@@ -3,7 +3,8 @@ import { Id } from '@/convex/_generated/dataModel';
 import { useMutation } from 'convex/react';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 const NumberCircle = ({ number, isSelected, isBought, onSelect }: { number: number, isSelected: boolean, isBought: boolean, onSelect: (num: number) => void }) => {
   // Define los estilos basados en el estado del número
@@ -69,7 +70,7 @@ const TableNumbers = ({ totalTickets, ticketPrice, raffleId, nonAvailableTickets
 
   const handlePurchase = async () => {
     if (selectedNumbers.length === 0) {
-      Alert.alert("Sin selección", "Por favor, selecciona al menos un número para reservar.");
+      Toast.show({ type: 'error', text1: 'Sin selección', text2: 'Por favor, selecciona al menos un número para reservar.' });
       return;
     }
 
@@ -80,16 +81,20 @@ const TableNumbers = ({ totalTickets, ticketPrice, raffleId, nonAvailableTickets
         ticketNumbers: selectedNumbers,
       });
 
-      Alert.alert(
-        "¡Boletos Reservados!",
-        "Tus boletos han sido reservados. Completa el pago para asegurarlos.",
-        [{ text: "Ir a Pagar", onPress: () => router.push(`/purchase/${result.purchaseId}`) }]
-      );
+      Toast.show({
+        type: 'success',
+        text1: '¡Boletos reservados!',
+        text2: 'Toca para ir al pago.',
+        onPress: () => router.push(`/purchase/${result.purchaseId}`),
+        visibilityTime: 6000,
+        swipeable: true,
+        position: 'bottom',
+      });
       setSelectedNumbers([]); // Limpiar selección
 
     } catch (error: any) {
       console.error("Error al reservar boletos:", error);
-      Alert.alert("Error", error.data?.message || "No se pudieron reservar los boletos. Alguien pudo haberlos tomado antes que tú.");
+      Toast.show({ type: 'error', text1: 'Error', text2: error.data?.message || 'No se pudieron reservar los boletos. Alguien pudo haberlos tomado antes que tú.' });
     } finally {
       setIsReserving(false);
     }

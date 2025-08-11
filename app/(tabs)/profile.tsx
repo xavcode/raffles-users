@@ -4,7 +4,8 @@ import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useQuery } from 'convex/react';
 import { Link } from 'expo-router';
 import React from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const profile = () => {
   const { signOut } = useAuth();
@@ -12,7 +13,7 @@ const profile = () => {
   const convexUser = useQuery(api.users.getCurrent);
 
   return (
-    <ScrollView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-gray-50">
       <SignedIn>
         {convexUser === undefined ? (
           <View className="flex-1 justify-center items-center h-screen">
@@ -74,7 +75,7 @@ const profile = () => {
           </Link>
         </View>
       </SignedOut>
-    </ScrollView>
+    </SafeAreaView>
   )
 }
 

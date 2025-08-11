@@ -1,6 +1,6 @@
 import { api } from '@/convex/_generated/api';
 import { registerForPushNotificationsAsync } from "@/libs/notifications";
-import { SignedIn } from '@clerk/clerk-expo';
+import { SignedIn, SignedOut } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
 import { Link } from 'expo-router';
@@ -26,7 +26,7 @@ const GlobalHeader = () => {
   }, [convexUser]);
 
   return (
-    <View className="flex-row justify-between items-center px-4 pt-2 mb-2 ">
+    <View className="flex-row justify-between items-center px-4 pt-2">
       <SignedIn>
         <View>
           {convexUser &&
@@ -41,7 +41,7 @@ const GlobalHeader = () => {
           }
         </View>
         {convexUser?.userType === ADMIN && (
-          <Link href="/raffles" asChild>
+          <Link href="/(admin)/raffles" asChild>
             <Pressable className="flex-row items-center bg-white p-3 rounded-full shadow-lg shadow-gray-300/50 active:bg-gray-100">
               <Ionicons name="shield-checkmark-outline" size={24} color="#4f46e5" />
               <Text className="text-primary font-quicksand-bold ml-2">Admin</Text>
@@ -49,6 +49,12 @@ const GlobalHeader = () => {
           </Link>
         )}
       </SignedIn >
+      <SignedOut>
+        <View className="flex-row items-center">
+          <Ionicons name="person-outline" size={24} color="#4f46e5" />
+          <Text className="text-primary font-quicksand-bold ml-2">Inicia sesión</Text>
+        </View>
+      </SignedOut>
     </View>
   );
 };

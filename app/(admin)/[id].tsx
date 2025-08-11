@@ -4,9 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 
 const EditRafflePage = () => {
   const { id } = useLocalSearchParams();
@@ -52,11 +53,11 @@ const EditRafflePage = () => {
     const totalTicketsNumber = parseInt(totalTickets, 10);
 
     if (!title || !description || !imageUrl) {
-      Alert.alert('Campos Incompletos', 'Por favor, completa todos los campos de texto.');
+      Toast.show({ type: 'error', text1: 'Campos incompletos', text2: 'Por favor, completa todos los campos de texto.' });
       return;
     }
     if (isNaN(prizeNumber) || isNaN(ticketPriceNumber) || isNaN(totalTicketsNumber)) {
-      Alert.alert('Datos Inválidos', 'Asegúrate de que el premio, precio y total de boletos sean números válidos.');
+      Toast.show({ type: 'error', text1: 'Datos inválidos', text2: 'Asegúrate de premio, precio y total de boletos válidos.' });
       return;
     }
 
@@ -71,10 +72,10 @@ const EditRafflePage = () => {
         totalTickets: totalTicketsNumber,
         ticketPrice: ticketPriceNumber,
       });
-      Alert.alert('Éxito', 'Sorteo actualizado correctamente.');
+      Toast.show({ type: 'success', text1: 'Éxito', text2: 'Sorteo actualizado correctamente.' });
     } catch (error) {
       console.error('Error al actualizar el sorteo:', error);
-      Alert.alert('Error', 'No se pudo actualizar el sorteo.');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo actualizar el sorteo.' });
     } finally {
       setIsSaving(false);
     }
@@ -85,11 +86,11 @@ const EditRafflePage = () => {
     const totalTicketsNumber = parseInt(totalTickets, 10);
 
     if (isNaN(winningNumber) || winningNumber <= 0) {
-      Alert.alert('Boleto Inválido', 'Debes ingresar un número de boleto ganador válido y positivo.');
+      Toast.show({ type: 'error', text1: 'Boleto inválido', text2: 'Ingresa un número de boleto ganador válido y positivo.' });
       return;
     }
     if (winningNumber > totalTicketsNumber) {
-      Alert.alert('Boleto Fuera de Rango', 'El boleto ganador no puede ser mayor que el total de boletos.');
+      Toast.show({ type: 'error', text1: 'Fuera de rango', text2: 'El boleto ganador no puede ser mayor que el total de boletos.' });
       return;
     }
 
@@ -100,62 +101,40 @@ const EditRafflePage = () => {
         status: 'finished',
         winningTicketNumber: winningNumber,
       });
-      Alert.alert('Éxito', '¡Sorteo finalizado! Se ha asignado el ganador.');
+      Toast.show({ type: 'success', text1: 'Éxito', text2: '¡Sorteo finalizado! Se ha asignado el ganador.' });
       router.back();
     } catch (error) {
       console.error('Error al finalizar el sorteo:', error);
-      Alert.alert('Error', 'No se pudo finalizar el sorteo.');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo finalizar el sorteo.' });
     } finally {
       setIsFinishing(false);
     }
   };
 
-  const handleCancelRaffle = () => {
-    Alert.alert(
-      "Cancelar Sorteo",
-      "¿Estás seguro de que quieres cancelar este sorteo? Esta acción no se puede deshacer y el sorteo aparecerá como 'Cancelado' para todos los usuarios.",
-      [
-        { text: "No, mantener", style: "cancel" },
-        {
-          text: "Sí, Cancelar", style: "destructive", onPress: async () => {
-            setIsDeleting(true);
-            try {
-              await cancelRaffle({ id: id as Id<'raffles'> });
-              Alert.alert('Éxito', 'El sorteo ha sido cancelado.');
-              router.back();
-            } catch (error: any) {
-              Alert.alert('Error', error.data?.message || 'No se pudo cancelar el sorteo. Tiene boletos vendidos o reservados.');
-            } finally {
-              setIsDeleting(false);
-            }
-          }
-        }
-      ]
-    );
+  const handleCancelRaffle = async () => {
+    setIsDeleting(true);
+    try {
+      await cancelRaffle({ id: id as Id<'raffles'> });
+      Toast.show({ type: 'success', text1: 'Éxito', text2: 'El sorteo ha sido cancelado.' });
+      router.back();
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Error', text2: error.data?.message || 'No se pudo cancelar el sorteo. Tiene boletos vendidos o reservados.' });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
-  const handleDeleteRaffle = () => {
-    Alert.alert(
-      "Eliminar Sorteo Permanentemente",
-      "Esta acción es IRREVERSIBLE. Solo funcionará si el sorteo no tiene boletos vendidos. ¿Estás seguro?",
-      [
-        { text: "No, mantener", style: "cancel" },
-        {
-          text: "Sí, Eliminar", style: "destructive", onPress: async () => {
-            setIsDeleting(true);
-            try {
-              await deleteRaffle({ id: id as Id<'raffles'> });
-              Alert.alert('Éxito', 'El sorteo ha sido eliminado permanentemente.');
-              router.back();
-            } catch (error: any) {
-              Alert.alert('Error', error.data?.message || 'No se pudo eliminar el sorteo.');
-            } finally {
-              setIsDeleting(false);
-            }
-          }
-        }
-      ]
-    );
+  const handleDeleteRaffle = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteRaffle({ id: id as Id<'raffles'> });
+      Toast.show({ type: 'success', text1: 'Éxito', text2: 'El sorteo ha sido eliminado permanentemente.' });
+      router.back();
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Error', text2: error.data?.message || 'No se pudo eliminar el sorteo.' });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (raffle === undefined) {

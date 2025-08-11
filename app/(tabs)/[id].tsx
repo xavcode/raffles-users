@@ -6,9 +6,10 @@ import { useUser } from '@clerk/clerk-expo';
 import { useMutation, useQuery } from 'convex/react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
+import GlobalHeader from '../components/GlobalHeader';
 
 // 1. Estilos mejorados para los boletos, con mejor contraste y legibilidad
 const TICKET_STYLES = {
@@ -65,7 +66,7 @@ const Ticket = React.memo(({ number, status, isSelected, onPress }: {
   return (
     <Pressable
       onPress={isPressable ? onPress : undefined} // Solo se puede presionar si está disponible
-      className={`w-16 h-12 justify-center items-center m-1.5 rounded-lg border ${styles.container} ${!isPressable && 'opacity-70'} active:scale-95 transition-transform`}
+      className={`w-16 h-12 justify-center items-center m-1.5 rounded-2xl border ${styles.container} ${!isPressable && 'opacity-70'} active:scale-95 transition-transform`}
       disabled={!isPressable}
     >
       <Text className={`font-quicksand-bold text-lg ${styles.text}`}>{number.toString().padStart(3, '0')}</Text>
@@ -84,7 +85,7 @@ export default function RaffleDetailsScreen() {
 
   // 1. Importamos useUser para saber si el usuario está logueado.
   const { isSignedIn } = useUser();
-  const insets = useSafeAreaInsets();
+  // const insets = useSafeAreaInsets();
   const settings = useQuery(api.admin.getSettings);
 
   // Hooks de Convex
@@ -173,7 +174,7 @@ export default function RaffleDetailsScreen() {
   // Manejador para la reserva de boletos
   const handleReserve = async () => {
     if (selectedTickets.size === 0) {
-      Alert.alert("Sin selección", "Debes seleccionar al menos un boleto para reservar.");
+      Toast.show({ type: 'error', text1: 'Sin selección', text2: 'Debes seleccionar al menos un boleto para reservar.' });
       return;
     }
 
@@ -224,45 +225,55 @@ export default function RaffleDetailsScreen() {
   };
 
   return (
-    <SafeAreaView className='flex-1 mb-10'>
-      <ScrollView className="flex-1 bg-gray-50 relative">
-        {/* Hero con overlay */}
-        <View>
-          {raffle.imageUrl && (
+    <SafeAreaView className='flex-1 bg-white'>
+      <GlobalHeader />
+      <FlatList
+        className="flex-1"
+        data={Array.from({ length: raffle.totalTickets }, (_, i) => i + 1)}
+        renderItem={({ item: number }) => (
+          <Ticket
+            number={number}
+            status={ticketStatusMap.get(number) || 'available'}
+            isSelected={selectedTickets.has(number)}
+            onPress={() => handleTicketPress(number)}
+          />
+        )}
+        keyExtractor={(item) => item.toString()}
+        numColumns={5}
+        columnWrapperStyle={{ justifyContent: 'center' }}
+        contentContainerStyle={{ alignItems: 'center' }}
+        initialNumToRender={50}
+        windowSize={7}
+        removeClippedSubviews
+        ListHeaderComponent={
+          <View>
             <View>
-              <Image source={{ uri: raffle.imageUrl }} className="w-full h-56" resizeMode="cover" />
-              <View className="absolute bottom-0 left-0 right-0 p-4 bg-black/40">
-                <Text className="text-white font-quicksand-bold text-xl" numberOfLines={1}>{raffle.title}</Text>
-                <Text className="text-white font-quicksand-semibold text-sm mt-1">Gana {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(raffle.prize ?? 0)}</Text>
-              </View>
+              {raffle.imageUrl && (
+                <View>
+                  <Image source={{ uri: raffle.imageUrl }} className="w-full h-56" resizeMode="cover" />
+                  <View className="absolute bottom-0 left-0 right-0 p-4 bg-black/40">
+                    <Text className="text-white font-quicksand-bold text-xl" numberOfLines={1}>{raffle.title}</Text>
+                    <Text className="text-white font-quicksand-semibold text-sm mt-1">Gana {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(raffle.prize ?? 0)}</Text>
+                  </View>
+                </View>
+              )}
             </View>
-          )}
-        </View>
-        <View className="p-5 bg-white border-b border-gray-200 -mt-2 rounded-t-2xl">
-          <Text className="text-base text-gray-600">{raffle.description}</Text>
-          {raffle.winCondition ? (
-            <Text className="text-sm text-gray-500 mt-2">{raffle.winCondition}</Text>
-          ) : null}
-        </View>
+            <View className="p-5 bg-white border-b border-gray-200 -mt-2 rounded-t-2xl">
+              <Text className="text-base text-gray-600">{raffle.description}</Text>
+              {raffle.winCondition ? (
+                <Text className="text-sm text-gray-500 mt-2">{raffle.winCondition}</Text>
+              ) : null}
+            </View>
+            <ColorLegend />
 
-        <ColorLegend />
+          </View>
+        }
+      />
 
-        <View className="flex-row flex-wrap justify-center p-2.5 pb-56">
-          {Array.from({ length: raffle.totalTickets }, (_, i) => i + 1).map((number) => (
-            <Ticket
-              key={number}
-              number={number}
-              status={ticketStatusMap.get(number) || 'available'}
-              isSelected={selectedTickets.has(number)}
-              onPress={() => handleTicketPress(number)}
-            />
-          ))}
-        </View>
-      </ScrollView>
       {/* Contenedor centrado para el botón flotante, evitando tapar el grid y la TabBar */}
-      {/* Dock inferior por encima de la TabBar, sin cubrir el grid */}
-      <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: insets.bottom + 12 }}>
-        <View className="mx-4 bg-white rounded-2xl border border-slate-200 shadow-lg p-3">
+
+      <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
+        <View className="mx-4 bg-white rounded-2xl border border-slate-200 shadow-lg">
           {isSignedIn ? (
             <Pressable
               onPress={handleReserve}

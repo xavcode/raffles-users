@@ -5,7 +5,7 @@ import { useMutation } from 'convex/react';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Image, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
@@ -127,12 +127,12 @@ const CreateRaffle = () => {
         endTime: endTime.getTime(),
       });
 
-      Alert.alert('Éxito', 'Sorteo creado correctamente.');
+      Toast.show({ type: 'success', text1: 'Éxito', text2: 'Sorteo creado correctamente.' });
       router.back();
     } catch (error) {
       console.error('Failed to create raffle:', error);
       const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error desconocido.';
-      Alert.alert('Error al crear sorteo', errorMessage);
+      Toast.show({ type: 'error', text1: 'Error al crear sorteo', text2: errorMessage });
     } finally {
       setIsLoading(false);
     }

@@ -202,7 +202,18 @@ export const adminNotifyPayment = mutation({
 export const confirmPurchase = mutation({
   args: { purchaseId: v.id("purchases") },
   handler: async (ctx, args) => {
-    // Aquí deberías añadir una validación para asegurar que solo un admin puede ejecutar esto.
+    // Validación: solo un admin puede confirmar pagos
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("No autenticado");
+    }
+    const requester = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    if (!requester || requester.userType !== "admin") {
+      throw new Error("Permisos insuficientes");
+    }
 
     const purchase = await ctx.db.get(args.purchaseId);
     if (!purchase) {
@@ -236,7 +247,18 @@ export const confirmPurchase = mutation({
 export const rejectPurchase = mutation({
   args: { purchaseId: v.id("purchases") },
   handler: async (ctx, args) => {
-    // TODO: En un futuro, añade una validación para asegurar que solo un admin puede ejecutar esto.
+    // Validación: solo un admin puede rechazar pagos
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("No autenticado");
+    }
+    const requester = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    if (!requester || requester.userType !== "admin") {
+      throw new Error("Permisos insuficientes");
+    }
 
     const purchase = await ctx.db.get(args.purchaseId);
     if (!purchase) {
@@ -340,8 +362,20 @@ export const getPurchaseDetails = query({
     const purchase = await ctx.db.get(args.purchaseId);
     if (!purchase) return null;
 
+    // Control de acceso: solo dueño o admin
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+    const requester = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    if (!requester) return null;
+    const isOwner = requester._id === purchase.userId;
+    const isAdmin = requester.userType === "admin";
+    if (!isOwner && !isAdmin) return null;
+
     const raffle = await ctx.db.get(purchase.raffleId);
-    const user = await ctx.db.get(purchase.userId); // <-- Añadimos la info del usuario
+    const user = await ctx.db.get(purchase.userId);
 
     // Tickets pagados/asociados a la compra
     const paidTickets = await ctx.db

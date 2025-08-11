@@ -1,5 +1,7 @@
+import { PURCHASE_STATUS } from '@/constants/status';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
+import { formatCOP } from '@/utils/format';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
 import { format } from 'date-fns';
@@ -17,8 +19,8 @@ const PURCHASE_STATUS_STYLES = {
   expired: { label: 'Expirado', bg: 'bg-red-100', text: 'text-red-700', icon: 'close-circle-outline' as const }
 };
 
-const PENDING_PAYMENT = 'pending_payment';
-const PENDING_CONFIRMATION = 'pending_confirmation'
+const PENDING_PAYMENT = PURCHASE_STATUS.PENDING_PAYMENT;
+const PENDING_CONFIRMATION = PURCHASE_STATUS.PENDING_CONFIRMATION;
 const IS_ADMIN = 'admin'
 
 const PurchaseDetailsPage = () => {
@@ -99,7 +101,7 @@ const PurchaseDetailsPage = () => {
     label: 'Desconocido', bg: 'bg-slate-100', text: 'text-slate-700', icon: 'help-circle-outline' as const
   };
   const purchaseDate = format(new Date(purchase._creationTime), "d 'de' MMMM, yyyy 'a las' h:mm a", { locale: es });
-  const formattedAmount = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(purchase.totalAmount);
+  const formattedAmount = formatCOP(purchase.totalAmount);
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">

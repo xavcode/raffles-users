@@ -48,8 +48,8 @@ export default function RootLayout() {
 
 
   return (
-    <View className="flex-1 items-center justify-center bg-white md:bg-slate-100">
-      <View className="flex-1 w-full bg-gray-50 md:max-w-2xl md:rounded-2xl md:shadow-2xl md:my-8">
+    <View className="flex-1 items-center justify-center ">
+      <View className="flex-1 w-full md:max-w-2xl md:rounded-2xl md:shadow-2xl ">
         <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
           <ClerkLoaded>
             <ConvexProviderWithClerk client={convex} useAuth={useAuth}>

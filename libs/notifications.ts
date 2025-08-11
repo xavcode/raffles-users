@@ -6,10 +6,11 @@ import { Platform } from 'react-native';
 // Configuración global para cómo se manejan las notificaciones cuando la app está en primer plano.
 Notifications.setNotificationHandler({
     handleNotification: async () => ({
-        shouldPlaySound: true,
-        shouldSetBadge: true,
         shouldShowBanner: true,
         shouldShowList: true,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+        shouldShowAlert: true,
     }),
 });
 
@@ -20,13 +21,16 @@ function handleRegistrationError(errorMessage: string) {
 
 export async function registerForPushNotificationsAsync(): Promise<string | undefined> {
     if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('default', {
-            name: 'default',
+        // Importante: Si ya existía un canal con la misma ID en el dispositivo, sus propiedades
+        // no se actualizan. Si probaste antes sin sonido/vibración, reinstala la app o usa un canal nuevo.
+        await Notifications.setNotificationChannelAsync('alerts', {
+            name: 'General Alerts',
             importance: Notifications.AndroidImportance.MAX,
             enableVibrate: true,
             vibrationPattern: [0, 250, 250, 250],
             lightColor: '#FF231F7C',
             sound: 'default',
+            lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
         });
     }
 

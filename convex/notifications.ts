@@ -22,10 +22,12 @@ export const send = internalAction({
     // Construye el cuerpo de la solicitud
     const requestBody = {
       to: pushToken,
-      // Aquí especificamos el nombre del archivo de sonido que añadimos en assets/sounds.
-      // Expo se encargará de encontrarlo y usarlo en la notificación.
-      // sound: "notification.wav",
-      sound: "default",
+      // --- Propiedades para asegurar la visibilidad y el sonido/vibración ---
+      sound: "default", // Reproduce el sonido de notificación por defecto.
+      vibrate: true, // Activa la vibración.
+      priority: "high", // Prioridad alta para que aparezca la notificación emergente.
+      channelId: "alerts", // ID del canal de notificación configurado en la app.
+      // --- Contenido de la notificación ---
       title: title,
       body: message,
       data: { withSome: "data" }, // Puedes enviar datos adicionales aquí para manejar la navegación

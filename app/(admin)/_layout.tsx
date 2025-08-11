@@ -4,8 +4,10 @@ import { usePaginatedQuery } from 'convex/react';
 import { Tabs, useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AdminLayout() {
+  const insets = useSafeAreaInsets();
   const { results: purchases, status, loadMore
   } = usePaginatedQuery(
     api.tickets.getPendingConfirmationPurchases,
@@ -26,7 +28,7 @@ export default function AdminLayout() {
         tabBarStyle: {
           backgroundColor: '#ffffff',
           borderTopColor: '#e2e8f0', // slate-200
-          height: 10,
+          paddingBottom: Math.max(8, insets.bottom),
         },
         tabBarLabelStyle: {
           fontFamily: 'Quicksand-Bold',
@@ -55,7 +57,7 @@ export default function AdminLayout() {
           </Pressable>
         ),
         headerRight: () => (
-          <Pressable onPress={() => { router.push('/settings') }}>
+          <Pressable onPress={() => { router.push('/(admin)/settings') }}>
             {
               ({ pressed }) => (
                 <View className={`flex mr-5 p-2 rounded-lg ${pressed ? 'bg-indigo-100' : 'bg-transparent'}`}>

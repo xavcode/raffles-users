@@ -7,6 +7,7 @@ import { Link, Stack } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import GlobalHeader from '../components/GlobalHeader';
 import TabSelectorRaffleStatus from '../components/TabSelectorRaffleStatus';
 
 const RaffleCard = ({ item }: { item: Doc<'raffles'> }) => {
@@ -68,11 +69,12 @@ const RaffleCard = ({ item }: { item: Doc<'raffles'> }) => {
     return <Link href={`/${item._id}`} asChild>{CardContent}</Link>;
   }
 
+
   return CardContent;
-};
+}
 
 const IndexPage = () => {
-  // 1. Creamos el estado para saber qué pestaña está seleccionada. Inicia en 'active'.
+  // el estado para saber qué pestaña está seleccionada. Inicia en 'active'.
   const [selectedTab, setSelectedTab] = useState<'active' | 'finished'>('active');
 
   const {
@@ -87,7 +89,8 @@ const IndexPage = () => {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
+    <SafeAreaView className="flex-1 bg-white">
+      <GlobalHeader />
       <Stack.Screen
         options={{
           headerLargeTitle: true,
@@ -107,7 +110,7 @@ const IndexPage = () => {
         data={raffles}
         renderItem={({ item }) => <RaffleCard item={item} />}
         keyExtractor={(item) => item._id}
-        contentContainerClassName="pt-4 pb-8"
+        contentContainerClassName="pt-2 pb-24"
         onEndReached={() => {
           if (status === 'CanLoadMore') {
             loadMore(3);
@@ -135,5 +138,6 @@ const IndexPage = () => {
     </SafeAreaView>
   );
 };
+
 
 export default IndexPage;

@@ -17,7 +17,6 @@
   "dependencies": {
     "@clerk/backend": "^2.5.0",
     "@clerk/clerk-expo": "^2.14.9",
-    "@clerk/nextjs": "^5.7.5",
     "@expo/vector-icons": "^14.1.0",
     "@react-native-community/datetimepicker": "^8.4.4",
     "@react-navigation/bottom-tabs": "^7.3.10",

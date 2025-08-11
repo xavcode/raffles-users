@@ -1,11 +1,13 @@
 import { api } from '@/convex/_generated/api';
 import { Doc, Id } from '@/convex/_generated/dataModel';
+import { formatCOP } from '@/utils/format';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, usePaginatedQuery, useQuery } from 'convex/react';
 import { Link, Redirect, Stack } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, SectionList, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, SectionList, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 
 type RaffleWithSales = Doc<'raffles'>;
 const STATUS_ACTIVE = 'active';
@@ -19,11 +21,11 @@ const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
     const winningNumber = parseInt(winningTicket, 10);
 
     if (isNaN(winningNumber) || winningNumber <= 0) {
-      Alert.alert('Boleto Inválido', 'Debes ingresar un número de boleto ganador válido y positivo.');
+      Toast.show({ type: 'error', text1: 'Boleto inválido', text2: 'Ingresa un número de boleto ganador válido y positivo.' });
       return;
     }
     if (winningNumber > raffle.totalTickets) {
-      Alert.alert('Boleto Fuera de Rango', `El boleto ganador no puede ser mayor que ${raffle.totalTickets}.`);
+      Toast.show({ type: 'error', text1: 'Fuera de rango', text2: `El boleto ganador no puede ser mayor que ${raffle.totalTickets}.` });
       return;
     }
 
@@ -34,19 +36,19 @@ const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
         status: 'finished',
         winningTicketNumber: winningNumber,
       });
-      Alert.alert('Éxito', '¡Sorteo finalizado! Se ha asignado el ganador.');
+      Toast.show({ type: 'success', text1: 'Éxito', text2: '¡Sorteo finalizado! Se ha asignado el ganador.' });
       setWinningTicket(''); // Limpiar input
     } catch (error) {
       console.error('Error al finalizar el sorteo:', error);
-      Alert.alert('Error', 'No se pudo finalizar el sorteo.');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo finalizar el sorteo.' });
     } finally {
       setIsFinishing(false);
     }
   };
 
   const progress = raffle.totalTickets > 0 ? ((raffle.ticketsSold ?? 0) / raffle.totalTickets) * 100 : 0;
-  const formattedPrice = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(raffle.ticketPrice);
-  const formattedPrize = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(raffle.prize as number);
+  const formattedPrice = formatCOP(raffle.ticketPrice);
+  const formattedPrize = formatCOP(raffle.prize as number);
 
   return (
     <View className="bg-white rounded-2xl shadow-sm shadow-slate-300/50 overflow-hidden mb-4">
