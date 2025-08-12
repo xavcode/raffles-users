@@ -123,7 +123,7 @@ export default function RaffleDetailsScreen() {
     if (selectionUpdated) {
       setSelectedTickets(updatedSelectedTickets);
       Toast.show({
-        type: 'info',
+        type: 'alert',
         text1: 'Algunos boletos ya no están disponibles',
         text2: 'Se han quitado de tu selección actual.',
         position: 'bottom',
@@ -247,7 +247,7 @@ export default function RaffleDetailsScreen() {
 
         <ColorLegend />
 
-        <View className="flex-row flex-wrap justify-center p-2.5 pb-10">
+        <View className="flex-row flex-wrap justify-center p-2.5 pb-20">
           {Array.from({ length: raffle.totalTickets }, (_, i) => i + 1).map((number) => (
             <Ticket
               key={number}

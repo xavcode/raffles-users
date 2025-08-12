@@ -32,12 +32,15 @@ export default defineSchema({
       v.literal("reserved"),
       v.literal("sold")
     ),
+
     reservedUntil: v.optional(v.float64()), // Timestamp de cuando expira la reserva
   })
     .index("by_user", ["userId"])
     .index("by_raffle", ["raffleId"])
     .index("by_purchase", ["purchaseId"]) // Nuevo índice para buscar boletos por compra
-    .index("by_raffle_status", ["raffleId", "status"]),
+    .index("by_raffle_status", ["raffleId", "status"])
+    .index("by_raffle_and_ticket_number", ["raffleId", "ticketNumber"]),
+
 
   released_tickets: defineTable({
     purchaseId: v.id("purchases"),
@@ -81,8 +84,9 @@ export default defineSchema({
     userType: v.optional(v.union(v.literal("admin"), v.literal("member"))),
   })
     .index("by_clerk_id", ["clerkId"])
-    .index("by_email", ["email"]),
-
+    .index("by_email", ["email"])
+    .index("by_pushToken", ["pushToken"])
+    .index("by_userType_pushToken", ["userType", "pushToken"]),
 
   notifications: defineTable({
     type: v.string(), // e.g., "payment_confirmation_pending"
@@ -98,7 +102,6 @@ export default defineSchema({
     releaseTime: v.number(),
     purchasesEnabled: v.boolean(),
     maintenanceMessage: v.optional(v.string()),
-
   })
 
 });

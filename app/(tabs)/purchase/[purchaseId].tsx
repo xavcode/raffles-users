@@ -8,8 +8,9 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import React from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 
 // Reutilizamos el helper de estilos de la pantalla de listado
 const PURCHASE_STATUS_STYLES = {
@@ -42,8 +43,13 @@ const PurchaseDetailsPage = () => {
     setIsConfirming(true);
     try {
       await notifyPaymentMutation({ purchaseId: purchaseId as Id<'purchases'> });
+      Toast.show({
+        type: 'success',
+        text1: '¡Notificación Enviada!',
+        text2: 'Los administradores han sido notificados sobre tu pago.',
+      });
     } catch (error) {
-      alert('Hubo un error al notificar el pago. Por favor, inténtalo de nuevo.');
+      Alert.alert('Error', 'Hubo un error al notificar el pago. Por favor, inténtalo de nuevo.');
       console.error("Error notifying payment:", error);
     } finally {
       setIsConfirming(false);

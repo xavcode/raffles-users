@@ -29,6 +29,17 @@ const CreateRaffle = () => {
 
 
   const [imageAsset, setImageAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const resetStates = () => {
+    setTitle('');
+    setDescription('');
+    setPrize('');
+    setWinCondition('');
+    setStartTime(new Date());
+    setEndTime(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)); // Por defecto, 7 días
+    setShowDatePicker(false);
+    setDatePickerTarget('start');
+    setImageAsset(null);
+  }
 
   // 2. Función para abrir la galería de imágenes del dispositivo
   const pickImage = async () => {
@@ -127,8 +138,15 @@ const CreateRaffle = () => {
         endTime: endTime.getTime(),
       });
 
-      Toast.show({ type: 'success', text1: 'Éxito', text2: 'Sorteo creado correctamente.' });
+      Toast.show({
+        type: 'success',
+        text1: 'Éxito',
+        text2: 'Sorteo creado correctamente.'
+      });
+      resetStates();
       router.back();
+
+
     } catch (error) {
       console.error('Failed to create raffle:', error);
       const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error desconocido.';

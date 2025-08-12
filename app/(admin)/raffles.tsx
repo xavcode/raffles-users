@@ -15,7 +15,7 @@ const STATUS_ACTIVE = 'active';
 const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
   const [winningTicket, setWinningTicket] = useState('');
   const [isFinishing, setIsFinishing] = useState(false);
-  const updateRaffle = useMutation(api.raffles.updateRaffle);
+  const finishRaffle = useMutation(api.raffles.finishRaffle);
 
   const handleFinishRaffle = async () => {
     const winningNumber = parseInt(winningTicket, 10);
@@ -31,10 +31,9 @@ const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
 
     setIsFinishing(true);
     try {
-      await updateRaffle({
+      await finishRaffle({
         id: raffle._id as Id<'raffles'>,
-        status: 'finished',
-        winningTicketNumber: winningNumber,
+        winningTicketNumber: winningNumber
       });
       Toast.show({ type: 'success', text1: 'Éxito', text2: '¡Sorteo finalizado! Se ha asignado el ganador.' });
       setWinningTicket(''); // Limpiar input
@@ -108,25 +107,15 @@ const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
 const RafflesPage = () => {
   const convexUser = useQuery(api.users.getCurrent);
 
-  if (convexUser === undefined) {
-    return <View className="flex-1 bg-slate-50 justify-center items-center"><ActivityIndicator size="large" color="#4f46e5" /></View>;
-  }
+  // 1. Todos los Hooks se declaran en el nivel superior.
+  // Determinamos si debemos omitir la consulta de sorteos.
+  const skipQuery = convexUser === undefined || (convexUser !== null && convexUser.userType !== "admin");
 
-  if (convexUser && convexUser.userType !== "admin") {
-    return <Redirect href="/(tabs)" />;
-  }
-
-  const {
-    results: raffles,
-    status,
-    loadMore,
-  } = usePaginatedQuery(
+  const { results: raffles, status, loadMore } = usePaginatedQuery(
     api.raffles.getRaffles,
-    // Correcto: No pasamos 'status' para obtener todos los sorteos para el admin.
-    {},
+    skipQuery ? 'skip' : {},
     { initialNumItems: 5 }
   );
-
 
   // useMemo para evitar recalcular las secciones en cada render
   const sections = useMemo(() => {
@@ -143,6 +132,16 @@ const RafflesPage = () => {
     }
     return data;
   }, [raffles]);
+
+  // 3. Los retornos condicionales se colocan DESPUÉS de todos los Hooks.
+  if (convexUser === undefined) {
+    return <View className="flex-1 bg-slate-50 justify-center items-center"><ActivityIndicator size="large" color="#4f46e5" /></View>;
+  }
+
+  // Si el usuario existe pero no es admin, lo redirigimos.
+  if (convexUser && convexUser.userType !== "admin") {
+    return <Redirect href="/(tabs)" />;
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">

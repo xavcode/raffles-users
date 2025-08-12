@@ -4,14 +4,14 @@ import { internal } from "./_generated/api";
 import { internalAction } from "./_generated/server";
 
 // Acción interna para enviar la notificación usando el servicio de Expo
-export const send = internalAction({
+export const sendPushNotification = internalAction({
   args: {
     pushToken: v.string(),
     message: v.string(),
     title: v.string(),
-    raffleId: v.optional(v.string()),
+    data: v.optional(v.any()), // Añadimos un campo opcional para enviar datos extra (ej: IDs para navegación)
   },
-  handler: async (_, { pushToken, message, title, raffleId }) => {
+  handler: async (_, { pushToken, message, title, data }) => {
     const expoPushEndpoint = "https://exp.host/--/api/v2/push/send";
 
     // Comprueba si el token es un token válido de Expo
@@ -21,7 +21,7 @@ export const send = internalAction({
     }
 
     // Construye el cuerpo de la solicitud
-    const requestBody: any = {
+    const requestBody = {
       to: pushToken,
       // --- Propiedades para asegurar la visibilidad y el sonido/vibración ---
       sound: "default", // Reproduce el sonido de notificación por defecto.
@@ -31,13 +31,8 @@ export const send = internalAction({
       // --- Contenido de la notificación ---
       title: title,
       body: message,
-      data: { withSome: "data" }, // Puedes enviar datos adicionales aquí para manejar la navegación
+      data: data, // Enviamos los datos para manejar la navegación al tocar la notificación
     };
-
-    if (raffleId) {
-      requestBody.data.raffleId = raffleId;
-      requestBody.categoryId = 'raffle_actions';
-    }
 
     // Envía la notificación
     try {
@@ -67,9 +62,8 @@ export const sendToAllUsers = internalAction({
   args: {
     title: v.string(),
     message: v.string(),
-    raffleId: v.optional(v.string()),
   },
-  handler: async (ctx, { title, message, raffleId }) => {
+  handler: async (ctx, { title, message }) => {
     // 1. Obtenemos todos los usuarios que tienen un token de notificación.
     // Usamos `runQuery` porque las acciones no pueden acceder a la BD directamente.
     const users = await ctx.runQuery(internal.users.getUsersWithPushTokens);
@@ -78,13 +72,39 @@ export const sendToAllUsers = internalAction({
     // Hacemos esto para que los envíos se procesen en paralelo y no bloqueen la acción principal.
     for (const user of users) {
       if (user.pushToken) {
-        await ctx.runAction(internal.notifications.send, {
+        await ctx.runAction(internal.notifications.sendPushNotification, {
           pushToken: user.pushToken,
           title: title,
           message: message,
-          raffleId: raffleId,
+          // Aquí podrías pasar datos genéricos si fuera necesario
         });
       }
+    }
+  },
+});
+
+/**
+ * Acción interna para notificar a todos los administradores sobre un pago que necesita ser verificado.
+ */
+export const sendPaymentConfirmationToAdmins = internalAction({
+  args: {
+    title: v.string(),
+    message: v.string(),
+    purchaseId: v.id("purchases"),
+  },
+  handler: async (ctx, { title, message, purchaseId }) => {
+    // 1. Obtenemos todos los usuarios que son administradores usando la query que creamos.
+    const admins = await ctx.runQuery(internal.users.getAdminsWithPushTokens);
+
+    // 2. Por cada admin, programamos una acción para enviarle la notificación.
+    for (const admin of admins) {
+      await ctx.runAction(internal.notifications.sendPushNotification, {
+        pushToken: admin.pushToken!,
+        title: title,
+        message: message,
+        // Enviamos el ID de la compra para que el admin pueda navegar directamente a ella.
+        data: { type: 'NEW_PAYMENT_CONFIRMATION', purchaseId: purchaseId },
+      });
     }
   },
 });

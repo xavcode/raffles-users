@@ -135,11 +135,6 @@ export const storePushToken = mutation({
   },
 });
 
-export const getUsersWithPushTokens = internalQuery({
-  handler: async (ctx) => {
-    return await ctx.db.query("users").filter((q) => q.neq(q.field("pushToken"), undefined)).collect();
-  },
-});
 
 export const getByEmail = query({
   args: { email: v.string() },
@@ -162,4 +157,24 @@ export const updateRole = mutation({
     await ctx.db.patch(user._id, { userType: args.role });
     return true;
   }
+});
+
+export const getUsersWithPushTokens = internalQuery({
+  handler: async (ctx) => {
+    // Si agregas un índice sobre pushToken:
+    // .index("by_pushToken", ["pushToken"])
+    return await ctx.db
+      .query("users")
+      .withIndex("by_pushToken", q => q.gt("pushToken", undefined))
+      .collect();
+  },
+});
+
+export const getAdminsWithPushTokens = internalQuery({
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("users")
+      .withIndex("by_userType_pushToken", q => q.eq("userType", "admin").gt("pushToken", undefined))
+      .collect();
+  },
 });

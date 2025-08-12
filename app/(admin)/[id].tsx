@@ -18,6 +18,7 @@ const EditRafflePage = () => {
   });
 
   const updateRaffle = useMutation(api.raffles.updateRaffle);
+  const finishRaffle = useMutation(api.raffles.finishRaffle);
   const cancelRaffle = useMutation(api.raffles.cancelRaffle);
   const deleteRaffle = useMutation(api.raffles.deleteRaffle);
 
@@ -96,9 +97,8 @@ const EditRafflePage = () => {
 
     setIsFinishing(true);
     try {
-      await updateRaffle({
+      await finishRaffle({
         id: id as Id<'raffles'>,
-        status: 'finished',
         winningTicketNumber: winningNumber,
       });
       Toast.show({ type: 'success', text1: 'Éxito', text2: '¡Sorteo finalizado! Se ha asignado el ganador.' });
