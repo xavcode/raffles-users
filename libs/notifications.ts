@@ -14,6 +14,20 @@ Notifications.setNotificationHandler({
     }),
 });
 
+// Función para configurar categorías de notificaciones con acciones.
+export async function setupNotificationCategories() {
+    await Notifications.setNotificationCategoryAsync('raffle_actions', [
+        {
+            identifier: 'view_raffle',
+            buttonTitle: 'Ver Sorteo',
+            options: {
+                // Abre la app en primer plano cuando se presiona el botón.
+                opensAppToForeground: true,
+            },
+        },
+    ]);
+}
+
 function handleRegistrationError(errorMessage: string) {
     // En producción, podrías registrar este error en un servicio de monitoreo.
     console.error(errorMessage);
@@ -33,6 +47,9 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
             lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
         });
     }
+
+    // Configura las categorías de notificación para toda la app.
+    await setupNotificationCategories();
 
     if (Device.isDevice) {
         const { status: existingStatus } = await Notifications.getPermissionsAsync();

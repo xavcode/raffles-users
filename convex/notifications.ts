@@ -9,8 +9,9 @@ export const send = internalAction({
     pushToken: v.string(),
     message: v.string(),
     title: v.string(),
+    raffleId: v.optional(v.string()),
   },
-  handler: async (_, { pushToken, message, title }) => {
+  handler: async (_, { pushToken, message, title, raffleId }) => {
     const expoPushEndpoint = "https://exp.host/--/api/v2/push/send";
 
     // Comprueba si el token es un token válido de Expo
@@ -20,7 +21,7 @@ export const send = internalAction({
     }
 
     // Construye el cuerpo de la solicitud
-    const requestBody = {
+    const requestBody: any = {
       to: pushToken,
       // --- Propiedades para asegurar la visibilidad y el sonido/vibración ---
       sound: "default", // Reproduce el sonido de notificación por defecto.
@@ -32,6 +33,11 @@ export const send = internalAction({
       body: message,
       data: { withSome: "data" }, // Puedes enviar datos adicionales aquí para manejar la navegación
     };
+
+    if (raffleId) {
+      requestBody.data.raffleId = raffleId;
+      requestBody.categoryId = 'raffle_actions';
+    }
 
     // Envía la notificación
     try {
@@ -61,8 +67,9 @@ export const sendToAllUsers = internalAction({
   args: {
     title: v.string(),
     message: v.string(),
+    raffleId: v.optional(v.string()),
   },
-  handler: async (ctx, { title, message }) => {
+  handler: async (ctx, { title, message, raffleId }) => {
     // 1. Obtenemos todos los usuarios que tienen un token de notificación.
     // Usamos `runQuery` porque las acciones no pueden acceder a la BD directamente.
     const users = await ctx.runQuery(internal.users.getUsersWithPushTokens);
@@ -75,6 +82,7 @@ export const sendToAllUsers = internalAction({
           pushToken: user.pushToken,
           title: title,
           message: message,
+          raffleId: raffleId,
         });
       }
     }

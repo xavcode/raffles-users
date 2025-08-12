@@ -1,7 +1,8 @@
 import { useAuth } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
-import React from 'react';
+import * as Notifications from 'expo-notifications';
+import { Tabs, useRouter } from 'expo-router';
+import React, { useEffect } from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,6 +18,29 @@ const TabsLayout = () => {
       </View>
     );
   }
+
+
+
+
+  const router = useRouter();
+
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+      const { actionIdentifier, notification } = response;
+      const raffleId = notification.request.content.data.raffleId as string | undefined;
+
+      // Si se presionó el botón "Ver Sorteo" y hay un raffleId
+      if (actionIdentifier === 'view_raffle' && raffleId) {
+        router.push(`/(tabs)/${raffleId}`);
+      }
+      // Si se presionó la notificación misma y hay un raffleId
+      else if (actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER && raffleId) {
+        router.push(`/(tabs)/${raffleId}`);
+      }
+    });
+
+    return () => subscription.remove();
+  }, [router]);
 
   return (
     // El componente Tabs debe ser el principal. Cada pantalla gestionará su propio SafeAreaView y Header.

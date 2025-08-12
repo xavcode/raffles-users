@@ -69,6 +69,7 @@ export const createRaffle = mutation({
         await ctx.scheduler.runAfter(0, internal.notifications.sendToAllUsers, {
             title: "🎉 ¡Nuevo Sorteo Disponible!",
             message: `¡No te pierdas la oportunidad de ganar en nuestro nuevo sorteo: "${args.title}"!`,
+
         });
 
         return newRaffleId;
