@@ -6,6 +6,7 @@ import { ConvexProviderWithClerk } from 'convex/react-clerk';
 import { useFonts } from "expo-font";
 import { Slot, SplashScreen } from "expo-router";
 import { useEffect } from 'react';
+import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { configureReanimatedLogger } from 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -80,22 +81,26 @@ const RootLayoutNav = () => {
   const convex = new ConvexReactClient(convexUrl);
 
   return (
-    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <SafeAreaProvider>
-            <NetworkProvider>
-              <ClerkLoaded>
-                <Slot />
-                {/* <InitialLayout /> */}
-              </ClerkLoaded>
-              <Toast config={toastConfig} />
-              <OfflineBanner />
-            </NetworkProvider>
-          </SafeAreaProvider>
-        </GestureHandlerRootView>
-      </ConvexProviderWithClerk>
-    </ClerkProvider>
+    <View className="flex-1 items-center justify-center ">
+      <View className="flex-1 w-full md:max-w-2xl md:rounded-2xl md:shadow-2xl ">
+        <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+          <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <SafeAreaProvider>
+                <NetworkProvider>
+                  <ClerkLoaded>
+                    <Slot />
+                    <Toast config={toastConfig} />
+                    <OfflineBanner />
+                    {/* <InitialLayout /> */}
+                  </ClerkLoaded>
+                </NetworkProvider>
+              </SafeAreaProvider>
+            </GestureHandlerRootView>
+          </ConvexProviderWithClerk>
+        </ClerkProvider>
+      </View>
+    </View>
   );
 };
 
