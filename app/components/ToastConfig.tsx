@@ -90,5 +90,23 @@ const toastConfig = {
       }}
     />
   ),
+  warning: (props: any) => (
+    <BaseToast
+      {...props}
+      // Sobrescribimos los estilos para que sea naranja
+      style={{ borderLeftColor: '#F59E0B' }} // Un color naranja de Tailwind (amber-500)
+      contentContainerStyle={{ paddingHorizontal: 15 }}
+      // Puedes mantener las fuentes que ya usas
+      text1Style={{
+        fontSize: 16,
+        fontFamily: 'Quicksand-Bold'
+      }}
+      text2Style={{
+        fontSize: 14,
+        fontFamily: 'Quicksand-Regular',
+        color: '#4B5563' // Color de texto un poco más oscuro
+      }}
+    />
+  ),
 };
 export default toastConfig

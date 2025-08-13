@@ -1,22 +1,40 @@
 import { api } from '@/convex/_generated/api';
-import { SignedIn, SignedOut, useAuth, useUser } from '@clerk/clerk-expo';
+// import { SignedIn, SignedOut, useAuth, useUser } from '@clerk/clerk-expo';
+
+import { useAuth, useUser } from '@clerk/clerk-expo';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
-import { useQuery } from 'convex/react';
-import { Link } from 'expo-router';
+import { Authenticated, AuthLoading, Unauthenticated, useQuery } from 'convex/react';
+import { Link, Stack } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const profile = () => {
+
   const { signOut } = useAuth();
   const { user } = useUser();
   const convexUser = useQuery(api.users.getCurrent);
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <SignedIn>
+    <SafeAreaView className="flex-1 bg-slate-50">
+      <AuthLoading>
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color="#6366F1" />
+        </View>
+      </AuthLoading>
+      <Authenticated>
+        {/* This Stack.Screen is for the signed-in state, ensuring a consistent header */}
+        <Stack.Screen
+          options={{
+            headerTitle: 'Perfil',
+            headerLargeTitle: true,
+            headerShadowVisible: false,
+            headerStyle: { backgroundColor: '#f8fafc' },
+            headerTitleStyle: { fontFamily: 'Quicksand-Bold' },
+          }}
+        />
         {convexUser === undefined ? (
-          <View className="flex-1 justify-center items-center h-screen">
+          <View className="flex-1 justify-center items-center">
             <ActivityIndicator size="large" color="#6366F1" />
           </View>
         ) : (
@@ -40,7 +58,6 @@ const profile = () => {
                 </View>
               </View>
             )}
-
             <View className="bg-white rounded-xl p-4 shadow-sm">
               <Text className="text-lg font-quicksand-bold text-gray-700 mb-4">Cuenta</Text>
               <Link href={"./edit-profile"} asChild>
@@ -63,18 +80,30 @@ const profile = () => {
             </View>
           </View>
         )}
-      </SignedIn>
-      <SignedOut>
-        <View className="w-full items-center p-6 mt-20">
-          <Text className="text-2xl font-quicksand-bold mb-4 text-gray-800">¡Únete a la comunidad!</Text>
-          <Text className="text-lg text-center text-gray-600 mb-12">Inicia sesión para participar en sorteos, ver tus boletos y gestionar tu perfil.</Text>
+      </Authenticated>
+      <Unauthenticated>
+        <Stack.Screen
+          options={{
+            headerTitle: 'Perfil',
+            headerLargeTitle: true,
+            headerShadowVisible: false,
+            headerStyle: { backgroundColor: '#f8fafc' },
+            headerTitleStyle: { fontFamily: 'Quicksand-Bold' },
+          }}
+        />
+        <View className="flex-1 justify-center items-center px-8 -mt-10">
+          <Ionicons name="person-circle-outline" size={64} color="#cbd5e1" />
+          <Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">Tu perfil te espera</Text>
+          <Text className="text-sm font-quicksand-medium text-slate-400 text-center mt-1 mb-6">
+            Inicia sesión para editar tus datos, ver tus sorteos y más.
+          </Text>
           <Link href="/(auth)/sign-in" asChild>
-            <Pressable className="bg-primary p-4 rounded-lg w-full items-center active:opacity-80">
-              <Text className="text-white font-quicksand-bold text-base">Iniciar Sesión o Registrarse</Text>
+            <Pressable className="bg-primary px-8 py-3 rounded-lg active:opacity-80">
+              <Text className="text-white font-quicksand-bold text-base">Iniciar Sesión</Text>
             </Pressable>
           </Link>
         </View>
-      </SignedOut>
+      </Unauthenticated>
     </SafeAreaView>
   )
 }

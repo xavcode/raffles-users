@@ -1,12 +1,15 @@
 import { api } from '@/convex/_generated/api';
 import { Ionicons } from '@expo/vector-icons';
 import { usePaginatedQuery } from 'convex/react';
+import * as Notifications from 'expo-notifications';
 import { Tabs, useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AdminLayout() {
+  // 1. Todos los hooks se declaran al principio del componente.
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { results: purchases, status, loadMore
   } = usePaginatedQuery(
@@ -14,10 +17,27 @@ export default function AdminLayout() {
     {},
     {
       initialNumItems: 10
-
     });
   const pendingCount = purchases?.length;
-  const router = useRouter();
+
+  // 2. El listener (efecto secundario) se envuelve en un useEffect.
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log("DATOS DE LA NOTIFICACIÓN RECIBIDA:", JSON.stringify(response.notification.request.content.data, null, 2));
+      const purchaseId = response.notification.request.content.data.purchaseId as string | undefined;
+
+      // La lógica de navegación es la misma, ya que era correcta.
+      if (purchaseId) {
+        router.push(`/(admin)/purchases/${purchaseId}`);
+      }
+    });
+
+    // 3. Se devuelve una función de limpieza para eliminar el listener cuando
+    //    el componente se desmonte, evitando fugas de memoria.
+    return () => {
+      subscription.remove();
+    };
+  }, [router]); // Se añade `router` como dependencia del efecto.
 
   return (
     <Tabs

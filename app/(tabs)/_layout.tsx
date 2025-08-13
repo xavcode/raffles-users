@@ -1,5 +1,6 @@
-import { useAuth } from '@clerk/clerk-expo';
+// import { useAuth } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
+import { useConvexAuth } from 'convex/react';
 import * as Notifications from 'expo-notifications';
 import { Tabs, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
@@ -7,23 +8,10 @@ import { ActivityIndicator, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const TabsLayout = () => {
-  const { isLoaded } = useAuth();
+  // const { isLoaded } = useAuth();
+  const { isLoading, isAuthenticated } = useConvexAuth(); // Hook 1
   const insets = useSafeAreaInsets();
-
-  // Muestra un indicador de carga mientras Clerk verifica la sesión.
-  if (!isLoaded) {
-    return (
-      <View className="flex-1 items-center justify-center">
-        <ActivityIndicator size="large" color="#4f46e5" />
-      </View>
-    );
-  }
-
-
-
-
-  const router = useRouter();
-
+  const router = useRouter(); // Hook 2
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener(response => {
       const { actionIdentifier, notification } = response;
@@ -41,6 +29,16 @@ const TabsLayout = () => {
 
     return () => subscription.remove();
   }, [router]);
+
+  // Muestra un indicador de carga mientras Clerk verifica la sesión.
+  // Esta comprobación ahora se hace DESPUÉS de haber llamado a todos los Hooks.
+  if (isLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-slate-50">
+        <ActivityIndicator size="large" color="#4f46e5" />
+      </View>
+    );
+  }
 
   return (
     // El componente Tabs debe ser el principal. Cada pantalla gestionará su propio SafeAreaView y Header.

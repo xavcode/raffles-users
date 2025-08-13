@@ -24,7 +24,7 @@ const SocialButton = ({ strategy, icon, text }: SocialButtonProps) => {
                 // Si el flujo es exitoso, activa la sesión.
                 await setActive({ session: createdSessionId });
                 // Redirige al usuario a la página principal.
-                router.replace('/(tabs)/profile');
+                router.replace('/(tabs)');
             }
         } catch (err) {
             console.error("OAuth error", err);

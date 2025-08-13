@@ -17,7 +17,7 @@ type PurchaseWithDetails = Doc<'purchases'> & {
 const LOADING_FIRST_PAGE = 'LoadingFirstPage';
 
 const VerificationCard = ({ item }: { item: PurchaseWithDetails }) => {
-  const timeAgo = formatUtcToLocal(item._creationTime, "d 'de' MMMM, yyyy 'a las' h:mm a");
+  const timeAgo = formatUtcToLocal(item._creationTime, "d 'de' MMMM, yyyy ' - ' h:mm a");
 
   const formattedAmount = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(item.totalAmount);
 

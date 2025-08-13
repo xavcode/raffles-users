@@ -1,0 +1,24 @@
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (2714/2715)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow". 
+  console.warn (C:\Users\JAVIER\Desktop\proyectos\rifas-webapp\node_modules\@expo\cli\src\start\server\serverLogLikeMetro.ts:152:21)
+  warnOnce (C:\Users\JAVIER\Desktop\proyectos\rifas-webapp\node_modules\react-native-web\dist\modules\warnOnce\index.js:24:13)
+  preprocess (C:\Users\JAVIER\Desktop\proyectos\rifas-webapp\node_modules\react-native-web\dist\exports\StyleSheet\preprocess.js:136:13)
+  compileAndInsertAtomic (C:\Users\JAVIER\Desktop\proyectos\rifas-webapp\node_modules\react-native-web\dist\exports\StyleSheet\index.js:56:34)
+  forEach (C:\Users\JAVIER\Desktop\proyectos\rifas-webapp\node_modules\react-native-web\dist\exports\StyleSheet\index.js:99:26)        
+  Function.create (C:\Users\JAVIER\Desktop\proyectos\rifas-webapp\node_modules\react-native-web\dist\exports\StyleSheet\index.js:87:23)
+  factory (C:\Users\JAVIER\Desktop\proyectos\rifas-webapp\node_modules\expo-router\build\views\Sitemap.js:128:42)
+  loadModuleImplementation (C:\Users\JAVIER\Desktop\proyectos\rifas-webapp\node_modules\metro-runtime\src\polyfills\require.js:285:5)  
+
+Metro error: Cannot destructure property '__extends' of '_tslib.default' as it is undefined.                                           
+
+  TypeError: Cannot destructure property '__extends' of '_tslib.default' as it is undefined.
+    at factory (C:\Users\JAVIER\Desktop\proyectos\rifas-webapp\node_modules\tslib\modules\index.js:3:5)
+    at loadModuleImplementation (C:\Users\JAVIER\Desktop\proyectos\rifas-webapp\node_modules\metro-runtime\src\polyfills\require.js:285:5)
+    at guardedLoadModule (C:\Users\JAVIER\Desktop\proyectos\rifas-webapp\node_modules\metro-runtime\src\polyfills\require.js:190:12)   
+    at require (C:\Users\JAVIER\Desktop\proyectos\rifas-webapp\node_modules\metro-runtime\src\polyfills\require.js:98:7)
+    at factory (C:\Users\JAVIER\Desktop\proyectos\rifas-webapp\node_modules\framer-motion\dist\es\render\dom\motion.mjs:1:1)
+    at loadModuleImplementation (C:\Users\JAVIER\Desktop\proyectos\rifas-webapp\node_modules\metro-runtime\src\polyfills\require.js:285:5)
+    at guardedLoadModule (C:\Users\JAVIER\Desktop\proyectos\rifas-webapp\node_modules\metro-runtime\src\polyfills\require.js:190:12)   
+    at require (C:\Users\JAVIER\Desktop\proyectos\rifas-webapp\node_modules\metro-runtime\src\polyfills\require.js:98:7)
+    at factory (C:\Users\JAVIER\Desktop\proyectos\rifas-webapp\node_modules\framer-motion\dist\es\index.mjs:1:1)
+    at loadModuleImplementation (C:\Users\JAVIER\Desktop\proyectos\rifas-webapp\node_modules\metro-runtime\src\polyfills\require.js:285:5)

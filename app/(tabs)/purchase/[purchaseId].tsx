@@ -106,7 +106,7 @@ const PurchaseDetailsPage = () => {
   const statusStyle = PURCHASE_STATUS_STYLES[purchase.status as keyof typeof PURCHASE_STATUS_STYLES] || {
     label: 'Desconocido', bg: 'bg-slate-100', text: 'text-slate-700', icon: 'help-circle-outline' as const
   };
-  const purchaseDate = format(new Date(purchase._creationTime), "d 'de' MMMM, yyyy 'a las' h:mm a", { locale: es });
+  const purchaseDate = format(new Date(purchase._creationTime), "d 'de' MMMM, yyyy' -' h:mm a", { locale: es });
   const formattedAmount = formatCOP(purchase.totalAmount);
 
   return (

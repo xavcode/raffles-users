@@ -1,8 +1,8 @@
 import { api } from '@/convex/_generated/api';
 import { registerForPushNotificationsAsync } from "@/libs/notifications";
-import { SignedIn, SignedOut } from '@clerk/clerk-expo';
+// import { SignedIn, SignedOut } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
-import { useMutation, useQuery } from 'convex/react';
+import { Authenticated, Unauthenticated, useMutation, useQuery } from 'convex/react';
 import { Link } from 'expo-router';
 import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -27,7 +27,7 @@ const GlobalHeader = () => {
 
   return (
     <View className="flex-row justify-between items-center px-4 pt-2">
-      <SignedIn>
+      <Authenticated>
         <View>
           {convexUser &&
             <View>
@@ -44,8 +44,8 @@ const GlobalHeader = () => {
             </Pressable>
           </Link>
         )}
-      </SignedIn >
-      <SignedOut>
+      </Authenticated >
+      <Unauthenticated>
         <View className="flex-row items-center">
           <Link href="/(auth)/sign-in" asChild>
             <Pressable className="flex-row items-center bg-white p-3 rounded-full shadow-lg shadow-gray-300/50 active:bg-gray-100">
@@ -55,7 +55,7 @@ const GlobalHeader = () => {
           </Link>
           {/* <Text className="text-primary font-quicksand-bold ml-2">Inicia sesión</Text> */}
         </View>
-      </SignedOut>
+      </Unauthenticated>
     </View>
   );
 };

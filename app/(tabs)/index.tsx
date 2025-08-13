@@ -58,7 +58,7 @@ const RaffleCard = ({ item }: { item: Doc<'raffles'> }) => {
       {/* Imagen a la derecha */}
       <Image
         source={{ uri: item.imageUrl }}
-        className="w-36 bg-slate-200 rounded-2xl" // Ancho de imagen aumentado
+        className="w-36 bg-slate-200 rounded-2xl"
         resizeMode="cover"
       />
     </Pressable>

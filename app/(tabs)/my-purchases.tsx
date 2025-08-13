@@ -41,7 +41,7 @@ type PurchaseWithDetails = Doc<'purchases'> & { raffleTitle: string };
 
 const PurchaseListItem = ({ purchase }: { purchase: PurchaseWithDetails }) => {
   const statusStyle = PURCHASE_STATUS_STYLES[purchase.status as keyof typeof PURCHASE_STATUS_STYLES];
-  const purchaseDate = formatUtcToLocal(purchase._creationTime, "d 'de' MMMM, yyyy 'a las' h:mm a");
+  const purchaseDate = formatUtcToLocal(purchase._creationTime, "d 'de' MMMM, yyyy ' - ' h:mm a");
   const formattedAmount = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(purchase.totalAmount);
 
   return (

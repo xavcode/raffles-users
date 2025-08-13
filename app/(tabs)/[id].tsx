@@ -7,7 +7,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 // 1. Estilos mejorados para los boletos, con mejor contraste y legibilidad
@@ -84,7 +84,6 @@ export default function RaffleDetailsScreen() {
 
   // 1. Importamos useUser para saber si el usuario está logueado.
   const { isSignedIn } = useUser();
-  const insets = useSafeAreaInsets();
   const settings = useQuery(api.admin.getSettings);
 
   // Hooks de Convex
@@ -123,7 +122,7 @@ export default function RaffleDetailsScreen() {
     if (selectionUpdated) {
       setSelectedTickets(updatedSelectedTickets);
       Toast.show({
-        type: 'alert',
+        type: 'warning',
         text1: 'Algunos boletos ya no están disponibles',
         text2: 'Se han quitado de tu selección actual.',
         position: 'bottom',
