@@ -3,11 +3,11 @@ import { Doc } from '@/convex/_generated/dataModel';
 import { formatUtcToLocal } from '@/utils/date';
 import { Ionicons } from '@expo/vector-icons';
 import { usePaginatedQuery, useQuery } from 'convex/react';
-import { Link, router, Stack } from 'expo-router';
+import { Link, router } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import GlobalHeader from '../components/GlobalHeader';
+import GlobalHeader from '../../components/GlobalHeader';
 
 // Helper para el estado de la compra
 const PURCHASE_STATUS_STYLES = {
@@ -34,6 +34,12 @@ const PURCHASE_STATUS_STYLES = {
     bg: 'bg-red-100',
     text: 'text-red-700',
     icon: 'close-circle-outline' as const,
+  },
+  rejected: {
+    label: 'Expirado',
+    bg: 'bg-red-100',
+    text: 'text-red-700',
+    icon: 'close-circle-outline' as const,
   }
 };
 
@@ -43,9 +49,10 @@ const PurchaseListItem = ({ purchase }: { purchase: PurchaseWithDetails }) => {
   const statusStyle = PURCHASE_STATUS_STYLES[purchase.status as keyof typeof PURCHASE_STATUS_STYLES];
   const purchaseDate = formatUtcToLocal(purchase._creationTime, "d 'de' MMMM, yyyy ' - ' h:mm a");
   const formattedAmount = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(purchase.totalAmount);
+  // console.log(purchase._id)
 
   return (
-    <Link href={`/purchase/${purchase._id}`} asChild>
+    <Link href={`/${purchase._id}`} asChild>
       <TouchableOpacity activeOpacity={0.7}>
         <View className="bg-white mx-4 mb-4 p-4 rounded-2xl shadow-sm shadow-slate-300/50">
           <View className="flex-row justify-between items-start">
@@ -92,7 +99,6 @@ const MyPurchases = () => {
   if (convexUser === undefined || (convexUser && status === 'LoadingFirstPage')) {
     return (
       <SafeAreaView className="flex-1 bg-slate-50">
-        <Stack.Screen options={{ headerTitle: 'Mis Compras', headerLargeTitle: true, headerShadowVisible: false, headerStyle: { backgroundColor: '#f8fafc' }, headerTitleStyle: { fontFamily: 'Quicksand-Bold' } }} />
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#4f46e5" />
         </View>
@@ -104,7 +110,6 @@ const MyPurchases = () => {
   if (convexUser === null) {
     return (
       <SafeAreaView className="flex-1 bg-slate-50">
-        <Stack.Screen options={{ headerTitle: 'Mis Compras', headerLargeTitle: true, headerShadowVisible: false, headerStyle: { backgroundColor: '#f8fafc' }, headerTitleStyle: { fontFamily: 'Quicksand-Bold' } }} />
         <View className="flex-1 justify-center items-center px-8">
           <Ionicons name="lock-closed-outline" size={64} color="#cbd5e1" />
           <Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">Inicia sesión para ver tus compras</Text>
@@ -120,7 +125,6 @@ const MyPurchases = () => {
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
       <GlobalHeader />
-      <Stack.Screen options={{ headerTitle: 'Mis Compras', headerLargeTitle: true, headerShadowVisible: false, headerStyle: { backgroundColor: '#f8fafc' }, headerTitleStyle: { fontFamily: 'Quicksand-Bold' } }} />
       <FlatList
         data={userPurchases}
         keyExtractor={(item) => item._id.toString()}

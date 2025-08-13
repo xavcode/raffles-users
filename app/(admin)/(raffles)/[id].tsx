@@ -2,7 +2,7 @@ import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -150,7 +150,6 @@ const EditRafflePage = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
-      <Stack.Screen options={{ title: 'Editar Sorteo' }} />
       <KeyboardAwareScrollView contentContainerClassName="p-4 pb-8" extraScrollHeight={20} enableOnAndroid={true}>
         <View className="bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50">
           <Text className="text-lg font-quicksand-bold text-slate-800 mb-4">Información General</Text>

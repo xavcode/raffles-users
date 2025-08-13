@@ -23,7 +23,6 @@ export default function AdminLayout() {
   // 2. El listener (efecto secundario) se envuelve en un useEffect.
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log("DATOS DE LA NOTIFICACIÓN RECIBIDA:", JSON.stringify(response.notification.request.content.data, null, 2));
       const purchaseId = response.notification.request.content.data.purchaseId as string | undefined;
 
       // La lógica de navegación es la misma, ya que era correcta.
@@ -96,10 +95,13 @@ export default function AdminLayout() {
         }}
       />
       <Tabs.Screen
-        name="raffles"
+        // 1. Apuntamos al GRUPO de rutas, no a un archivo específico.
+        name="(raffles)"
         options={{
           title: 'Sorteos',
           tabBarIcon: ({ color, size }) => <Ionicons name="list-outline" color={color} size={size} />,
+          // 2. Ocultamos el header del Tab, porque el Stack de adentro ya tiene el suyo.
+          headerShown: false,
         }}
       />
       <Tabs.Screen
@@ -118,7 +120,6 @@ export default function AdminLayout() {
         }}
       />
       {/* Ocultamos las rutas que no son pestañas */}
-      <Tabs.Screen name="[id]" options={{ href: null }} />
       <Tabs.Screen name="purchases/[purchaseId]" options={{ href: null }} />
       <Tabs.Screen name='settings' options={{ href: null }} />
     </Tabs>

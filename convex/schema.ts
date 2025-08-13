@@ -31,6 +31,7 @@ export default defineSchema({
       v.literal("expired"),
       v.literal("reserved"),
       v.literal("sold")
+
     ),
 
     reservedUntil: v.optional(v.float64()), // Timestamp de cuando expira la reserva
@@ -40,7 +41,6 @@ export default defineSchema({
     .index("by_purchase", ["purchaseId"]) // Nuevo índice para buscar boletos por compra
     .index("by_raffle_status", ["raffleId", "status"])
     .index("by_raffle_and_ticket_number", ["raffleId", "ticketNumber"]),
-
 
   released_tickets: defineTable({
     purchaseId: v.id("purchases"),
@@ -65,7 +65,13 @@ export default defineSchema({
     raffleId: v.id("raffles"),
     ticketCount: v.float64(),
     totalAmount: v.float64(),
-    status: v.union(v.literal("pending_payment"), v.literal(`pending_confirmation`), v.literal("completed"), v.literal("expired")),
+    status: v.union(
+      v.literal("pending_payment"),
+      v.literal(`pending_confirmation`),
+      v.literal("completed"),
+      v.literal("expired"),
+      v.literal("rejected")),
+
     expiresAt: v.optional(v.float64()), // Timestamp de cuando expira la reserva
   })
     .index("by_user", ["userId"])

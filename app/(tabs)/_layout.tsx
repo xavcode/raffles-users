@@ -12,22 +12,33 @@ const TabsLayout = () => {
   const { isLoading, isAuthenticated } = useConvexAuth(); // Hook 1
   const insets = useSafeAreaInsets();
   const router = useRouter(); // Hook 2
+
+  // Este efecto secundario es para manejar las notificaciones PUSH.
+  // Es una funcionalidad NATIVA (iOS/Android) y no existe en la web.
+  // Lo envolvemos en una comprobación de plataforma para evitar el error en el navegador.
   useEffect(() => {
-    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
-      const { actionIdentifier, notification } = response;
-      const raffleId = notification.request.content.data.raffleId as string | undefined;
+    if (Platform.OS !== 'web') {
+      const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+        const data = response.notification.request.content.data;
 
-      // Si se presionó el botón "Ver Sorteo" y hay un raffleId
-      if (actionIdentifier === 'view_raffle' && raffleId) {
-        router.push(`/(tabs)/${raffleId}`);
-      }
-      // Si se presionó la notificación misma y hay un raffleId
-      else if (actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER && raffleId) {
-        router.push(`/(tabs)/${raffleId}`);
-      }
-    });
+        // Extraemos los posibles IDs del payload de la notificación
+        const purchaseId = data.purchaseId as string | undefined;
+        const raffleId = data.raffleId as string | undefined;
 
-    return () => subscription.remove();
+        // Lógica para notificaciones de PAGO POR VERIFICAR (para admins)
+        if (purchaseId) {
+          // Navegamos a la pantalla de detalle de la compra en el panel de admin
+          router.push(`/(admin)/purchases/${purchaseId}`);
+          return; // Salimos para no procesar otras lógicas
+        }
+
+        // Lógica existente para notificaciones de SORTEOS (para usuarios)
+        if (raffleId) {
+          router.push(`/(tabs)/${raffleId}`);
+        }
+      });
+      return () => subscription.remove();
+    }
   }, [router]);
 
   // Muestra un indicador de carga mientras Clerk verifica la sesión.
@@ -77,7 +88,7 @@ const TabsLayout = () => {
         }}
       >
         <Tabs.Screen
-          name="index"
+          name="(home)"
           options={{
             title: 'Sorteos',
             // 4. Usamos Ionicons para consistencia y un tamaño adecuado.
@@ -85,7 +96,7 @@ const TabsLayout = () => {
           }}
         />
         <Tabs.Screen
-          name="my-purchases"
+          name="(purchases)"
           options={{
             title: 'Mis Compras',
             tabBarIcon: ({ color }) => <Ionicons name="ticket-outline" color={color} size={26} />,
@@ -100,9 +111,7 @@ const TabsLayout = () => {
         />
 
         {/* Rutas que no son pestañas se ocultan con href: null */}
-        <Tabs.Screen name="[id]" options={{ href: null }} />
         <Tabs.Screen name="edit-profile" options={{ href: null }} />
-        <Tabs.Screen name="purchase/[purchaseId]" options={{ href: null }} />
         <Tabs.Screen name="oauth-native-callback" options={{ href: null }} />
       </Tabs>
     </>

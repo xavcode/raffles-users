@@ -5,8 +5,8 @@ import { formatCOP } from '@/utils/format';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { es } from 'date-fns/locale'; // Asegúrate de que este import sea correcto
+import { useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,7 +17,8 @@ const PURCHASE_STATUS_STYLES = {
   pending_payment: { label: 'Pendiente', bg: 'bg-amber-100', text: 'text-amber-700', icon: 'time-outline' as const },
   pending_confirmation: { label: 'Verificando', bg: 'bg-blue-100', text: 'text-blue-700', icon: 'hourglass-outline' as const },
   completed: { label: 'Pagado', bg: 'bg-green-100', text: 'text-green-700', icon: 'checkmark-circle-outline' as const },
-  expired: { label: 'Expirado', bg: 'bg-red-100', text: 'text-red-700', icon: 'close-circle-outline' as const }
+  expired: { label: 'Expirado', bg: 'bg-slate-100', text: 'text-slate-600', icon: 'close-circle-outline' as const },
+  rejected: { label: 'Rechazado', bg: 'bg-red-100', text: 'text-red-700', icon: 'alert-circle-outline' as const }
 };
 
 const PENDING_PAYMENT = PURCHASE_STATUS.PENDING_PAYMENT;
@@ -29,15 +30,23 @@ const PurchaseDetailsPage = () => {
   const [isConfirming, setIsConfirming] = React.useState(false);
   const [isApproving, setIsApproving] = React.useState(false);
 
+  // --- QUERIES DE DATOS ---
   const purchaseDetails = useQuery(
     api.tickets.getPurchaseDetails,
     purchaseId ? { purchaseId: purchaseId as Id<'purchases'> } : 'skip'
   );
-  const notifyPaymentMutation = useMutation(api.tickets.adminNotifyPayment);
-
-  // Obtenemos el usuario actual para saber si es admin o el dueño
   const convexUser = useQuery(api.users.getCurrent);
-  const confirmPurchaseMutation = useMutation(api.tickets.confirmPurchase);
+  const settings = useQuery(api.admin.getSettings);
+
+  // --- MUTATIONS ---
+  const notifyPaymentMutation = useMutation(api.tickets.adminNotifyPayment);
+  const aprovalPurchaseMutation = useMutation(api.tickets.aprovalPurchase);
+
+  // --- ESTADO DE CARGA UNIFICADO ---
+  // La pantalla está cargando si CUALQUIERA de los datos esenciales aún no ha llegado.
+  const isLoading = purchaseDetails === undefined || convexUser === undefined || settings === undefined;
+
+  // --- MANEJADORES DE EVENTOS ---
   const handleConfirmPayment = async () => {
     if (!purchaseId) return;
     setIsConfirming(true);
@@ -60,7 +69,7 @@ const PurchaseDetailsPage = () => {
     if (!purchaseId) return;
     setIsApproving(true);
     try {
-      await confirmPurchaseMutation({ purchaseId: purchaseId as Id<'purchases'> });
+      await aprovalPurchaseMutation({ purchaseId: purchaseId as Id<'purchases'> });
     } catch (error) {
       alert('Hubo un error al aprobar el pago. Por favor, inténtalo de nuevo.');
       console.error("Error approving payment:", error);
@@ -69,8 +78,9 @@ const PurchaseDetailsPage = () => {
     }
   };
 
-  if (purchaseDetails === undefined) {
-    return (
+  // --- RENDERIZADO CONDICIONAL ---
+  if (isLoading) {
+    return ( // Mostramos un solo indicador de carga mientras esperamos todos los datos.
       <View className="flex-1 bg-slate-50 justify-center items-center">
         <ActivityIndicator size="large" color="#4f46e5" />
       </View>
@@ -80,7 +90,6 @@ const PurchaseDetailsPage = () => {
   if (purchaseDetails === null) {
     return (
       <SafeAreaView className="flex-1 bg-slate-50">
-        <Stack.Screen options={{ headerTitle: 'Error' }} />
         <View className="flex-1 justify-center items-center p-8">
           <Ionicons name="alert-circle-outline" size={64} color="#f87171" />
           <Text className="text-lg font-quicksand-bold text-slate-700 mt-4">Compra no encontrada</Text>
@@ -90,10 +99,6 @@ const PurchaseDetailsPage = () => {
     );
   }
 
-  // --- INICIO DE LA VALIDACIÓN DE SEGURIDAD ---
-  if (convexUser === undefined) {
-    return <View className="flex-1 bg-slate-50 justify-center items-center"><ActivityIndicator size="large" color="#4f46e5" /></View>;
-  }
 
   const { purchase, raffle, tickets } = purchaseDetails;
 
@@ -101,7 +106,6 @@ const PurchaseDetailsPage = () => {
   if (convexUser?._id !== purchase.userId && convexUser?.userType !== 'admin') {
     return <SafeAreaView className="flex-1 bg-slate-50 justify-center items-center p-4"><Text className="text-center font-quicksand-medium text-slate-600">No tienes permiso para ver los detalles de esta compra.</Text></SafeAreaView>;
   }
-  // --- FIN DE LA VALIDACIÓN DE SEGURIDAD ---
 
   const statusStyle = PURCHASE_STATUS_STYLES[purchase.status as keyof typeof PURCHASE_STATUS_STYLES] || {
     label: 'Desconocido', bg: 'bg-slate-100', text: 'text-slate-700', icon: 'help-circle-outline' as const
@@ -111,7 +115,6 @@ const PurchaseDetailsPage = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
-      <Stack.Screen options={{ headerTitle: 'Detalle de Compra', headerBackTitle: 'Atrás', headerStyle: { backgroundColor: '#f8fafc' }, headerTitleStyle: { fontFamily: 'Quicksand-Bold' } }} />
       <ScrollView contentContainerClassName="p-4">
         <View className="bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50">
           <View className="flex-row justify-between items-center">
@@ -138,8 +141,9 @@ const PurchaseDetailsPage = () => {
           <View className="mt-8 items-center">
             <TouchableOpacity
               onPress={handleConfirmPayment}
-              disabled={isConfirming}
-              className="bg-green-500 flex-row items-center justify-center p-4 rounded-xl shadow-lg shadow-green-500/30 w-full"
+              disabled={isConfirming || settings?.purchasesEnabled === false}
+              className={`bg-green-500 flex-row items-center justify-center p-4 rounded-xl  w-full shadow-lg ${settings?.purchasesEnabled === false ? 'bg-slate-300' : 'shadow-green-500/30'}`}
+
               activeOpacity={0.8}
             >
               {isConfirming ? (
@@ -147,7 +151,7 @@ const PurchaseDetailsPage = () => {
               ) : (
                 <>
                   <Ionicons name="checkmark-done-circle-outline" size={22} color="white" />
-                  <Text className="text-white font-quicksand-bold text-base ml-2">Ya realicé el pago</Text>
+                  <Text className="text-white font-quicksand-bold text-base ml-2"> {settings?.purchasesEnabled === false ? 'Compras deshabilitadas' : 'Ya realicé el pago'}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -164,7 +168,7 @@ const PurchaseDetailsPage = () => {
             </View>
 
             {/* Botón para el ADMIN: Solo si es admin y la compra está pendiente de confirmación */}
-            {convexUser?.userType === IS_ADMIN && (
+            {/* {convexUser?.userType === IS_ADMIN && (
               <TouchableOpacity
                 onPress={handleApprovePayment}
                 disabled={isApproving}
@@ -180,7 +184,7 @@ const PurchaseDetailsPage = () => {
                   </>
                 )}
               </TouchableOpacity>
-            )}
+            )} */}
           </View>
         )}
 

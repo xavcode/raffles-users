@@ -3,6 +3,7 @@ export const PURCHASE_STATUS = {
     PENDING_CONFIRMATION: 'pending_confirmation',
     COMPLETED: 'completed',
     EXPIRED: 'expired',
+    REJECTED: 'rejected'
 } as const;
 
 export type PurchaseStatus = typeof PURCHASE_STATUS[keyof typeof PURCHASE_STATUS];

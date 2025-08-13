@@ -7,8 +7,8 @@ import { Link, Stack } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import GlobalHeader from '../components/GlobalHeader';
-import TabSelectorRaffleStatus from '../components/TabSelectorRaffleStatus';
+import GlobalHeader from '../../components/GlobalHeader';
+import TabSelectorRaffleStatus from '../../components/TabSelectorRaffleStatus';
 
 const RaffleCard = ({ item }: { item: Doc<'raffles'> }) => {
   const formattedPrice = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(item.ticketPrice);

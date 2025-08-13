@@ -3,7 +3,7 @@ import { Doc, Id } from '@/convex/_generated/dataModel';
 import { formatCOP } from '@/utils/format';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, usePaginatedQuery, useQuery } from 'convex/react';
-import { Link, Redirect, Stack } from 'expo-router';
+import { Link, Redirect } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, SectionList, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -93,7 +93,8 @@ const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
         )}
       </View>
       <View className="bg-slate-50/70 px-4 py-3 flex-row justify-end">
-        <Link href={`/(admin)/${String(raffle._id)}`} asChild>
+        {/* La ruta debe ser relativa para que se apile sobre la pantalla actual */}
+        <Link href={`./${String(raffle._id)}`} asChild>
           <Pressable className="flex-row items-center bg-indigo-100 px-3 py-1.5 rounded-lg active:opacity-70">
             <Ionicons name="create-outline" size={16} color="#4338ca" />
             <Text className="text-sm font-quicksand-bold text-indigo-800 ml-1.5">Editar</Text>
@@ -145,7 +146,6 @@ const RafflesPage = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
-      <Stack.Screen options={{ title: 'Sorteos' }} />
       <SectionList
         sections={sections}
         keyExtractor={(item) => item._id}

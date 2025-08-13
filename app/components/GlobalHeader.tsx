@@ -26,13 +26,13 @@ const GlobalHeader = () => {
   }, [convexUser]);
 
   return (
-    <View className="flex-row justify-between items-center px-4 pt-2">
+    <View className="flex-row justify-between items-center px-4 p-2">
       <Authenticated>
         <View>
           {convexUser &&
-            <View>
-              <Text className="text-lg font-quicksand-medium text-gray-500">Bienvenido,</Text>
-              <Text className="text-2xl font-quicksand-bold text-gray-800">{convexUser?.firstName} {convexUser?.lastName}</Text>
+            <View >
+              {/* <Text className="text-lg font-quicksand-medium text-gray-500">Bienvenido,</Text> */}
+              <Text className="text-2xl font-quicksand-bold text-center  text-gray-800">{convexUser?.firstName} {convexUser?.lastName}</Text>
             </View>
           }
         </View>

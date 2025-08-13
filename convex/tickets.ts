@@ -178,7 +178,7 @@ export const adminNotifyPayment = mutation({
     await ctx.scheduler.runAfter(0, internal.notifications.sendPaymentConfirmationToAdmins, {
       purchaseId: args.purchaseId,
       title: "💰 Pago por Verificar",
-      message: `El usuario ${user.firstName ?? 'N/A'} ha reportado un pago para el sorteo "${raffle?.title ?? 'N/A'}".`,
+      message: `El usuario ${user.firstName ?? 'N/A'} ${user.lastName ?? 'N/A'} ha reportado un pago para el sorteo "${raffle?.title ?? 'N/A'}".`,
     });
 
     return { success: true }; // Mantenemos la respuesta al cliente
@@ -186,7 +186,7 @@ export const adminNotifyPayment = mutation({
 });
 
 //notificacion de admin a usuario que la compra fue verificada y aprobada
-export const confirmPurchase = mutation({
+export const aprovalPurchase = mutation({
   args: { purchaseId: v.id("purchases") },
   handler: async (ctx, args) => {
     // Validación: solo un admin puede confirmar pagos
@@ -236,7 +236,7 @@ export const confirmPurchase = mutation({
       if (user && user.pushToken) {
         await ctx.scheduler.runAfter(0, internal.notifications.sendPushNotification, {
           pushToken: user.pushToken,
-          title: "✅ ¡Compra Aprobada!",
+          title: "✅ Pago Aprobado!",
           message: `Tus ${ticketsToUpdate.length} boletos para "${raffle?.title}" han sido asignados. ¡Mucha suerte!`,
         });
       }
@@ -272,15 +272,15 @@ export const rejectPurchase = mutation({
     }
 
     // 1. Marcar la compra como expirada
-    await ctx.db.patch(args.purchaseId, { status: "expired" });
+    await ctx.db.patch(args.purchaseId, { status: "rejected" });
 
     // 2. Buscar y liberar los boletos asociados
-    const tickets = await ctx.db
+    const ticketsToUpdate = await ctx.db
       .query("tickets")
       .withIndex("by_purchase", (q) => q.eq("purchaseId", args.purchaseId))
       .collect();
 
-    for (const ticket of tickets) {
+    for (const ticket of ticketsToUpdate) {
       await ctx.db.patch(ticket._id, {
         status: "available",
         userId: undefined,
@@ -288,7 +288,19 @@ export const rejectPurchase = mutation({
         purchaseId: undefined,
       });
     }
+    if (purchase.userId) {
+      const user = await ctx.db.get(purchase.userId);
+      const raffle = await ctx.db.get(purchase.raffleId);
 
+      // Si el usuario tiene un pushToken, le enviamos la notificación
+      if (user && user.pushToken) {
+        await ctx.scheduler.runAfter(0, internal.notifications.sendPushNotification, {
+          pushToken: user.pushToken,
+          title: "❌ ¡Pago Rechazado!",
+          message: `Tu pago de ${ticketsToUpdate.length} boletos para "${raffle?.title}" ha sido rechazado`,
+        });
+      }
+    }
     return { success: true };
   },
 });

@@ -31,13 +31,13 @@ const AdminPurchaseDetailsPage = () => {
     purchaseId ? { purchaseId: purchaseId as Id<'purchases'> } : 'skip'
   );
 
-  const confirmPurchase = useMutation(api.tickets.confirmPurchase);
+  const aprovalPurchase = useMutation(api.tickets.aprovalPurchase);
   const rejectPurchase = useMutation(api.tickets.rejectPurchase);
 
   const handleApproval = async () => {
     setIsProcessing(true);
     try {
-      await confirmPurchase({ purchaseId: purchaseId as Id<'purchases'> });
+      await aprovalPurchase({ purchaseId: purchaseId as Id<'purchases'> });
       Toast.show({
         type: 'success',
         text1: 'Éxito',

@@ -4,9 +4,8 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { useMutation } from 'convex/react';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { ActivityIndicator, Image, Platform, Pressable, Text, TextInput, View } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import React, { useRef, useState } from 'react';
+import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
@@ -14,6 +13,7 @@ const CreateRaffle = () => {
   const createRaffle = useMutation(api.raffles.createRaffle);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -26,7 +26,6 @@ const CreateRaffle = () => {
   const [endTime, setEndTime] = useState(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)); // Por defecto, 7 días
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [datePickerTarget, setDatePickerTarget] = useState<'start' | 'end'>('start');
-
 
   const [imageAsset, setImageAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const resetStates = () => {
@@ -70,6 +69,15 @@ const CreateRaffle = () => {
   const showDatepickerFor = (target: 'start' | 'end') => {
     setDatePickerTarget(target);
     setShowDatePicker(true);
+  };
+
+  /**
+   * Cuando un input inferior recibe el foco, nos aseguramos de que el ScrollView
+   * se desplace hasta el final para que el botón de "Crear Sorteo" sea visible.
+   */
+  const handleFocusLastInputs = () => {
+    // Usamos un pequeño delay para dar tiempo a que el teclado se anime completamente.
+    setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 200);
   };
 
   const handleCreateRaffle = async () => {
@@ -159,95 +167,106 @@ const CreateRaffle = () => {
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
       <Stack.Screen options={{ title: 'Crear Nuevo Sorteo' }} />
-      {/* Reemplazamos KeyboardAvoidingView y ScrollView por este componente inteligente */}
-      <KeyboardAwareScrollView contentContainerClassName="p-4" extraScrollHeight={20} enableOnAndroid={true}>
-        <View className="bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50">
-          <View className="mb-5">
-            <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Título del Sorteo</Text>
-            <TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: Rifa Pro-fondos" value={title} onChangeText={setTitle} />
-          </View>
+      {/* 
+        SOLUCIÓN: Usamos el `KeyboardAvoidingView` nativo de React Native.
+        - `behavior`: 'padding' para iOS (añade padding en la parte inferior), 'height' para Android (recalcula la altura).
+        - `keyboardVerticalOffset`: Un espacio extra para compensar la altura del header de la pantalla.
+      */}
+      <KeyboardAvoidingView
+        behavior="position"
+        className="flex-1"
+        keyboardVerticalOffset={80}
+      >
+        <ScrollView
+          ref={scrollViewRef}
+          contentContainerClassName="p-4"
+          keyboardShouldPersistTaps="always" // Evita que el teclado se cierre al tocar fuera de un input
+        >
+          <View className="bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50">
+            <View className="mb-5">
+              <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Título del Sorteo</Text>
+              <TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: Rifa Pro-fondos" value={title} onChangeText={setTitle} />
+            </View>
 
-          <View className="mb-5">
-            <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Descripción</Text>
-            <TextInput className="bg-slate-100 border border-slate-200 h-28 rounded-lg px-4 text-base font-quicksand-medium align-top pt-3" placeholder="Describe los detalles del sorteo..." value={description} onChangeText={setDescription} multiline />
-          </View>
+            <View className="mb-5">
+              <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Descripción</Text>
+              <TextInput className="bg-slate-100 border border-slate-200 h-28 rounded-lg px-4 text-base font-quicksand-medium align-top pt-3" placeholder="Describe los detalles del sorteo..." value={description} onChangeText={setDescription} multiline />
+            </View>
 
-          <View className="mb-5">
-            <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Condición del Sorteo</Text>
-            <TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: Lotería de Nariño, últimos 2 dígitos" value={winCondition} onChangeText={setWinCondition} />
-          </View>
+            <View className="mb-5">
+              <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Condición del Sorteo</Text>
+              <TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: Lotería de Nariño, últimos 2 dígitos" value={winCondition} onChangeText={setWinCondition} />
+            </View>
 
-          <View className="mb-5">
-            <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Premio (en COP)</Text>
-            <TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: 1000000" value={prize} onChangeText={setPrize} keyboardType="numeric" />
-          </View>
+            <View className="mb-5">
+              <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Premio (en COP)</Text>
+              <TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: 1000000" value={prize} onChangeText={setPrize} keyboardType="numeric" />
+            </View>
 
-          <View className="mb-5">
-            <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Imagen del Premio</Text>
-            {/* 6. Reemplazamos el TextInput por un área presionable para subir la imagen */}
-            <Pressable onPress={pickImage} className="bg-slate-100 border-2 border-dashed border-slate-300 h-48 rounded-lg justify-center items-center overflow-hidden">
-              {imageAsset ? (
-                // Si hay una imagen seleccionada, la mostramos como vista previa
-                <Image source={{ uri: imageAsset.uri }} className="w-full h-full" resizeMode="cover" />
+            <View className="mb-5">
+              <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Imagen del Premio</Text>
+              <Pressable onPress={pickImage} className="bg-slate-100 border-2 border-dashed border-slate-300 h-48 rounded-lg justify-center items-center overflow-hidden">
+                {imageAsset ? (
+                  <Image source={{ uri: imageAsset.uri }} className="w-full h-full" resizeMode="cover" />
+                ) : (
+                  <View className="items-center">
+                    <Ionicons name="cloud-upload-outline" size={40} color="#94a3b8" />
+                    <Text className="text-slate-500 font-quicksand-medium mt-2">Seleccionar una imagen</Text>
+                  </View>
+                )}
+              </Pressable>
+            </View>
+
+            <View className="flex-row gap-x-4 mb-5">
+              <View className="flex-1">
+                <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Fecha de Inicio</Text>
+                <Pressable onPress={() => showDatepickerFor('start')} className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 justify-center">
+                  <Text className="text-base font-quicksand-medium">{startTime.toLocaleDateString('es-CO')}</Text>
+                </Pressable>
+              </View>
+              <View className="flex-1">
+                <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Fecha del Sorteo</Text>
+                <Pressable onPress={() => showDatepickerFor('end')} className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 justify-center">
+                  <Text className="text-base font-quicksand-medium">{endTime.toLocaleDateString('es-CO')}</Text>
+                </Pressable>
+              </View>
+            </View>
+
+
+            <View className="flex-row gap-x-4 mb-5">
+              <View className="flex-1">
+                <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Total Boletos</Text>
+                <TextInput onFocus={handleFocusLastInputs} className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: 100" value={totalTickets} onChangeText={setTotalTickets} keyboardType="numeric" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Precio Boleto</Text>
+                <TextInput onFocus={handleFocusLastInputs} className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: 5000" value={ticketPrice} onChangeText={setTicketPrice} keyboardType="decimal-pad" />
+              </View>
+            </View>
+
+            <Pressable
+              className="bg-primary h-12 rounded-lg justify-center items-center active:opacity-80 disabled:bg-primary/60"
+              onPress={handleCreateRaffle}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="white" />
               ) : (
-                // Si no, mostramos un ícono y texto para incitar a la acción
-                <View className="items-center">
-                  <Ionicons name="cloud-upload-outline" size={40} color="#94a3b8" />
-                  <Text className="text-slate-500 font-quicksand-medium mt-2">Seleccionar una imagen</Text>
-                </View>
+                <Text className="text-white font-quicksand-bold text-base">Crear Sorteo</Text>
               )}
             </Pressable>
           </View>
-
-          <View className="flex-row gap-x-4 mb-5">
-            <View className="flex-1">
-              <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Fecha de Inicio</Text>
-              <Pressable onPress={() => showDatepickerFor('start')} className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 justify-center">
-                <Text className="text-base font-quicksand-medium">{startTime.toLocaleDateString('es-CO')}</Text>
-              </Pressable>
-            </View>
-            <View className="flex-1">
-              <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Fecha del Sorteo</Text>
-              <Pressable onPress={() => showDatepickerFor('end')} className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 justify-center">
-                <Text className="text-base font-quicksand-medium">{endTime.toLocaleDateString('es-CO')}</Text>
-              </Pressable>
-            </View>
-          </View>
-
-
-          <View className="flex-row gap-x-4 mb-5">
-            <View className="flex-1">
-              <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Total Boletos</Text>
-              <TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: 100" value={totalTickets} onChangeText={setTotalTickets} keyboardType="numeric" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Precio Boleto</Text>
-              <TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: 5000" value={ticketPrice} onChangeText={setTicketPrice} keyboardType="decimal-pad" />
-            </View>
-          </View>
-
-          <Pressable
-            className="bg-primary h-12 rounded-lg justify-center items-center active:opacity-80 disabled:bg-primary/60"
-            onPress={handleCreateRaffle}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text className="text-white font-quicksand-bold text-base">Crear Sorteo</Text>
-            )}
-          </Pressable>
-        </View>
-        {showDatePicker && (
-          <DateTimePicker
-            value={datePickerTarget === 'start' ? startTime : endTime}
-            mode="date"
-            display="default"
-            onChange={handleDateChange}
-            minimumDate={new Date()} // No se pueden seleccionar fechas pasadas
-          />
-        )}
-      </KeyboardAwareScrollView>
+          {showDatePicker && (
+            <DateTimePicker
+              value={datePickerTarget === 'start' ? startTime : endTime}
+              mode="date"
+              display="default"
+              onChange={handleDateChange}
+              minimumDate={new Date()} // No se pueden seleccionar fechas pasadas
+            />
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

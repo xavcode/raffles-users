@@ -2,8 +2,8 @@ import { api } from '@/convex/_generated/api'
 import { Ionicons } from '@expo/vector-icons'
 import { useMutation, useQuery } from 'convex/react'
 import { Stack } from 'expo-router'
-import React, { useMemo, useState } from 'react'
-import { Pressable, Switch, Text, TextInput, View } from 'react-native'
+import React, { useEffect, useMemo, useState } from 'react'
+import { KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
 
@@ -28,7 +28,7 @@ const Settings = () => {
 
   const isReservationDirty = useMemo(() => reservationMinutes !== savedReservationMinutes, [reservationMinutes, savedReservationMinutes])
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (settings) {
       setReservationMinutes(String(settings.releaseTime ?? 30))
       setSavedReservationMinutes(String(settings.releaseTime ?? 30))
@@ -105,129 +105,137 @@ const Settings = () => {
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
       <Stack.Screen options={{ title: 'Configuración', headerLargeTitle: true }} />
-
-      <View className="p-4 pb-10">
-        {/* Sección: Habilitar/Deshabilitar compras (Switch) */}
-        <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mb-5">
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center">
-              <Ionicons name="cart-outline" size={18} color="#64748b" />
-              <Text className="ml-2 text-base font-quicksand-bold text-slate-800">Habilitar compras</Text>
+      <KeyboardAvoidingView
+        behavior='padding'
+        className='flex-1'
+        keyboardVerticalOffset={80}
+      >
+        <ScrollView
+          className="p-4 pb-10"
+          keyboardShouldPersistTaps="always"
+        >
+          {/* Sección: Habilitar/Deshabilitar compras (Switch) */}
+          <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mb-5">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center">
+                <Ionicons name="cart-outline" size={18} color="#64748b" />
+                <Text className="ml-2 text-base font-quicksand-bold text-slate-800">Habilitar compras</Text>
+              </View>
+              <Switch
+                value={purchasesEnabledLocal}
+                onValueChange={async (next) => {
+                  setPurchasesEnabledLocal(next)
+                  try {
+                    await setPurchasesEnabled({ enabled: next })
+                    Toast.show({ type: 'success', text1: 'Actualizado', text2: next ? 'Compras habilitadas' : 'Compras deshabilitadas' })
+                  } catch (e) {
+                    setPurchasesEnabledLocal(!next)
+                    Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo actualizar el estado de compras.' })
+                  }
+                }}
+                thumbColor={purchasesEnabledLocal ? '#4f46e5' : undefined}
+              />
             </View>
-            <Switch
-              value={purchasesEnabledLocal}
-              onValueChange={async (next) => {
-                setPurchasesEnabledLocal(next)
-                try {
-                  await setPurchasesEnabled({ enabled: next })
-                  Toast.show({ type: 'success', text1: 'Actualizado', text2: next ? 'Compras habilitadas' : 'Compras deshabilitadas' })
-                } catch (e) {
-                  setPurchasesEnabledLocal(!next)
-                  Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo actualizar el estado de compras.' })
-                }
-              }}
-              thumbColor={purchasesEnabledLocal ? '#4f46e5' : undefined}
-            />
-          </View>
-          <Text className="text-xs text-slate-500 mt-2">Si las deshabilitas, los usuarios no podrán reservar/comprar boletos temporalmente.</Text>
-        </View>
-
-        {/* Sección: Reservas */}
-        <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mb-5">
-          <View className="flex-row items-center mb-3">
-            <Ionicons name="time-outline" size={18} color="#64748b" />
-            <Text className="ml-2 text-base font-quicksand-bold text-slate-800">Tiempo de reserva</Text>
-          </View>
-          <Text className="text-sm text-slate-600 mb-3">Define por cuántos minutos se reservarán los boletos antes de liberarse automáticamente.</Text>
-          <View className="flex-row items-center gap-x-3">
-            <TextInput
-              className="flex-1 bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium"
-              placeholder="Ej: 30"
-              keyboardType="number-pad"
-              value={reservationMinutes}
-              onChangeText={setReservationMinutes}
-              maxLength={3}
-            />
-            <Pressable
-              onPress={handleSaveReservation}
-              disabled={!isReservationDirty || isSavingReservation}
-              className={`h-12 px-4 rounded-lg items-center justify-center ${isReservationDirty ? 'bg-primary' : 'bg-primary/50'}`}
-            >
-              <Text className="text-white font-quicksand-bold">Guardar</Text>
-            </Pressable>
-          </View>
-          <Text className="text-xs text-slate-500 mt-2">Actual: {savedReservationMinutes} min</Text>
-        </View>
-
-        {/* Sección: Permisos de usuario */}
-        <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mb-5">
-          <View className="flex-row items-center mb-3">
-            <Ionicons name="shield-checkmark-outline" size={18} color="#64748b" />
-            <Text className="ml-2 text-base font-quicksand-bold text-slate-800">Permisos de usuario</Text>
-          </View>
-          <Text className="text-sm text-slate-600 mb-3">Busca un usuario por correo y cambia entre rol de Miembro o Admin.</Text>
-          <View className="flex-row gap-x-3 mb-3">
-            <TextInput
-              className="flex-1 bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium"
-              placeholder="correo@ejemplo.com"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              value={searchEmail}
-              onChangeText={setSearchEmail}
-            />
-            <Pressable onPress={handleSearchUser} className="h-12 px-4 rounded-lg items-center justify-center bg-indigo-600 active:bg-indigo-700">
-              <Text className="text-white font-quicksand-bold">Buscar</Text>
-            </Pressable>
+            <Text className="text-xs text-slate-500 mt-2">Si las deshabilitas, los usuarios no podrán reservar/comprar boletos temporalmente.</Text>
           </View>
 
-          {isSearching && (
-            <View className="mt-2"><Text className="text-slate-500 text-sm">Buscando...</Text></View>
-          )}
+          {/* Sección: Reservas */}
+          <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mb-5">
+            <View className="flex-row items-center mb-3">
+              <Ionicons name="time-outline" size={18} color="#64748b" />
+              <Text className="ml-2 text-base font-quicksand-bold text-slate-800">Tiempo de reserva</Text>
+            </View>
+            <Text className="text-sm text-slate-600 mb-3">Define por cuántos minutos se reservarán los boletos antes de liberarse automáticamente.</Text>
+            <View className="flex-row items-center gap-x-3">
+              <TextInput
+                className="flex-1 bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium"
+                placeholder="Ej: 30"
+                keyboardType="number-pad"
+                value={reservationMinutes}
+                onChangeText={setReservationMinutes}
+                maxLength={3}
+              />
+              <Pressable
+                onPress={handleSaveReservation}
+                disabled={!isReservationDirty || isSavingReservation}
+                className={`h-12 px-4 rounded-lg items-center justify-center ${isReservationDirty ? 'bg-primary' : 'bg-primary/50'}`}
+              >
+                <Text className="text-white font-quicksand-bold">Guardar</Text>
+              </Pressable>
+            </View>
+            <Text className="text-xs text-slate-500 mt-2">Actual: {savedReservationMinutes} min</Text>
+          </View>
 
-          {userResult && !isSearching && (
-            <View className="mt-2 border border-slate-200 rounded-xl p-3 bg-slate-50">
-              <View className="flex-row items-center justify-between mb-2">
-                <View className="flex-1 pr-2">
-                  <Text className="text-base font-quicksand-bold text-slate-800" numberOfLines={1}>{userResult.firstName} {userResult.lastName}</Text>
-                  <Text className="text-xs text-slate-500" numberOfLines={1}>{userResult.email}</Text>
+          {/* Sección: Permisos de usuario */}
+          <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mb-5">
+            <View className="flex-row items-center mb-3">
+              <Ionicons name="shield-checkmark-outline" size={18} color="#64748b" />
+              <Text className="ml-2 text-base font-quicksand-bold text-slate-800">Permisos de usuario</Text>
+            </View>
+            <Text className="text-sm text-slate-600 mb-3">Busca un usuario por correo y cambia entre rol de Miembro o Admin.</Text>
+            <View className="flex-row gap-x-3 mb-3">
+              <TextInput
+                className="flex-1 bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium"
+                placeholder="correo@ejemplo.com"
+                autoCapitalize="none"
+                keyboardType="email-address"
+                value={searchEmail}
+                onChangeText={setSearchEmail}
+              />
+              <Pressable onPress={handleSearchUser} className="h-12 px-4 rounded-lg items-center justify-center bg-indigo-600 active:bg-indigo-700">
+                <Text className="text-white font-quicksand-bold">Buscar</Text>
+              </Pressable>
+            </View>
+
+            {isSearching && (
+              <View className="mt-2"><Text className="text-slate-500 text-sm">Buscando...</Text></View>
+            )}
+
+            {userResult && !isSearching && (
+              <View className="mt-2 border border-slate-200 rounded-xl p-3 bg-slate-50">
+                <View className="flex-row items-center justify-between mb-2">
+                  <View className="flex-1 pr-2">
+                    <Text className="text-base font-quicksand-bold text-slate-800" numberOfLines={1}>{userResult.firstName} {userResult.lastName}</Text>
+                    <Text className="text-xs text-slate-500" numberOfLines={1}>{userResult.email}</Text>
+                  </View>
+                  <View className="px-2.5 py-1 rounded-full bg-slate-200">
+                    <Text className="text-xs font-quicksand-bold text-slate-700 uppercase">{userResult.role === 'member' ? 'Usuario' : 'Admin'}</Text>
+                  </View>
                 </View>
-                <View className="px-2.5 py-1 rounded-full bg-slate-200">
-                  <Text className="text-xs font-quicksand-bold text-slate-700 uppercase">{userResult.role}</Text>
+
+                <View className="flex-row gap-x-3 mt-1">
+                  <Pressable
+                    onPress={() => handleChangeRole('member')}
+                    disabled={isSavingRole || userResult.role === 'member'}
+                    className={`flex-1 h-11 rounded-lg items-center justify-center ${userResult.role === 'member' ? 'bg-slate-300' : 'bg-slate-200 active:bg-slate-300'}`}
+                  >
+                    <Text className="font-quicksand-bold text-slate-800">Miembro</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => handleChangeRole('admin')}
+                    disabled={isSavingRole || userResult.role === 'admin'}
+                    className={`flex-1 h-11 rounded-lg items-center justify-center ${userResult.role === 'admin' ? 'bg-indigo-600' : 'bg-indigo-500 active:bg-indigo-600'}`}
+                  >
+                    <Text className="font-quicksand-bold text-white">Admin</Text>
+                  </Pressable>
                 </View>
               </View>
-
-              <View className="flex-row gap-x-3 mt-1">
-                <Pressable
-                  onPress={() => handleChangeRole('member')}
-                  disabled={isSavingRole || userResult.role === 'member'}
-                  className={`flex-1 h-11 rounded-lg items-center justify-center ${userResult.role === 'member' ? 'bg-slate-300' : 'bg-slate-200 active:bg-slate-300'}`}
-                >
-                  <Text className="font-quicksand-bold text-slate-800">Miembro</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => handleChangeRole('admin')}
-                  disabled={isSavingRole || userResult.role === 'admin'}
-                  className={`flex-1 h-11 rounded-lg items-center justify-center ${userResult.role === 'admin' ? 'bg-indigo-600' : 'bg-indigo-500 active:bg-indigo-600'}`}
-                >
-                  <Text className="font-quicksand-bold text-white">Admin</Text>
-                </Pressable>
-              </View>
-            </View>
-          )}
-        </View>
-
-        {/* Sección: Preferencias */}
-        <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50">
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center">
-              <Ionicons name="notifications-outline" size={18} color="#64748b" />
-              <Text className="ml-2 text-base font-quicksand-bold text-slate-800">Notificaciones push</Text>
-            </View>
-            <Switch value={pushEnabled} onValueChange={setPushEnabled} thumbColor={pushEnabled ? '#4f46e5' : undefined} />
+            )}
           </View>
-          <Text className="text-xs text-slate-500 mt-2">Activa/desactiva recordatorios y avisos generales. (Configuración local)</Text>
-        </View>
-      </View>
+
+          {/* Sección: Preferencias */}
+          <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center">
+                <Ionicons name="notifications-outline" size={18} color="#64748b" />
+                <Text className="ml-2 text-base font-quicksand-bold text-slate-800">Notificaciones push</Text>
+              </View>
+              <Switch value={pushEnabled} onValueChange={setPushEnabled} thumbColor={pushEnabled ? '#4f46e5' : undefined} />
+            </View>
+            <Text className="text-xs text-slate-500 mt-2">Activa/desactiva recordatorios y avisos generales. (Configuración local)</Text>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }

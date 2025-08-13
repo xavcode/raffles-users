@@ -75,7 +75,7 @@ const Ticket = React.memo(({ number, status, isSelected, onPress }: {
 
 // 4. Componente principal de la pantalla
 export default function RaffleDetailsScreen() {
-  const { id } = useLocalSearchParams();
+  const { raffleId } = useLocalSearchParams();
   const router = useRouter();
   const [selectedTickets, setSelectedTickets] = useState(new Set<number>());
   const [isReserving, setIsReserving] = useState(false);
@@ -87,8 +87,8 @@ export default function RaffleDetailsScreen() {
   const settings = useQuery(api.admin.getSettings);
 
   // Hooks de Convex
-  const raffle = useQuery(api.raffles.getById, { id: id as Id<'raffles'> });
-  const nonAvailableTickets = useQuery(api.tickets.getNonAvailableTickets, { raffleId: id as Id<'raffles'> });
+  const raffle = useQuery(api.raffles.getById, { id: raffleId as Id<'raffles'> });
+  const nonAvailableTickets = useQuery(api.tickets.getNonAvailableTickets, { raffleId: raffleId as Id<'raffles'> });
   const reserveTicketsMutation = useMutation(api.tickets.reserveTickets);
 
   useEffect(() => {
@@ -96,7 +96,7 @@ export default function RaffleDetailsScreen() {
     // limpiamos los boletos seleccionados. Esto asegura que la selección
     // de una rifa no se "filtre" a la siguiente que se visite.
     setSelectedTickets(new Set());
-  }, [id]);
+  }, [raffleId]);
 
   // Sincroniza la selección local con el estado del servidor.
   // Si un boleto seleccionado deja de estar disponible, se elimina de la selección.
@@ -188,7 +188,7 @@ export default function RaffleDetailsScreen() {
     setIsReserving(true);
     try {
       const result = await reserveTicketsMutation({
-        raffleId: id as Id<'raffles'>,
+        raffleId: raffleId as Id<'raffles'>,
         ticketNumbers: Array.from(selectedTickets),
       });
       Toast.show({
