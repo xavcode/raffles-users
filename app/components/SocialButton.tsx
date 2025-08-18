@@ -5,7 +5,7 @@ import { Image, Pressable, Text } from 'react-native';
 // import { useWarmUpBrowser } from '../../hooks/useWarmUpBrowser';
 
 type SocialButtonProps = {
-    strategy: 'oauth_google' | 'oauth_facebook' | 'oauth_instagram';
+    strategy: 'oauth_google';
     icon: any; // Tipo de dato para el ícono (puede ser un require)
     text: string;
 };

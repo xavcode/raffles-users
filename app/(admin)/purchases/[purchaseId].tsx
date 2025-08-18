@@ -8,15 +8,19 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Image, Modal, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
+import { SnapbackZoom } from "react-native-zoom-toolkit";
+
+
 
 const PURCHASE_STATUS_STYLES = {
   pending_payment: { label: 'Pendiente', bg: 'bg-amber-100', text: 'text-amber-700', icon: 'time-outline' as const },
   pending_confirmation: { label: 'Verificando', bg: 'bg-blue-100', text: 'text-blue-700', icon: 'hourglass-outline' as const },
   completed: { label: 'Pagado', bg: 'bg-green-100', text: 'text-green-700', icon: 'checkmark-circle-outline' as const },
-  expired: { label: 'Expirado', bg: 'bg-red-100', text: 'text-red-700', icon: 'close-circle-outline' as const }
+  expired: { label: 'Expirado', bg: 'bg-slate-100', text: 'text-slate-600', icon: 'close-circle-outline' as const },
+  rejected: { label: 'Rechazado', bg: 'bg-red-100', text: 'text-red-700', icon: 'alert-circle-outline' as const }
 };
 
 const PENDING_CONFIRMATION = PURCHASE_STATUS.PENDING_CONFIRMATION
@@ -25,6 +29,8 @@ const AdminPurchaseDetailsPage = () => {
   const { purchaseId } = useLocalSearchParams<{ purchaseId: string }>();
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
 
   const purchaseDetails = useQuery(
     api.tickets.getPurchaseDetails,
@@ -78,9 +84,11 @@ const AdminPurchaseDetailsPage = () => {
     return <SafeAreaView className="flex-1 bg-slate-50"><Text>Compra no encontrada.</Text></SafeAreaView>;
   }
 
-  const { purchase, raffle, tickets, user } = purchaseDetails;
+  const { purchase, raffle, tickets, user, } = purchaseDetails;
   const statusStyle = PURCHASE_STATUS_STYLES[purchase.status as keyof typeof PURCHASE_STATUS_STYLES] || { label: 'Desconocido', bg: 'bg-slate-100', text: 'text-slate-700', icon: 'help-circle-outline' as const };
   const formattedAmount = formatCOP(purchase.totalAmount);
+
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
@@ -95,7 +103,7 @@ const AdminPurchaseDetailsPage = () => {
             </View>
           </View>
           <View className="border-t border-slate-100 pt-4 space-y-2">
-            <View className="flex-row justify-between"><Text className="font-quicksand-medium text-slate-500">Usuario:</Text><Text className="font-quicksand-bold text-slate-800">{user?.firstName ?? 'No disponible'}</Text></View>
+            <View className="flex-row justify-between"><Text className="font-quicksand-medium text-slate-500">Usuario:</Text><Text className="font-quicksand-bold text-slate-800">{user?.firstName ?? 'No disponible'} {user?.lastName}</Text></View>
             <View className="flex-row justify-between"><Text className="font-quicksand-medium text-slate-500">Boletos:</Text><Text className="font-quicksand-bold text-slate-800">{purchase.ticketCount}</Text></View>
             <View className="flex-row justify-between"><Text className="font-quicksand-medium text-slate-500">Monto Total:</Text><Text className="font-quicksand-bold text-primary">{formattedAmount}</Text></View>
             <View className="flex-row justify-between"><Text className="font-quicksand-medium text-slate-500">Fecha:</Text><Text className="font-quicksand-semibold text-slate-600">{format(new Date(purchase._creationTime), "d MMM, yyyy h:mm a", { locale: es })}</Text></View>
@@ -104,7 +112,7 @@ const AdminPurchaseDetailsPage = () => {
 
         <View className="bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50 mb-6">
           <Text className="text-lg font-quicksand-bold text-slate-700 mb-2">Boletos Reservados</Text>
-          <View className="flex-row flex-wrap">
+          <View className="flex-row flex-wrap justify-center -m-1 pt-2">
             {tickets.map(ticket => (
               <View key={ticket.ticketNumber} className="bg-primary/10 w-16 h-16 m-1 rounded-lg items-center justify-center">
                 <Text className="text-2xl font-quicksand-bold text-primary">{ticket.ticketNumber.toString().padStart(3, '0')}</Text>
@@ -113,8 +121,44 @@ const AdminPurchaseDetailsPage = () => {
           </View>
         </View>
 
+        {purchase.imageUrl && (
+          <View className="bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50 mb-6">
+            <Text className="text-lg font-quicksand-bold text-slate-700 mb-3">Comprobante de Pago</Text>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setIsModalVisible(true)}
+            >
+              <Image
+                source={{ uri: purchase.imageUrl }}
+                className="w-full h-48 rounded-lg bg-slate-200"
+                resizeMode="cover"
+              />
+              <View className="absolute inset-0 bg-black/30 justify-center items-center rounded-lg">
+                <Ionicons name="scan-outline" size={32} color="white" />
+                <Text className="text-white font-quicksand-bold mt-1">Toca para ampliar</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <Modal
+          visible={isModalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setIsModalVisible(false)}
+        >
+          <View className="flex-1 bg-black/80 justify-center items-center">
+            <SnapbackZoom onGestureEnd={() => setIsModalVisible(false)} >
+              <Image source={{ uri: purchase.imageUrl }} style={{ width: screenWidth, height: screenHeight }} resizeMethod={"scale"} resizeMode="contain" />
+            </SnapbackZoom>
+            <TouchableOpacity className="absolute top-12 right-5 bg-black/50 p-2 rounded-full" onPress={() => setIsModalVisible(false)}>
+              <Ionicons name="close" size={28} color="white" />
+            </TouchableOpacity>
+          </View>
+        </Modal>
+
         {purchase.status === PENDING_CONFIRMATION && (
-          <View className="space-y-3">
+          <View className="space-y-3 gap-2">
             <Pressable onPress={handleApproval} disabled={isProcessing} className="bg-green-500 h-12 rounded-lg justify-center items-center flex-row active:bg-green-600 disabled:bg-green-300">
               {isProcessing ? <ActivityIndicator color="white" /> : <><Ionicons name="checkmark-circle-outline" size={20} color="white" /><Text className="text-white font-quicksand-bold text-base ml-2">Aprobar Pago</Text></>}
             </Pressable>
@@ -129,4 +173,3 @@ const AdminPurchaseDetailsPage = () => {
 };
 
 export default AdminPurchaseDetailsPage;
-

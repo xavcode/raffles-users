@@ -2,9 +2,10 @@ import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
+import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
@@ -33,6 +34,7 @@ const EditRafflePage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (raffle) {
@@ -47,6 +49,14 @@ const EditRafflePage = () => {
       }
     }
   }, [raffle]);
+
+  const cloudName = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+  if (!cloudName || !uploadPreset) {
+    console.error("Cloudinary environment variables are not set.");
+    // Optionally, you can show an alert or a message to the user.
+  }
 
   const handleSaveChanges = async () => {
     const prizeNumber = parseFloat(prize);
@@ -79,6 +89,53 @@ const EditRafflePage = () => {
       Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo actualizar el sorteo.' });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handlePickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+
+    if (result.canceled) {
+      return;
+    }
+
+    const asset = result.assets[0];
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('upload_preset', uploadPreset!);
+
+      if (Platform.OS === 'web') {
+        const response = await fetch(asset.uri);
+        const blob = await response.blob();
+        formData.append('file', blob, asset.fileName ?? 'upload.jpg');
+      } else {
+        formData.append('file', {
+          uri: asset.uri,
+          type: asset.mimeType ?? 'image/jpeg',
+          name: asset.fileName ?? 'upload.jpg',
+        } as any);
+      }
+
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error.message);
+
+      setImageUrl(data.secure_url);
+      Toast.show({ type: 'success', text1: 'Imagen actualizada', text2: 'No olvides guardar los cambios.' });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      Alert.alert('Error', 'No se pudo subir la nueva imagen.');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -146,7 +203,7 @@ const EditRafflePage = () => {
   }
 
   const isFinished = raffle.status === 'finished';
-  const isLoading = isSaving || isFinishing || isDeleting;
+  const isLoading = isSaving || isFinishing || isDeleting || isUploading;
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
@@ -157,7 +214,29 @@ const EditRafflePage = () => {
             <View><Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Título</Text><TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" value={title} onChangeText={setTitle} editable={!isFinished} /></View>
             <View><Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Descripción</Text><TextInput className="bg-slate-100 border border-slate-200 h-28 rounded-lg px-4 text-base font-quicksand-medium align-top pt-3" value={description} onChangeText={setDescription} multiline editable={!isFinished} /></View>
             <View><Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Premio (en COP)</Text><TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" value={prize} onChangeText={setPrize} keyboardType="numeric" editable={!isFinished} /></View>
-            <View><Text className="text-base font-quicksand-semibold mb-2 text-slate-700">URL de la Imagen</Text><TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" value={imageUrl} onChangeText={setImageUrl} keyboardType="url" autoCapitalize="none" editable={!isFinished} /></View>
+            <View>
+              <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Imagen del Sorteo</Text>
+              <Pressable
+                onPress={handlePickImage}
+                disabled={isFinished || isLoading}
+                className="h-48 bg-slate-100 rounded-lg overflow-hidden justify-center items-center active:opacity-80"
+              >
+                {imageUrl ? (
+                  <Image source={{ uri: imageUrl }} className='w-full h-full' resizeMode='cover' />
+                ) : (
+                  <Ionicons name="image-outline" size={48} color="#94a3b8" />
+                )}
+                {!isFinished && (
+                  <View className="absolute inset-0 bg-black/40 justify-center items-center">
+                    {isUploading ? (
+                      <ActivityIndicator color="white" size="large" />
+                    ) : (
+                      <Ionicons name="create-outline" size={32} color="white" />
+                    )}
+                  </View>
+                )}
+              </Pressable>
+            </View>
             <View className="flex-row gap-x-4">
               <View className="flex-1"><Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Total Boletos</Text><TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" value={totalTickets} onChangeText={setTotalTickets} keyboardType="numeric" editable={!isFinished} /></View>
               <View className="flex-1"><Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Precio Boleto</Text><TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" value={ticketPrice} onChangeText={setTicketPrice} keyboardType="decimal-pad" editable={!isFinished} /></View>

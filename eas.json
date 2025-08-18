@@ -9,10 +9,31 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "${EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY}",
+        "EXPO_PUBLIC_CLERK_ISSUER_URL": "${EXPO_PUBLIC_CLERK_ISSUER_URL}",
+        "EXPO_PUBLIC_CONVEX_URL": "${EXPO_PUBLIC_CONVEX_URL}",
+        "EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME": "${EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME}",
+        "EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET": "${EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET}"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "android": {
+        "buildType": "apk"
+      },
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "${EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY}",
+        "EXPO_PUBLIC_CLERK_ISSUER_URL": "${EXPO_PUBLIC_CLERK_ISSUER_URL}",
+        "EXPO_PUBLIC_CONVEX_URL": "${EXPO_PUBLIC_CONVEX_URL}",
+        "EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME": "${EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME}",
+        "EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET": "${EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET}"
+      }
     }
   },
   "submit": {

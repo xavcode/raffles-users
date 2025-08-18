@@ -5,7 +5,8 @@ import { useMutation } from 'convex/react';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
@@ -167,15 +168,13 @@ const CreateRaffle = () => {
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
       <Stack.Screen options={{ title: 'Crear Nuevo Sorteo' }} />
-      {/* 
-        SOLUCIÓN: Usamos el `KeyboardAvoidingView` nativo de React Native.
-        - `behavior`: 'padding' para iOS (añade padding en la parte inferior), 'height' para Android (recalcula la altura).
-        - `keyboardVerticalOffset`: Un espacio extra para compensar la altura del header de la pantalla.
-      */}
-      <KeyboardAvoidingView
-        behavior="position"
-        className="flex-1"
-        keyboardVerticalOffset={80}
+      <KeyboardAwareScrollView
+        contentContainerClassName='flex-1'
+        enableOnAndroid={true}
+        enableAutomaticScroll={true}
+        enableResetScrollToCoords={true}
+        resetScrollToCoords={{ x: 0, y: 0 }}
+        extraScrollHeight={20}
       >
         <ScrollView
           ref={scrollViewRef}
@@ -187,7 +186,6 @@ const CreateRaffle = () => {
               <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Título del Sorteo</Text>
               <TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: Rifa Pro-fondos" value={title} onChangeText={setTitle} />
             </View>
-
             <View className="mb-5">
               <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Descripción</Text>
               <TextInput className="bg-slate-100 border border-slate-200 h-28 rounded-lg px-4 text-base font-quicksand-medium align-top pt-3" placeholder="Describe los detalles del sorteo..." value={description} onChangeText={setDescription} multiline />
@@ -232,7 +230,6 @@ const CreateRaffle = () => {
               </View>
             </View>
 
-
             <View className="flex-row gap-x-4 mb-5">
               <View className="flex-1">
                 <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Total Boletos</Text>
@@ -266,7 +263,7 @@ const CreateRaffle = () => {
             />
           )}
         </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 };

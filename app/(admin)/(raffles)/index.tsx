@@ -12,6 +12,13 @@ import Toast from 'react-native-toast-message';
 type RaffleWithSales = Doc<'raffles'>;
 const STATUS_ACTIVE = 'active';
 
+const RAFFLE_STATUS_STYLES = {
+  active: { label: 'Activo', bg: 'bg-green-100', text: 'text-green-700', icon: 'flash-outline' as const },
+  finished: { label: 'Finalizado', bg: 'bg-blue-100', text: 'text-blue-700', icon: 'trophy-outline' as const },
+  cancelled: { label: 'Cancelado', bg: 'bg-red-100', text: 'text-red-700', icon: 'close-circle-outline' as const },
+};
+
+
 const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
   const [winningTicket, setWinningTicket] = useState('');
   const [isFinishing, setIsFinishing] = useState(false);
@@ -48,26 +55,25 @@ const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
   const progress = raffle.totalTickets > 0 ? ((raffle.ticketsSold ?? 0) / raffle.totalTickets) * 100 : 0;
   const formattedPrice = formatCOP(raffle.ticketPrice);
   const formattedPrize = formatCOP(raffle.prize as number);
+  const statusStyle = RAFFLE_STATUS_STYLES[raffle.status as keyof typeof RAFFLE_STATUS_STYLES] || { label: raffle.status, bg: 'bg-slate-100', text: 'text-slate-600', icon: 'help-circle-outline' as const };
 
   return (
-    <View className="bg-white rounded-2xl shadow-sm shadow-slate-300/50 overflow-hidden mb-4">
+    <View className="bg-white rounded-2xl shadow-sm shadow-slate-300/50 overflow-hidden">
+      {/* --- Card Body --- */}
       <View className="p-4">
         <View className="flex-row justify-between items-start mb-3">
-          <Text className="text-base font-quicksand-bold text-slate-800 w-10/12" numberOfLines={2}>{raffle.title}</Text>
-          <View className={`px-2.5 py-1 rounded-full ${raffle.status === 'active' ? 'bg-green-100' : raffle.status === 'cancelled' ? 'bg-red-100' : 'bg-slate-100'}`}>
-            <Text className={`text-xs font-quicksand-bold uppercase ${raffle.status === 'active' ? 'text-green-700' :
-              raffle.status === 'cancelled' ? 'text-red-700' :
-                'text-slate-600'
-              }`}>{raffle.status}</Text>
+          <Text className="text-base font-quicksand-bold text-slate-800 flex-1 mr-2" numberOfLines={2}>{raffle.title}</Text>
+          <View className={`px-2.5 py-1 rounded-full ${statusStyle.bg}`}>
+            <Text className={`text-xs font-quicksand-bold uppercase ${statusStyle.text}`}>{statusStyle.label}</Text>
           </View>
         </View>
 
-        <View className="space-y-2 text-sm text-slate-600 mb-4">
-          <View className="flex-row items-center"><Ionicons name="gift-outline" className="mr-2 text-slate-500" size={16} /><Text className="font-quicksand-medium">Premio: </Text><Text className="font-quicksand-bold">{formattedPrize}</Text></View>
-          <View className="flex-row items-center"><Ionicons name="pricetag-outline" className="mr-2 text-slate-500" size={16} /><Text className="font-quicksand-medium">Valor del boleto: </Text><Text className="font-quicksand-bold">{formattedPrice}</Text></View>
+        <View className="space-y-2 mb-4">
+          <View className="flex-row items-center"><Ionicons name="gift-outline" size={16} color="#64748b" /><Text className="font-quicksand-medium text-slate-600 ml-2">Premio: </Text><Text className="font-quicksand-bold text-slate-700">{formattedPrize}</Text></View>
+          <View className="flex-row items-center"><Ionicons name="pricetag-outline" size={16} color="#64748b" /><Text className="font-quicksand-medium text-slate-600 ml-2">Valor del boleto: </Text><Text className="font-quicksand-bold text-slate-700">{formattedPrice}</Text></View>
         </View>
 
-        <View className="mb-4">
+        <View>
           <View className="flex-row justify-between items-center mb-1">
             <Text className="text-xs font-quicksand-semibold text-slate-600">Vendidos</Text>
             <Text className="text-xs font-quicksand-bold text-slate-600">{raffle.ticketsSold?.toString() ?? 0} / {raffle.totalTickets}</Text>
@@ -76,30 +82,38 @@ const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
             <View className="bg-primary h-2.5 rounded-full" style={{ width: `${progress}%` }} />
           </View>
         </View>
+      </View>
 
-        {raffle.status === STATUS_ACTIVE && (
-          <View className="mt-4 pt-4 border-t border-slate-200/80 flex-row items-center gap-x-2">
-            <TextInput
-              className="flex-1 bg-slate-100 border border-slate-200 h-10 rounded-lg px-3 text-base font-quicksand-medium"
-              placeholder="Boleto ganador"
-              keyboardType="number-pad"
-              value={winningTicket}
-              onChangeText={setWinningTicket}
-            />
-            <Pressable onPress={handleFinishRaffle} disabled={isFinishing || !winningTicket} className="bg-red-600 px-3 h-10 rounded-lg justify-center items-center active:bg-red-700 disabled:bg-red-300">
-              {isFinishing ? <ActivityIndicator color="white" size="small" /> : <Text className="text-white font-quicksand-bold text-sm">Finalizar</Text>}
-            </Pressable>
+      {/* --- Card Footer --- */}
+      <View className="bg-slate-50/70 px-4 py-3 border-t border-slate-200/80">
+        {raffle.status === STATUS_ACTIVE ? (
+          <View className="flex-row items-center justify-between">
+            <Link href={`/(admin)/(raffles)/${String(raffle._id)}`} asChild>
+              <Pressable className="p-2 active:opacity-70">
+                <Ionicons name="create-outline" size={22} color="#4f46e5" />
+              </Pressable>
+            </Link>
+            <View className="flex-row items-center gap-x-2 flex-1 ml-2">
+              <TextInput
+                className="flex-1 bg-white border border-slate-300 h-10 rounded-lg px-3 text-base font-quicksand-medium"
+                placeholder="Boleto ganador"
+                keyboardType="number-pad"
+                value={winningTicket}
+                onChangeText={setWinningTicket}
+              />
+              <Pressable onPress={handleFinishRaffle} disabled={isFinishing || !winningTicket} className="bg-red-600 px-3 h-10 rounded-lg justify-center items-center active:bg-red-700 disabled:bg-red-300">
+                {isFinishing ? <ActivityIndicator color="white" size="small" /> : <Text className="text-white font-quicksand-bold text-sm">Finalizar</Text>}
+              </Pressable>
+            </View>
+          </View>
+        ) : (
+          <View className="flex-row items-center justify-center">
+            <Ionicons name={statusStyle.icon} size={18} color={statusStyle.text.replace('text-', '')} />
+            <Text className={`font-quicksand-bold ml-2 ${statusStyle.text}`}>
+              {raffle.winningTicketNumber ? `Ganador: #${raffle.winningTicketNumber.toString().padStart(3, '0')}` : statusStyle.label}
+            </Text>
           </View>
         )}
-      </View>
-      <View className="bg-slate-50/70 px-4 py-3 flex-row justify-end">
-        {/* La ruta debe ser relativa para que se apile sobre la pantalla actual */}
-        <Link href={`./${String(raffle._id)}`} asChild>
-          <Pressable className="flex-row items-center bg-indigo-100 px-3 py-1.5 rounded-lg active:opacity-70">
-            <Ionicons name="create-outline" size={16} color="#4338ca" />
-            <Text className="text-sm font-quicksand-bold text-indigo-800 ml-1.5">Editar</Text>
-          </Pressable>
-        </Link>
       </View>
     </View>
   );
@@ -149,11 +163,11 @@ const RafflesPage = () => {
       <SectionList
         sections={sections}
         keyExtractor={(item) => item._id}
-        renderItem={({ item }) => <RaffleCard raffle={item} />}
+        renderItem={({ item }) => <View className="px-4"><RaffleCard raffle={item} /></View>}
         renderSectionHeader={({ section: { title } }) => (
-          <Text className="text-lg font-quicksand-bold text-slate-700 mb-3 px-4 pt-4 bg-slate-50">{title}</Text>
+          <Text className="text-sm font-quicksand-bold text-slate-500 uppercase tracking-wider mb-3 px-4 pt-4">{title}</Text>
         )}
-        contentContainerClassName="pb-8"
+        contentContainerClassName="pb-8 pt-2 space-y-4"
         stickySectionHeadersEnabled={false}
         onEndReached={() => {
           if (status === 'CanLoadMore') loadMore(5);
@@ -162,9 +176,9 @@ const RafflesPage = () => {
         ListHeaderComponent={() => status === 'LoadingFirstPage' ? <ActivityIndicator size="large" color="#4f46e5" className="mt-16" /> : null}
         ListFooterComponent={() => status === 'LoadingMore' ? <ActivityIndicator className="my-8" /> : null}
         ListEmptyComponent={() => status !== 'LoadingFirstPage' && (
-          <View className="mt-24 items-center justify-center">
+          <View className="mt-24 items-center justify-center p-4 bg-slate-100 mx-4 rounded-2xl">
             <Ionicons name="journal-outline" size={64} color="#cbd5e1" />
-            <Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">No hay sorteos</Text>
+            <Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">No hay sorteos aquí</Text>
             <Text className="text-sm font-quicksand-medium text-slate-400">Crea el primero para empezar.</Text>
           </View>
         )}

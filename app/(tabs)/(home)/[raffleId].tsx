@@ -3,12 +3,14 @@
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { useUser } from '@clerk/clerk-expo';
+import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, Image, Modal, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
+import { SnapbackZoom } from 'react-native-zoom-toolkit';
 
 // 1. Estilos mejorados para los boletos, con mejor contraste y legibilidad
 const TICKET_STYLES = {
@@ -78,8 +80,8 @@ export default function RaffleDetailsScreen() {
   const { raffleId } = useLocalSearchParams();
   const router = useRouter();
   const [selectedTickets, setSelectedTickets] = useState(new Set<number>());
-  const [isReserving, setIsReserving] = useState(false);
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isImageModalVisible, setIsImageModalVisible] = useState(false);
   // const soldTickets = useMutation(api.tickets.soldTickets);
 
   // 1. Importamos useUser para saber si el usuario está logueado.
@@ -90,6 +92,8 @@ export default function RaffleDetailsScreen() {
   const raffle = useQuery(api.raffles.getById, { id: raffleId as Id<'raffles'> });
   const nonAvailableTickets = useQuery(api.tickets.getNonAvailableTickets, { raffleId: raffleId as Id<'raffles'> });
   const reserveTicketsMutation = useMutation(api.tickets.reserveTickets);
+
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
   useEffect(() => {
     // Cuando el ID de la rifa cambia (al navegar entre diferentes rifas),
@@ -185,7 +189,7 @@ export default function RaffleDetailsScreen() {
       });
       return; // Detenemos la ejecución aquí.
     }
-    setIsReserving(true);
+    setIsProcessing(true);
     try {
       const result = await reserveTicketsMutation({
         raffleId: raffleId as Id<'raffles'>,
@@ -195,10 +199,10 @@ export default function RaffleDetailsScreen() {
         type: 'success',
         text1: 'Tus boletos han sido reservados por 30 minutos.',
         text2: 'Toca para ir al pago.',
-        onPress: () => router.push(`/purchase/${result.purchaseId}`),
+        onPress: () => router.push(`/(purchases)/${result.purchaseId}`),
         position: 'bottom',
         swipeable: true,
-        visibilityTime: 8000,
+        visibilityTime: 5000,
         text1Style: {
           fontSize: 12,
           color: '#444'
@@ -218,7 +222,7 @@ export default function RaffleDetailsScreen() {
         text2: errorMessage,
       });
     } finally {
-      setIsReserving(false);
+      setIsProcessing(false);
     }
   };
 
@@ -228,13 +232,13 @@ export default function RaffleDetailsScreen() {
         {/* Hero con overlay */}
         <View>
           {raffle.imageUrl && (
-            <View>
-              <Image source={{ uri: raffle.imageUrl }} className="w-full h-56" resizeMode="cover" />
+            <TouchableOpacity activeOpacity={0.9} onPress={() => setIsImageModalVisible(true)}>
+              <Image source={{ uri: raffle.imageUrl }} className="w-full h-56 bg-slate-200" resizeMode="cover" />
               <View className="absolute bottom-0 left-0 right-0 p-4 bg-black/40">
                 <Text className="text-white font-quicksand-bold text-xl" numberOfLines={1}>{raffle.title}</Text>
                 <Text className="text-white font-quicksand-semibold text-sm mt-1">Gana {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(raffle.prize ?? 0)}</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           )}
         </View>
         <View className="p-5 bg-white border-b border-gray-200 -mt-2 rounded-t-2xl">
@@ -258,20 +262,38 @@ export default function RaffleDetailsScreen() {
           ))}
         </View>
       </ScrollView>
-      {/* Contenedor centrado para el botón flotante, evitando tapar el grid y la TabBar */}
-      {/* Dock inferior por encima de la TabBar, sin cubrir el grid */}
+
+      {/* Modal for Image Zoom */}
+      {raffle.imageUrl && (
+        <Modal
+          visible={isImageModalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setIsImageModalVisible(false)}
+        >
+          <View className="flex-1 bg-black/80 justify-center items-center">
+            <SnapbackZoom onGestureEnd={() => setIsImageModalVisible(false)}>
+              <Image source={{ uri: raffle.imageUrl }} style={{ width: screenWidth, height: screenHeight }} resizeMode="contain" />
+            </SnapbackZoom>
+            <TouchableOpacity className="absolute top-12 right-5 bg-black/50 p-2 rounded-full" onPress={() => setIsImageModalVisible(false)}>
+              <Ionicons name="close" size={28} color="white" />
+            </TouchableOpacity>
+          </View>
+        </Modal>
+      )}
+
       <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
         <View className="mx-4 bg-white rounded-2xl border border-slate-200 shadow-lg p-3">
           {isSignedIn ? (
             <Pressable
               onPress={handleReserve}
-              disabled={isReserving || selectedTickets.size === 0 || settings?.purchasesEnabled === false}
+              disabled={isProcessing || selectedTickets.size === 0 || settings?.purchasesEnabled === false}
               className={`rounded-xl py-3 items-center active:opacity-80 disabled:opacity-50 ${settings?.purchasesEnabled === false ? 'bg-slate-300' : 'bg-primary'}`}
             >
               <Text className="text-white font-quicksand-bold">
                 {settings?.purchasesEnabled === false
                   ? 'Compras deshabilitadas'
-                  : isReserving
+                  : isProcessing
                     ? 'Procesando...'
                     : selectedTickets.size > 0
                       ? `Reservar ${selectedTickets.size} boletos`

@@ -3,7 +3,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { useMutation, useQuery } from 'convex/react'
 import { Stack } from 'expo-router'
 import React, { useEffect, useMemo, useState } from 'react'
-import { KeyboardAvoidingView, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native'
+import { Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
 
@@ -105,10 +106,13 @@ const Settings = () => {
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
       <Stack.Screen options={{ title: 'Configuración', headerLargeTitle: true }} />
-      <KeyboardAvoidingView
-        behavior='padding'
-        className='flex-1'
-        keyboardVerticalOffset={80}
+      <KeyboardAwareScrollView
+        contentContainerClassName='flex-1'
+        enableOnAndroid={true}
+        enableAutomaticScroll={true}
+        enableResetScrollToCoords={true}
+        resetScrollToCoords={{ x: 0, y: 0 }}
+        extraScrollHeight={20}
       >
         <ScrollView
           className="p-4 pb-10"
@@ -235,7 +239,7 @@ const Settings = () => {
             <Text className="text-xs text-slate-500 mt-2">Activa/desactiva recordatorios y avisos generales. (Configuración local)</Text>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   )
 }

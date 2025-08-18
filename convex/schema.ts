@@ -65,12 +65,13 @@ export default defineSchema({
     raffleId: v.id("raffles"),
     ticketCount: v.float64(),
     totalAmount: v.float64(),
+    imageUrl: v.optional(v.string()),
     status: v.union(
       v.literal("pending_payment"),
       v.literal(`pending_confirmation`),
-      v.literal("completed"),
       v.literal("expired"),
-      v.literal("rejected")),
+      // v.literal("rejected"),
+      v.literal("completed")),
 
     expiresAt: v.optional(v.float64()), // Timestamp de cuando expira la reserva
   })

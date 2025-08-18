@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 type PurchaseWithDetails = Doc<'purchases'> & {
   raffleTitle: string;
   userFirstName: string;
+  userLastName: string
 };
 
 const LOADING_FIRST_PAGE = 'LoadingFirstPage';
@@ -32,7 +33,7 @@ const VerificationCard = ({ item }: { item: PurchaseWithDetails }) => {
           <View className="flex-row justify-between items-center border-t border-slate-100 pt-3">
             <View className="flex-row items-center">
               <Ionicons name="person-circle-outline" size={18} color="#64748b" />
-              <Text className="text-sm font-quicksand-semibold text-slate-600 ml-1.5">{item.userFirstName}</Text>
+              <Text className="text-sm font-quicksand-semibold text-slate-600 ml-1.5">{item.userFirstName} {item.userLastName}</Text>
             </View>
             <Text className="text-xs font-quicksand-medium text-slate-500">{timeAgo}</Text>
           </View>

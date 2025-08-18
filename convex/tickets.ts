@@ -150,7 +150,7 @@ export const releaseIfUnpaid = internalMutation({
 
 //notifacion de un usuario a un admin que la compra fue pagada y se debe confirmar manualmente por un admin. 
 export const adminNotifyPayment = mutation({
-  args: { purchaseId: v.id("purchases") },
+  args: { purchaseId: v.id("purchases"), imageUrl: v.string() },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Usuario no autenticado.");
@@ -168,7 +168,8 @@ export const adminNotifyPayment = mutation({
     if (purchase.status !== 'pending_payment') throw new Error("Esta compra no está pendiente de pago.");
 
     // 1. Actualiza el estado de la compra para que el admin la verifique
-    await ctx.db.patch(args.purchaseId, { status: "pending_confirmation" });
+    await ctx.db.patch(args.purchaseId, { status: "pending_confirmation", imageUrl: args.imageUrl });
+
 
     // 2. Obtenemos datos del sorteo para un mensaje más descriptivo.
     const raffle = await ctx.db.get(purchase.raffleId);
@@ -237,7 +238,7 @@ export const aprovalPurchase = mutation({
         await ctx.scheduler.runAfter(0, internal.notifications.sendPushNotification, {
           pushToken: user.pushToken,
           title: "✅ Pago Aprobado!",
-          message: `Tus ${ticketsToUpdate.length} boletos para "${raffle?.title}" han sido asignados. ¡Mucha suerte!`,
+          message: `Tus boletos para "${raffle?.title}" han sido asignados. ¡Mucha suerte!`,
         });
       }
     }
@@ -272,7 +273,8 @@ export const rejectPurchase = mutation({
     }
 
     // 1. Marcar la compra como expirada
-    await ctx.db.patch(args.purchaseId, { status: "rejected" });
+    await ctx.db.patch(args.purchaseId, { status: "expired" });
+    // await ctx.db.patch(args.purchaseId, { status: "rejected" });
 
     // 2. Buscar y liberar los boletos asociados
     const ticketsToUpdate = await ctx.db
@@ -413,6 +415,7 @@ export const getPurchaseDetails = query({
         userId: rt.userId,
         releasedAt: rt.releasedAt,
         type: "released",
+
       })),
     ];
 
@@ -453,6 +456,7 @@ export const getPendingConfirmationPurchases = query({
         ...purchase,
         raffleTitle: raffle?.title ?? "Sorteo no encontrado",
         userFirstName: user?.firstName ?? "Usuario desconocido",
+        userLastName: user?.lastName ?? "Usuario desconocido",
       };
     });
 
