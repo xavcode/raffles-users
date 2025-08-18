@@ -84,44 +84,40 @@ const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
       </View>
 
       {/* --- Card Footer --- */}
-      <View className="bg-slate-50/70 px-4 py-3 border-t border-slate-200/80">
-        {raffle.status === STATUS_ACTIVE ? (
-          <View className="flex-row items-center justify-between gap-x-4">
-            {/* Left side: Main Actions */}
-            <View className="flex-row items-center gap-x-1">
-              <Link href={`/(admin)/(raffles)/${String(raffle._id)}/sales`} asChild>
-                <Pressable className="bg-indigo-50 h-10 px-3 rounded-lg flex-row items-center active:bg-indigo-100">
-                  <Ionicons name="list-outline" size={20} color="#4f46e5" />
-                  <Text className="text-indigo-700 font-quicksand-bold text-sm ml-1.5">Ventas</Text>
-                </Pressable>
-              </Link>
-              <Link href={`/(admin)/(raffles)/${String(raffle._id)}`} asChild>
-                <Pressable className="h-10 w-10 rounded-lg justify-center items-center active:bg-slate-200">
-                  <Ionicons name="create-outline" size={22} color="#475569" />
-                </Pressable>
-              </Link>
-            </View>
-
-            {/* Right side: Finish Form */}
-            <View className="flex-1 flex-row items-center bg-white border border-slate-200 rounded-lg overflow-hidden">
-              <TextInput
-                className="flex-1 h-10 px-3 text-base font-quicksand-medium text-slate-700"
-                placeholder="Boleto ganador"
-                keyboardType="number-pad"
-                value={winningTicket}
-                onChangeText={setWinningTicket}
-              />
-              <Pressable
-                onPress={handleFinishRaffle}
-                disabled={isFinishing || !winningTicket}
-                className="w-12 h-10 bg-primary justify-center items-center active:bg-primary/80 disabled:bg-primary/40"
-              >
-                {isFinishing ? <ActivityIndicator color="white" size="small" /> : <Ionicons name="checkmark-done-outline" size={24} color="white" />}
+      <View className="bg-slate-50/70 px-4 py-3 border-t border-slate-200/80 flex-row items-center justify-between gap-x-4">
+        {/* Left Side: Actions */}
+        <View className="flex-row items-center gap-x-1">
+          <Link href={`./${String(raffle._id)}/sales`} asChild>
+            <Pressable className="bg-indigo-50 h-10 px-3 rounded-lg flex-row items-center active:bg-indigo-100">
+              <Ionicons name="list-outline" size={20} color="#4f46e5" />
+              <Text className="text-indigo-700 font-quicksand-bold text-sm ml-1.5">Ventas</Text>
+            </Pressable>
+          </Link>
+          {raffle.status === STATUS_ACTIVE && (
+            <Link href={`./${String(raffle._id)}`} asChild>
+              <Pressable className="h-10 w-10 rounded-lg justify-center items-center active:bg-slate-200">
+                <Ionicons name="create-outline" size={22} color="#475569" />
               </Pressable>
-            </View>
+            </Link>
+          )}
+        </View>
+
+        {/* Right Side: Conditional Content */}
+        {raffle.status === STATUS_ACTIVE ? (
+          <View className="flex-1 flex-row items-center bg-white border border-slate-200 rounded-lg overflow-hidden">
+            <TextInput
+              className="flex-1 h-10 px-3 text-base font-quicksand-medium text-slate-700"
+              placeholder="Boleto ganador"
+              keyboardType="number-pad"
+              value={winningTicket}
+              onChangeText={setWinningTicket}
+            />
+            <Pressable onPress={handleFinishRaffle} disabled={isFinishing || !winningTicket} className="w-12 h-10 bg-primary justify-center items-center active:bg-primary/80 disabled:bg-primary/40">
+              {isFinishing ? <ActivityIndicator color="white" size="small" /> : <Ionicons name="checkmark-done-outline" size={24} color="white" />}
+            </Pressable>
           </View>
         ) : (
-          <View className="flex-row items-center justify-center">
+          <View className="flex-row items-center justify-end">
             <Ionicons name={statusStyle.icon} size={18} color={statusStyle.iconColor} />
             <Text className={`font-quicksand-bold ml-2 ${statusStyle.text}`}>
               {raffle.winningTicketNumber ? `Ganador: #${raffle.winningTicketNumber.toString().padStart(3, '0')}` : statusStyle.label}
@@ -132,6 +128,7 @@ const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
     </View>
   );
 };
+
 
 const RafflesPage = () => {
   const convexUser = useQuery(api.users.getCurrent);
