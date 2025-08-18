@@ -4,7 +4,7 @@ import { usePaginatedQuery } from 'convex/react';
 import * as Notifications from 'expo-notifications';
 import { Tabs, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AdminLayout() {
@@ -65,16 +65,16 @@ export default function AdminLayout() {
           fontFamily: 'Quicksand-Bold',
           fontSize: 18,
         },
-        headerLeft: () => (
-          <Pressable onPress={() => router.replace('/(tabs)/')} className="ml-3">
-            {({ pressed }) => (
-              <View className={`flex-row items-center rounded-lg p-2 ${pressed ? 'bg-indigo-100' : 'bg-transparent'}`}>
-                <Ionicons name="home-outline" size={20} color="#4f46e5" />
-                <Text className="text-indigo-600 font-quicksand-bold text-base ml-1.5">Inicio</Text>
-              </View>
-            )}
-          </Pressable>
-        ),
+        // headerLeft: () => (
+        //   <Pressable onPress={() => router.replace('/(tabs)/')} className="ml-3">
+        //     {({ pressed }) => (
+        //       <View className={`flex-row items-center rounded-lg p-2 ${pressed ? 'bg-indigo-100' : 'bg-transparent'}`}>
+        //         <Ionicons name="home-outline" size={20} color="#4f46e5" />
+        //         <Text className="text-indigo-600 font-quicksand-bold text-base ml-1.5">Inicio</Text>
+        //       </View>
+        //     )}
+        //   </Pressable>
+        // ),
         headerRight: () => (
           <Pressable onPress={() => { router.push('/(admin)/settings') }}>
             {

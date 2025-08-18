@@ -1,9 +1,10 @@
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
+import { formatCOP } from '@/utils/format';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
 import * as ImagePicker from 'expo-image-picker';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -74,6 +75,7 @@ const EditRafflePage = () => {
 
     setIsSaving(true);
     try {
+
       await updateRaffle({
         id: id as Id<'raffles'>,
         title,
@@ -95,6 +97,7 @@ const EditRafflePage = () => {
   const handlePickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
       aspect: [16, 9],
       quality: 0.8,
     });
@@ -247,6 +250,26 @@ const EditRafflePage = () => {
               {isSaving ? <ActivityIndicator color="white" /> : <Text className="text-white font-quicksand-bold text-base">Guardar Cambios</Text>}
             </Pressable>
           )}
+        </View>
+
+        <View className="mt-6 bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50">
+          <Text className="text-lg font-quicksand-bold text-slate-800 mb-4">Estadísticas y Ventas</Text>
+          <View className="space-y-3">
+            <View className="flex-row justify-between items-center">
+              <Text className="font-quicksand-medium text-slate-600">Boletos Vendidos</Text>
+              <Text className="font-quicksand-bold text-slate-800">{raffle.ticketsSold ?? 0} / {raffle.totalTickets}</Text>
+            </View>
+            <View className="flex-row justify-between items-center">
+              <Text className="font-quicksand-medium text-slate-600">Ingresos Totales</Text>
+              <Text className="font-quicksand-bold text-green-600">{formatCOP((raffle.ticketsSold ?? 0) * raffle.ticketPrice)}</Text>
+            </View>
+          </View>
+          <Link href={`/(admin)/(raffles)/${id}/sales`} asChild>
+            <Pressable className="bg-slate-100 h-12 rounded-lg justify-center items-center mt-6 active:bg-slate-200 flex-row">
+              <Ionicons name="list-outline" size={20} color="#475569" />
+              <Text className="text-slate-700 font-quicksand-bold text-base ml-2">Ver Historial de Ventas</Text>
+            </Pressable>
+          </Link>
         </View>
 
         {isFinished ? (

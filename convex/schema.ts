@@ -72,12 +72,12 @@ export default defineSchema({
       v.literal("expired"),
       // v.literal("rejected"),
       v.literal("completed")),
-
     expiresAt: v.optional(v.float64()), // Timestamp de cuando expira la reserva
   })
     .index("by_user", ["userId"])
     .index("by_raffle", ["raffleId"])
     .index("by_status", ["status"])
+    .index("by_raffleId_status", ["raffleId", "status"])
     .index("by_user_and_raffle", ["userId", "raffleId"]),
 
   users: defineTable({

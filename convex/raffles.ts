@@ -114,6 +114,36 @@ export const updateRaffle = mutation({
   },
 });
 
+export const getPurchasesForRaffle = query({
+  args: {
+    raffleId: v.id("raffles"),
+  },
+  handler: async (ctx, args) => {
+    const purchases = await ctx.db
+      .query("purchases")
+      .withIndex("by_raffleId_status", (q) =>
+        q.eq("raffleId", args.raffleId).eq("status", "completed")
+      )
+      .order("desc")
+      .collect();
+
+    const purchasesWithUsers = await Promise.all(
+      purchases.map(async (purchase) => {
+        const user = await ctx.db.get(purchase.userId);
+        return {
+          ...purchase,
+          user: user ? {
+            firstName: user.firstName,
+            email: user.email,
+          } : null,
+        };
+      })
+    );
+
+    return purchasesWithUsers;
+  },
+});
+
 export const deleteRaffle = mutation({
   args: { id: v.id("raffles") },
   handler: async (ctx, args) => {
