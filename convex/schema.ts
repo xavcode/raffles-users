@@ -110,5 +110,4 @@ export default defineSchema({
     purchasesEnabled: v.boolean(),
     maintenanceMessage: v.optional(v.string()),
   })
-
 });

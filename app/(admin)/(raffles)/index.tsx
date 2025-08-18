@@ -13,9 +13,9 @@ type RaffleWithSales = Doc<'raffles'>;
 const STATUS_ACTIVE = 'active';
 
 const RAFFLE_STATUS_STYLES = {
-  active: { label: 'Activo', bg: 'bg-green-100', text: 'text-green-700', icon: 'flash-outline' as const },
-  finished: { label: 'Finalizado', bg: 'bg-blue-100', text: 'text-blue-700', icon: 'trophy-outline' as const },
-  cancelled: { label: 'Cancelado', bg: 'bg-red-100', text: 'text-red-700', icon: 'close-circle-outline' as const },
+  active: { label: 'Activo', bg: 'bg-green-100', text: 'text-green-700', icon: 'flash-outline' as const, iconColor: '#15803d' },
+  finished: { label: 'Finalizado', bg: 'bg-blue-100', text: 'text-blue-700', icon: 'trophy-outline' as const, iconColor: '#1d4ed8' },
+  cancelled: { label: 'Cancelado', bg: 'bg-red-100', text: 'text-red-700', icon: 'close-circle-outline' as const, iconColor: '#b91c1c' },
 };
 
 
@@ -23,7 +23,6 @@ const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
   const [winningTicket, setWinningTicket] = useState('');
   const [isFinishing, setIsFinishing] = useState(false);
   const finishRaffle = useMutation(api.raffles.finishRaffle);
-
   const handleFinishRaffle = async () => {
     const winningNumber = parseInt(winningTicket, 10);
 
@@ -55,7 +54,7 @@ const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
   const progress = raffle.totalTickets > 0 ? ((raffle.ticketsSold ?? 0) / raffle.totalTickets) * 100 : 0;
   const formattedPrice = formatCOP(raffle.ticketPrice);
   const formattedPrize = formatCOP(raffle.prize as number);
-  const statusStyle = RAFFLE_STATUS_STYLES[raffle.status as keyof typeof RAFFLE_STATUS_STYLES] || { label: raffle.status, bg: 'bg-slate-100', text: 'text-slate-600', icon: 'help-circle-outline' as const };
+  const statusStyle = RAFFLE_STATUS_STYLES[raffle.status as keyof typeof RAFFLE_STATUS_STYLES] || { label: raffle.status, bg: 'bg-slate-100', text: 'text-slate-600', icon: 'help-circle-outline' as const, iconColor: '#475569' };
 
   return (
     <View className="bg-white rounded-2xl shadow-sm shadow-slate-300/50 overflow-hidden">
@@ -87,28 +86,43 @@ const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
       {/* --- Card Footer --- */}
       <View className="bg-slate-50/70 px-4 py-3 border-t border-slate-200/80">
         {raffle.status === STATUS_ACTIVE ? (
-          <View className="flex-row items-center justify-between">
-            <Link href={`/(admin)/(raffles)/${String(raffle._id)}`} asChild>
-              <Pressable className="p-2 active:opacity-70">
-                <Ionicons name="create-outline" size={22} color="#4f46e5" />
-              </Pressable>
-            </Link>
-            <View className="flex-row items-center gap-x-2 flex-1 ml-2">
+          <View className="flex-row items-center justify-between gap-x-4">
+            {/* Left side: Main Actions */}
+            <View className="flex-row items-center gap-x-1">
+              <Link href={`/(admin)/(raffles)/${String(raffle._id)}/sales`} asChild>
+                <Pressable className="bg-indigo-50 h-10 px-3 rounded-lg flex-row items-center active:bg-indigo-100">
+                  <Ionicons name="list-outline" size={20} color="#4f46e5" />
+                  <Text className="text-indigo-700 font-quicksand-bold text-sm ml-1.5">Ventas</Text>
+                </Pressable>
+              </Link>
+              <Link href={`/(admin)/(raffles)/${String(raffle._id)}`} asChild>
+                <Pressable className="h-10 w-10 rounded-lg justify-center items-center active:bg-slate-200">
+                  <Ionicons name="create-outline" size={22} color="#475569" />
+                </Pressable>
+              </Link>
+            </View>
+
+            {/* Right side: Finish Form */}
+            <View className="flex-1 flex-row items-center bg-white border border-slate-200 rounded-lg overflow-hidden">
               <TextInput
-                className="flex-1 bg-white border border-slate-300 h-10 rounded-lg px-3 text-base font-quicksand-medium"
+                className="flex-1 h-10 px-3 text-base font-quicksand-medium text-slate-700"
                 placeholder="Boleto ganador"
                 keyboardType="number-pad"
                 value={winningTicket}
                 onChangeText={setWinningTicket}
               />
-              <Pressable onPress={handleFinishRaffle} disabled={isFinishing || !winningTicket} className="bg-red-600 px-3 h-10 rounded-lg justify-center items-center active:bg-red-700 disabled:bg-red-300">
-                {isFinishing ? <ActivityIndicator color="white" size="small" /> : <Text className="text-white font-quicksand-bold text-sm">Finalizar</Text>}
+              <Pressable
+                onPress={handleFinishRaffle}
+                disabled={isFinishing || !winningTicket}
+                className="w-12 h-10 bg-primary justify-center items-center active:bg-primary/80 disabled:bg-primary/40"
+              >
+                {isFinishing ? <ActivityIndicator color="white" size="small" /> : <Ionicons name="checkmark-done-outline" size={24} color="white" />}
               </Pressable>
             </View>
           </View>
         ) : (
           <View className="flex-row items-center justify-center">
-            <Ionicons name={statusStyle.icon} size={18} color={statusStyle.text.replace('text-', '')} />
+            <Ionicons name={statusStyle.icon} size={18} color={statusStyle.iconColor} />
             <Text className={`font-quicksand-bold ml-2 ${statusStyle.text}`}>
               {raffle.winningTicketNumber ? `Ganador: #${raffle.winningTicketNumber.toString().padStart(3, '0')}` : statusStyle.label}
             </Text>

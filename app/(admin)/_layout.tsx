@@ -4,7 +4,7 @@ import { usePaginatedQuery } from 'convex/react';
 import * as Notifications from 'expo-notifications';
 import { Tabs, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Pressable, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AdminLayout() {
@@ -46,13 +46,30 @@ export default function AdminLayout() {
         tabBarInactiveTintColor: '#64748b', // slate-500
         tabBarStyle: {
           backgroundColor: '#ffffff',
-          borderTopColor: '#e2e8f0', // slate-200
-          paddingBottom: Math.max(8, insets.bottom),
+          borderWidth: 1,
+          borderColor: '#e2e8f0',
+          // 1. Altura controlada: base + área segura inferior (notch).
+          height: (Platform.OS === 'android' ? 60 : 70) + insets.bottom,
+          // 2. Padding para empujar el contenido hacia arriba desde el notch.
+          paddingBottom: insets.bottom,
+          paddingTop: 8,
         },
-        tabBarLabelStyle: {
-          fontFamily: 'Quicksand-Bold',
+        tabBarLabelStyle: Platform.select({
+          web: {
+            fontSize: 12,
+            fontWeight: '700',
+            fontFamily: 'system-ui, sans-serif',
+          },
+          default: {
+            fontFamily: 'Quicksand-Bold',
+            fontSize: 11,
+            ...(Platform.OS === 'android' && {
+              marginBottom: 5,
+              marginTop: -5,
+            }),
+          },
+        }),
 
-        },
         headerTitleAlign: 'center',
         headerStyle: {
           backgroundColor: '#f8fafc', // slate-50
@@ -65,16 +82,16 @@ export default function AdminLayout() {
           fontFamily: 'Quicksand-Bold',
           fontSize: 18,
         },
-        // headerLeft: () => (
-        //   <Pressable onPress={() => router.replace('/(tabs)/')} className="ml-3">
-        //     {({ pressed }) => (
-        //       <View className={`flex-row items-center rounded-lg p-2 ${pressed ? 'bg-indigo-100' : 'bg-transparent'}`}>
-        //         <Ionicons name="home-outline" size={20} color="#4f46e5" />
-        //         <Text className="text-indigo-600 font-quicksand-bold text-base ml-1.5">Inicio</Text>
-        //       </View>
-        //     )}
-        //   </Pressable>
-        // ),
+        headerLeft: () => (
+          <Pressable onPress={() => router.replace('/(tabs)/')} className="ml-3">
+            {({ pressed }) => (
+              <View className={`flex-row items-center rounded-lg p-2 ${pressed ? 'bg-indigo-100' : 'bg-transparent'}`}>
+                <Ionicons name="home-outline" size={20} color="#4f46e5" />
+                <Text className="text-indigo-600 font-quicksand-bold text-base ml-1.5">Inicio</Text>
+              </View>
+            )}
+          </Pressable>
+        ),
         headerRight: () => (
           <Pressable onPress={() => { router.push('/(admin)/settings') }}>
             {

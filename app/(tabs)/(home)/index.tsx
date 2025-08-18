@@ -66,7 +66,7 @@ const RaffleCard = ({ item }: { item: Doc<'raffles'> }) => {
 
   // Envolvemos la tarjeta con Link solo si está activa para evitar errores de navegación.
   if (isActive) {
-    return <Link href={`/${item._id}`} asChild>{CardContent}</Link>;
+    return <Link href={`./${item._id}`} asChild>{CardContent}</Link>;
   }
 
 

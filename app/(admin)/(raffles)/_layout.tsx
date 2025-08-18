@@ -17,7 +17,9 @@ export default function RafflesStackLayout() {
                 headerTitleAlign: 'center',
             }}>
             <Stack.Screen name="index" options={{ title: 'Administrar Sorteos' }} />
-            <Stack.Screen name="[id]" options={{ title: 'Editar Sorteo', headerShown: false }} />
+            <Stack.Screen name="[id]/index" options={{ title: 'Editar Sorteo', headerShown: true }} />
+            <Stack.Screen name="[id]/sales" options={{ title: 'Ventas del Sorteo' }} />
+
         </Stack>
     );
 }

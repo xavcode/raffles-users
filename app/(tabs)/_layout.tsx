@@ -64,7 +64,7 @@ const TabsLayout = () => {
             borderWidth: 1,
             borderColor: '#e2e8f0',
             // 1. Altura controlada: base + área segura inferior (notch).
-            height: (Platform.OS === 'android' ? 60 : 50) + insets.bottom,
+            height: (Platform.OS === 'android' ? 60 : 70) + insets.bottom,
             // 2. Padding para empujar el contenido hacia arriba desde el notch.
             paddingBottom: insets.bottom,
             paddingTop: 8,

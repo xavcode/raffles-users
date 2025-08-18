@@ -11,70 +11,72 @@ import GlobalHeader from '../../components/GlobalHeader';
 
 // Helper para el estado de la compra
 const PURCHASE_STATUS_STYLES = {
-  pending_payment: {
-    label: 'Pendiente',
-    bg: 'bg-amber-100',
-    text: 'text-amber-700',
-    icon: 'time-outline' as const,
-  },
-  pending_confirmation: {
-    label: 'Pendiente',
-    bg: 'bg-amber-100',
-    text: 'text-amber-700',
-    icon: 'time-outline' as const,
-  },
-  completed: {
-    label: 'Pagado',
-    bg: 'bg-green-100',
-    text: 'text-green-700',
-    icon: 'checkmark-circle-outline' as const,
-  },
-  expired: {
-    label: 'Expirado',
-    bg: 'bg-red-100',
-    text: 'text-red-700',
-    icon: 'close-circle-outline' as const,
-  },
-  rejected: {
-    label: 'Expirado',
-    bg: 'bg-red-100',
-    text: 'text-red-700',
-    icon: 'close-circle-outline' as const,
-  }
+  pending_payment: { label: 'Pendiente', bg: 'bg-amber-100', text: 'text-amber-700', icon: 'time-outline' as const, iconColor: '#b45309' },
+  pending_confirmation: { label: 'Verificando', bg: 'bg-blue-100', text: 'text-blue-700', icon: 'hourglass-outline' as const, iconColor: '#1d4ed8' },
+  completed: { label: 'Pagado', bg: 'bg-green-100', text: 'text-green-700', icon: 'checkmark-circle-outline' as const, iconColor: '#15803d' },
+  expired: { label: 'Expirado', bg: 'bg-slate-100', text: 'text-slate-600', icon: 'close-circle-outline' as const, iconColor: '#475569' },
+  rejected: { label: 'Rechazado', bg: 'bg-red-100', text: 'text-red-700', icon: 'alert-circle-outline' as const, iconColor: '#b91c1c' }
 };
 
 type PurchaseWithDetails = Doc<'purchases'> & { raffleTitle: string };
 
+const PurchaseListItemSkeleton = () => (
+  <View className="bg-white mx-4 mb-3 rounded-2xl shadow-sm shadow-slate-200/60 overflow-hidden">
+    <View className="p-4 space-y-3">
+      <View className="flex-row justify-between items-start">
+        <View className="w-3/4 space-y-2">
+          <View className="h-5 bg-slate-200 rounded w-full" />
+          <View className="h-5 bg-slate-200 rounded w-2/3" />
+        </View>
+        <View className="h-6 w-1/5 bg-slate-200 rounded-full" />
+      </View>
+      <View className="flex-row items-center space-x-3">
+        <View className="h-5 w-1/3 bg-slate-200 rounded" />
+        <View className="h-5 w-1/3 bg-slate-200 rounded" />
+      </View>
+    </View>
+    <View className="bg-slate-50/70 px-4 py-3 border-t border-slate-200/80">
+      <View className="h-4 w-1/2 bg-slate-200 rounded" />
+    </View>
+  </View>
+);
+
 const PurchaseListItem = ({ purchase }: { purchase: PurchaseWithDetails }) => {
-  const statusStyle = PURCHASE_STATUS_STYLES[purchase.status as keyof typeof PURCHASE_STATUS_STYLES];
-  const purchaseDate = formatUtcToLocal(purchase._creationTime, "d 'de' MMMM, yyyy ' - ' h:mm a");
+  const statusStyle = PURCHASE_STATUS_STYLES[purchase.status as keyof typeof PURCHASE_STATUS_STYLES] || PURCHASE_STATUS_STYLES.expired;
+  const purchaseDate = formatUtcToLocal(purchase._creationTime, "d MMM, yyyy 'a las' h:mm a");
   const formattedAmount = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(purchase.totalAmount);
-  // console.log(purchase._id)
 
   return (
-    <Link href={`/${purchase._id}`} asChild>
-      <TouchableOpacity activeOpacity={0.7}>
-        <View className="bg-white mx-4 mb-4 p-4 rounded-2xl shadow-sm shadow-slate-300/50">
-          <View className="flex-row justify-between items-start">
+    <Link href={`./${purchase._id}`} asChild>
+      <TouchableOpacity activeOpacity={0.8} className="bg-white mx-4 mb-3 rounded-2xl shadow-sm shadow-slate-200/60 overflow-hidden">
+        <View className="p-4">
+          {/* Header */}
+          <View className="flex-row justify-between items-start mb-3">
             <Text className="text-base font-quicksand-bold text-slate-800 w-8/12" numberOfLines={2}>
               {purchase.raffleTitle}
             </Text>
             <View className={`flex-row items-center px-2.5 py-1 rounded-full ${statusStyle.bg}`}>
-              <Ionicons name={statusStyle.icon} size={14} color={statusStyle.text.replace('text-', '')} />
-              <Text className={`ml-1 text-xs font-quicksand-bold ${statusStyle.text}`}>{statusStyle.label}</Text>
+              <Ionicons name={statusStyle.icon} size={14} color={statusStyle.iconColor} />
+              <Text className={`ml-1.5 text-xs font-quicksand-bold ${statusStyle.text}`}>{statusStyle.label}</Text>
             </View>
           </View>
-          <View className="mt-4 border-t border-slate-100 pt-3">
-            <View className="flex-row justify-between items-center mb-1">
-              <Text className="text-sm font-quicksand-medium text-slate-500">Boletos</Text>
-              <Text className="text-sm font-quicksand-semibold text-slate-700">{purchase.ticketCount}</Text>
+          {/* Details */}
+          <View className="flex-row items-center">
+            <View className="flex-row items-center">
+              <Ionicons name="cash-outline" size={16} color="#475569" />
+              <Text className="text-sm font-quicksand-bold text-primary ml-1.5">{formattedAmount}</Text>
             </View>
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-sm font-quicksand-medium text-slate-500">Total</Text>
-              <Text className="text-sm font-quicksand-bold text-primary">{formattedAmount}</Text>
+            <View className="w-px h-4 bg-slate-200 mx-3" />
+            <View className="flex-row items-center">
+              <Ionicons name="ticket-outline" size={16} color="#475569" />
+              <Text className="text-sm font-quicksand-semibold text-slate-600 ml-1.5">{purchase.ticketCount} Boletos</Text>
             </View>
-            <Text className="text-xs font-quicksand-medium text-slate-400 text-right">{purchaseDate}</Text>
           </View>
+        </View>
+        {/* Footer */}
+        <View className="bg-slate-50/70 px-4 py-2 border-t border-slate-200/80 flex-row justify-between items-center">
+          <Text className="text-xs font-quicksand-medium text-slate-500">{purchaseDate}</Text>
+          <Ionicons name="chevron-forward-outline" size={18} color="#94a3b8" />
         </View>
       </TouchableOpacity>
     </Link>
@@ -99,8 +101,11 @@ const MyPurchases = () => {
   if (convexUser === undefined || (convexUser && status === 'LoadingFirstPage')) {
     return (
       <SafeAreaView className="flex-1 bg-slate-50">
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#4f46e5" />
+        <GlobalHeader />
+        <View className="pt-4">
+          <PurchaseListItemSkeleton />
+          <PurchaseListItemSkeleton />
+          <PurchaseListItemSkeleton />
         </View>
       </SafeAreaView>
     );

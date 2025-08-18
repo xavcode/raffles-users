@@ -35,8 +35,8 @@ const PurchaseDetailsPage = () => {
 
   // --- MUTATIONS ---
 
-
   const notifyPaymentMutation = useMutation(api.tickets.adminNotifyPayment);
+
   // --- QUERIES DE DATOS ---
 
   const purchaseDetails = useQuery(

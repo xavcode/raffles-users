@@ -112,7 +112,7 @@ const AdminPurchaseDetailsPage = () => {
 
         <View className="bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50 mb-6">
           <Text className="text-lg font-quicksand-bold text-slate-700 mb-2">Boletos Reservados</Text>
-          <View className="flex-row flex-wrap justify-center -m-1 pt-2">
+          <View className="flex-row flex-wrap">
             {tickets.map(ticket => (
               <View key={ticket.ticketNumber} className="bg-primary/10 w-16 h-16 m-1 rounded-lg items-center justify-center">
                 <Text className="text-2xl font-quicksand-bold text-primary">{ticket.ticketNumber.toString().padStart(3, '0')}</Text>

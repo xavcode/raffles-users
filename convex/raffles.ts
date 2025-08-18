@@ -134,7 +134,9 @@ export const getPurchasesForRaffle = query({
           ...purchase,
           user: user ? {
             firstName: user.firstName,
+            lastName: user.lastName,
             email: user.email,
+            phone: user.phone
           } : null,
         };
       })
