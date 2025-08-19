@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { paymentMethodsFields } from "./schema";
 
 /**
  * Métricas generales para el panel de administración.
@@ -70,17 +71,28 @@ export const getSettings = query({
     },
 });
 
-export const updateSettings = mutation({
-    args: {},
-    handler: async (ctx, _args) => {
-        const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new Error('No autenticado');
-        const admin = await ctx.db.query('users').withIndex('by_clerk_id', q => q.eq('clerkId', identity.subject)).unique();
-        if (!admin || admin.userType !== 'admin') throw new Error('Permisos insuficientes');
-        // Esta mutación se actualizará con campos concretos desde otras mutaciones especializadas
-        return true;
+
+
+export const createPaymentMethod = mutation({
+    args: paymentMethodsFields,
+    handler: async (ctx, args) => {
+        return await ctx.db.insert("paymentMethods", args)
     }
-});
+})
+
+export const deletePaymentMethod = mutation({
+    args: { paymentMethodId: v.id("paymentMethods") },
+    handler: async (ctx, args) => {
+        return await ctx.db.delete(args.paymentMethodId)
+    }
+})
+
+export const getPaymentMethods = query({
+    args: {},
+    handler: async (ctx) => {
+        return await ctx.db.query('paymentMethods').collect()
+    }
+})
 
 export const setPurchasesEnabled = mutation({
     args: { enabled: v.boolean() },

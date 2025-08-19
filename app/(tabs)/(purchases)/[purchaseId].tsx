@@ -9,7 +9,7 @@ import { es } from 'date-fns/locale'; // Asegúrate de que este import sea corre
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Image, Modal, Platform, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Clipboard, Dimensions, Image, Modal, Platform, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { SnapbackZoom } from 'react-native-zoom-toolkit';
@@ -45,6 +45,7 @@ const PurchaseDetailsPage = () => {
   );
   const convexUser = useQuery(api.users.getCurrent);
   const settings = useQuery(api.admin.getSettings);
+  const paymentMethods = useQuery(api.admin.getPaymentMethods);
 
   const cloudName = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -117,6 +118,18 @@ const PurchaseDetailsPage = () => {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleCopyToClipboard = async (phoneNumber: string) => {
+    if (!phoneNumber) return;
+    Clipboard.setString(phoneNumber);
+    Toast.show({
+      type: 'success',
+      text1: `${phoneNumber}`,
+      text2: `copiado al portapapeles.`,
+      visibilityTime: 2000
+
+    });
   };
 
 
@@ -203,38 +216,62 @@ const PurchaseDetailsPage = () => {
 
         {/* Botón para el USUARIO: Solo si es el dueño y la compra está pendiente */}
         {convexUser?._id === purchase.userId && purchase.status === PENDING_PAYMENT && (
-          <View className='bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50'>
+          <View className="bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50 space-y-5">
+            {/* --- Sección de Métodos de Pago --- */}
             <View>
-              <Text className="text-lg font-quicksand-bold text-slate-700 mb-3">Sube tu comprobante</Text>
+              <Text className="text-lg font-quicksand-bold text-slate-700 mb-2">Realiza tu pago aquí</Text>
+              <Text className="text-sm font-quicksand-medium text-slate-600 mb-4">Copia los datos de uno de los siguientes métodos. Una vez realizado, sube el comprobante más abajo.</Text>
+              <View className="space-y-2">
+                {paymentMethods?.map((method) => (
+                  <Pressable key={method._id} className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl p-2 justify-between active:bg-slate-400">
+                    <View style={{ flex: 1 }}>
+                      <Text className="text-xs font-quicksand-medium text-slate-500">Entidad</Text>
+                      <Text className="text-base font-quicksand-bold text-slate-800 mb-1">{method.name}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text className="text-xs font-quicksand-medium text-slate-500">Titular</Text>
+                      <Text className="text-sm font-quicksand-semibold text-slate-700">{method.userName}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text className="text-xs font-quicksand-medium text-slate-500">Número</Text>
+                      <Text className="text-sm font-quicksand-semibold text-slate-700">{method.paymentsNumber}</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => handleCopyToClipboard(method.paymentsNumber)} className="h-9 w-9 items-center justify-center active:bg-red-100 rounded-full">
+                      <Ionicons name="copy-outline" size={32} color="#94a3b8" />
+                    </TouchableOpacity>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+
+            {/* --- Sección para Subir Comprobante --- */}
+            <View className="border-t border-slate-200/80 pt-5">
+              <Text className="text-lg font-quicksand-bold text-slate-700 mb-3">Sube tu comprobante de pago</Text>
               <Pressable onPress={pickImage} className="bg-slate-100 border-2 border-dashed border-slate-300 h-48 rounded-xl justify-center items-center overflow-hidden active:bg-slate-200/70 transition-colors">
                 {imageAsset ? (
-                  // <Image source={{ uri: imageAsset.uri }} className="w-full h-full" resizeMode="cover" />
                   <>
                     <Image source={{ uri: imageAsset.uri }} className="w-full h-full" resizeMode="cover" />
                     <TouchableOpacity
                       onPress={() => setImageAsset(null)}
-                      className="absolute top-2 right-2 bg-black/50 p-1.5 rounded-full"
-                    >
+                      className="absolute top-2 right-2 bg-black/50 p-1.5 rounded-full">
                       <Ionicons name="close" size={20} color="white" />
                     </TouchableOpacity>
                   </>
                 ) : (
                   <View className="items-center">
                     <Ionicons name="cloud-upload-outline" size={40} color="#94a3b8" />
-                    <Text className="text-slate-500 font-quicksand-medium mt-2">Seleccionar una imagen</Text>
+                    <Text className="text-slate-500 font-quicksand-medium mt-2">Toca para seleccionar una imagen</Text>
                   </View>
                 )}
               </Pressable>
             </View>
 
-            <View className="mt-5 items-center">
+            {/* --- Botón de Confirmación de Pago --- */}
+            <View className="items-center">
               <TouchableOpacity
                 onPress={handleConfirmPayment}
                 disabled={isProcessing || !imageAsset || settings?.purchasesEnabled === false}
-                className={`bg-green-500 flex-row items-center justify-center p-4 rounded-xl w-full shadow-lg active:opacity-80 disabled:opacity-50 disabled:bg-slate-400 ${settings?.purchasesEnabled === false ? 'bg-slate-400' : 'shadow-green-500/40'}`}
-
-                activeOpacity={0.8}
-              >
+                className={`bg-green-500 flex-row items-center justify-center p-4 rounded-xl w-full shadow-lg active:opacity-80 disabled:opacity-50 disabled:bg-slate-400 ${settings?.purchasesEnabled === false ? 'bg-slate-400' : 'shadow-green-500/40'}`} activeOpacity={0.8}>
                 {isProcessing ? (
                   <ActivityIndicator color="white" />
                 ) : (
@@ -243,14 +280,13 @@ const PurchaseDetailsPage = () => {
                     <Text className="text-white font-quicksand-bold text-base ml-2"> {settings?.purchasesEnabled === false
                       ? 'Compras deshabilitadas'
                       : !imageAsset
-                        ? 'Debes enviar comprobante'
+                        ? 'Sube tu comprobante'
                         : 'Ya realicé el pago'
                     }
                     </Text>
                   </>
                 )}
               </TouchableOpacity>
-              <Text className="text-center text-slate-500 font-quicksand-medium text-xs mt-4 px-4">Al presionar, notificarás al administrador para que verifique la transferencia y apruebe tu compra.</Text>
             </View>
           </View>
         )}

@@ -1,9 +1,10 @@
 import { api } from '@/convex/_generated/api'
+import { Doc, Id } from '@/convex/_generated/dataModel'
 import { Ionicons } from '@expo/vector-icons'
 import { useMutation, useQuery } from 'convex/react'
 import { Stack } from 'expo-router'
 import React, { useEffect, useMemo, useState } from 'react'
-import { Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, Pressable, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
@@ -15,17 +16,32 @@ type UserPreview = {
   role: 'member' | 'admin'
 }
 
+
+type PaymentMethod = Doc<'paymentMethods'>
+
 const Settings = () => {
-  // Reserva de boletos
-  const settings = useQuery(api.admin.getSettings)
-  const setPurchasesEnabled = useMutation(api.admin.setPurchasesEnabled)
-  const setReleaseTime = useMutation(api.admin.setReleaseTime)
-  const updateRole = useMutation(api.users.updateRole)
 
   const [reservationMinutes, setReservationMinutes] = useState<string>('30')
   const [savedReservationMinutes, setSavedReservationMinutes] = useState<string>('30')
   const [purchasesEnabledLocal, setPurchasesEnabledLocal] = useState<boolean>(true)
   const [isSavingReservation, setIsSavingReservation] = useState(false)
+  const [createPaymentMethodForm, setCreatePaymentMethodForm] = useState({ name: '', paymentsNumber: '', userName: '' })
+
+  const [searchEmail, setSearchEmail] = useState('')
+  const [queryEmail, setQueryEmail] = useState<string | null>(null)
+  const [userResult, setUserResult] = useState<UserPreview | null>(null)
+  const [isSearching, setIsSearching] = useState(false)
+  const [isSavingRole, setIsSavingRole] = useState(false)
+  const [isCreatingPaymentMethod, setIsCreatingPaymentMethod] = useState(false)
+
+  const settings = useQuery(api.admin.getSettings)
+  const setPurchasesEnabled = useMutation(api.admin.setPurchasesEnabled)
+  const setReleaseTime = useMutation(api.admin.setReleaseTime)
+  const updateRole = useMutation(api.users.updateRole)
+  const createPaymentMethod = useMutation(api.admin.createPaymentMethod)
+  const paymentMethods = useQuery(api.admin.getPaymentMethods)
+  const deletePaymentMethod = useMutation(api.admin.deletePaymentMethod)
+
 
   const isReservationDirty = useMemo(() => reservationMinutes !== savedReservationMinutes, [reservationMinutes, savedReservationMinutes])
 
@@ -53,13 +69,49 @@ const Settings = () => {
     }
   }
 
-  // Gestión de usuarios
-  const [searchEmail, setSearchEmail] = useState('')
-  const [queryEmail, setQueryEmail] = useState<string | null>(null)
-  const [isSearching, setIsSearching] = useState(false)
-  const [userResult, setUserResult] = useState<UserPreview | null>(null)
-  const [isSavingRole, setIsSavingRole] = useState(false)
+  //Gestion paymentsMethods
+  const handleCreatePaymentMethod = async () => {
+    if (!createPaymentMethodForm.name.trim() || !createPaymentMethodForm.paymentsNumber.trim()) {
+      Toast.show({
+        type: 'error',
+        text1: 'Campos requeridos',
+        text2: 'Por favor, completa el nombre y el número.',
+      })
+      return
+    }
+    const cleanedName = createPaymentMethodForm.name.trim().replace(/\s+/g, '');
+    const cleanedPaymentsNumber = createPaymentMethodForm.paymentsNumber.trim().replace(/\s+/g, '');
+    const cleanedUserName = createPaymentMethodForm.userName.trim().replace(/\s+/g, '');
 
+    setIsCreatingPaymentMethod(true)
+    try {
+      await createPaymentMethod({
+        name: cleanedName,
+        paymentsNumber: cleanedPaymentsNumber,
+        userName: cleanedUserName,
+        isActive: true
+      })
+      Toast.show({
+        type: 'success',
+        text1: '¡Guardado!',
+        text2: 'El nuevo método de pago ha sido agregado.'
+      })
+      setCreatePaymentMethodForm({ name: '', paymentsNumber: '', userName: '' }) // Limpiar el formulario
+    } catch (error) {
+      console.log(error)
+      Toast.show({
+        type: 'error',
+        text1: 'Error al crear el metodo de pago',
+        text2: 'No se pudo guardar el método de pago.'
+      })
+    } finally {
+      setIsCreatingPaymentMethod(false)
+    }
+  }
+
+
+
+  // Gestión de usuarios
   const handleSearchUser = async () => {
     if (!searchEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(searchEmail)) {
       Toast.show({ type: 'error', text1: 'Correo inválido', text2: 'Escribe un correo válido para buscar.' })
@@ -101,7 +153,6 @@ const Settings = () => {
   }
 
   // Preferencias locales adicionales
-  const [pushEnabled, setPushEnabled] = useState(true)
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
@@ -227,16 +278,63 @@ const Settings = () => {
             )}
           </View>
 
-          {/* Sección: Preferencias */}
-          <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50">
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center">
-                <Ionicons name="notifications-outline" size={18} color="#64748b" />
-                <Text className="ml-2 text-base font-quicksand-bold text-slate-800">Notificaciones push</Text>
-              </View>
-              <Switch value={pushEnabled} onValueChange={setPushEnabled} thumbColor={pushEnabled ? '#4f46e5' : undefined} />
+          {/* Sección: metodos de pago */}
+          <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mb-5">
+            <View className="flex-row items-center mb-3">
+              <Ionicons name="card-outline" size={18} color="#64748b" />
+              <Text className="ml-2 text-base font-quicksand-bold text-slate-800">Métodos de Pago</Text>
             </View>
-            <Text className="text-xs text-slate-500 mt-2">Activa/desactiva recordatorios y avisos generales. (Configuración local)</Text>
+            <Text className="text-sm text-slate-600 mb-4">Agrega o elimina los métodos de pago que los usuarios verán al comprar.</Text>
+
+            {/* Formulario para agregar */}
+            <View className='space-y-3 mb-4'>
+              <TextInput
+                className="flex-1 bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium"
+                placeholder='Nequi - daviplata'
+                value={createPaymentMethodForm.name}
+                onChangeText={(text) => setCreatePaymentMethodForm({ ...createPaymentMethodForm, name: text })}
+              />
+              <TextInput
+                className="flex-1 bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium"
+                placeholder='Andres Perez'
+                value={createPaymentMethodForm.userName}
+                onChangeText={(text) => setCreatePaymentMethodForm({ ...createPaymentMethodForm, userName: text })}
+              />
+              <TextInput
+                className="flex-1 bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium"
+                value={createPaymentMethodForm.paymentsNumber}
+                onChangeText={(text) => setCreatePaymentMethodForm({ ...createPaymentMethodForm, paymentsNumber: text })}
+                placeholder='300 000 00 00'
+                keyboardType="number-pad"
+              />
+              <Pressable onPress={handleCreatePaymentMethod} disabled={isCreatingPaymentMethod} className="h-12 rounded-lg items-center justify-center bg-primary active:bg-primary/80 disabled:bg-primary/40">
+                {isCreatingPaymentMethod ? <ActivityIndicator color="white" /> : <Text className="text-white font-quicksand-bold">Agregar Método</Text>}
+              </Pressable>
+            </View>
+
+            {/* Lista de métodos existentes */}
+            <View className="border-t border-slate-200 pt-3 space-y-2">
+              {paymentMethods === undefined && <ActivityIndicator className="mt-2" />}
+              {paymentMethods?.map((method: PaymentMethod) => (
+                <View key={method._id} className="flex-row items-center justify-between bg-slate-50 p-3 rounded-lg">
+                  <View style={{ flex: 1, alignItems: 'flex-start' }}>
+                    <Text className="font-quicksand-bold text-slate-700">{method.name}</Text>
+                  </View>
+                  <View style={{ flex: 1, alignItems: 'flex-start' }}>
+                    <Text className="font-quicksand-medium text-slate-500">{method.paymentsNumber}</Text>
+                  </View>
+                  <View style={{ flex: 1, alignItems: 'flex-start' }}>
+                    <Text className="font-quicksand-medium text-slate-500">{method.userName}</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => deletePaymentMethod({ paymentMethodId: method._id as Id<'paymentMethods'> })} className="h-9 w-9 items-center justify-center active:bg-red-100 rounded-full">
+                    <Ionicons name="trash-outline" size={20} color="#ef4444" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              {paymentMethods?.length === 0 && (
+                <Text className="text-center text-sm text-slate-400 py-2">No hay métodos de pago agregados.</Text>
+              )}
+            </View>
           </View>
         </ScrollView>
       </KeyboardAwareScrollView>

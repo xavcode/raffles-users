@@ -1,6 +1,23 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+export const paymentMethodsFields = {
+  name: v.string(), // Ej: "Nequi", "Daviplata"
+  paymentsNumber: v.string(),
+  userName: v.string(),
+  description: v.optional(v.string()),
+  isActive: v.boolean(),
+  config: v.optional(
+    v.object({
+      qrCodeUrl: v.optional(v.string()),
+      phoneNumber: v.optional(v.string()),
+      instructions: v.optional(v.string()),
+      // Puedes agregar más campos opcionales según lo necesites
+    })
+  ),
+  createdBy: v.optional(v.id("users"),)
+}
+
 export default defineSchema({
   raffles: defineTable({
     creatorId: v.id("users"),
@@ -63,6 +80,7 @@ export default defineSchema({
   purchases: defineTable({
     userId: v.id("users"),
     raffleId: v.id("raffles"),
+    transactionId: v.optional(v.id("transactions")),
     ticketCount: v.float64(),
     totalAmount: v.float64(),
     imageUrl: v.optional(v.string()),
@@ -81,7 +99,7 @@ export default defineSchema({
     .index("by_user_and_raffle", ["userId", "raffleId"]),
 
   users: defineTable({
-    balance: v.float64(),
+    balance: v.optional(v.float64()),
     clerkId: v.string(),
     email: v.optional(v.string()),
     firstName: v.string(),
@@ -94,6 +112,9 @@ export default defineSchema({
     .index("by_email", ["email"])
     .index("by_pushToken", ["pushToken"])
     .index("by_userType_pushToken", ["userType", "pushToken"]),
+
+
+  paymentMethods: defineTable(paymentMethodsFields),
 
   notifications: defineTable({
     type: v.string(), // e.g., "payment_confirmation_pending"

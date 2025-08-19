@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
 import * as ImagePicker from 'expo-image-picker';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Image, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,19 +37,19 @@ const EditRafflePage = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  useEffect(() => {
-    if (raffle) {
-      setTitle(raffle.title);
-      setDescription(raffle.description);
-      setPrize(String(raffle.prize));
-      setImageUrl(raffle.imageUrl);
-      setTicketPrice(String(raffle.ticketPrice));
-      setTotalTickets(String(raffle.totalTickets));
-      if (raffle.winningTicketNumber) {
-        setWinningTicket(String(raffle.winningTicketNumber));
-      }
-    }
-  }, [raffle]);
+  // useEffect(() => {
+  //   if (raffle) {
+  //     setTitle(raffle.title);
+  //     setDescription(raffle.description);
+  //     setPrize(String(raffle.prize));
+  //     setImageUrl(raffle.imageUrl);
+  //     setTicketPrice(String(raffle.ticketPrice));
+  //     setTotalTickets(String(raffle.totalTickets));
+  //     if (raffle.winningTicketNumber) {
+  //       setWinningTicket(String(raffle.winningTicketNumber));
+  //     }
+  //   }
+  // }, [raffle]);
 
   const cloudName = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
