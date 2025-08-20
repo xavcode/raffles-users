@@ -92,7 +92,7 @@ const TabsLayout = () => {
           options={{
             title: 'Sorteos',
             // 4. Usamos Ionicons para consistencia y un tamaño adecuado.
-            tabBarIcon: ({ color }) => <Ionicons name="home-outline" color={color} size={26} />,
+            tabBarIcon: ({ color }) => <Ionicons name="list-outline" color={color} size={26} />,
           }}
         />
         <Tabs.Screen

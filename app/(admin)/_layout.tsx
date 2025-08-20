@@ -4,8 +4,10 @@ import { usePaginatedQuery } from 'convex/react';
 import * as Notifications from 'expo-notifications';
 import { Tabs, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import HeaderLeft from '../components/HeaderLeft';
+import HeaderRigth from '../components/HeaderRigth';
 
 export default function AdminLayout() {
   // 1. Todos los hooks se declaran al principio del componente.
@@ -44,6 +46,7 @@ export default function AdminLayout() {
       screenOptions={{
         tabBarActiveTintColor: '#4f46e5', // indigo-600
         tabBarInactiveTintColor: '#64748b', // slate-500
+        // headerShown: false,
         tabBarStyle: {
           backgroundColor: '#ffffff',
           borderWidth: 1,
@@ -69,8 +72,7 @@ export default function AdminLayout() {
             }),
           },
         }),
-
-        headerTitleAlign: 'center',
+        // headerTitleAlign: 'center',
         headerStyle: {
           backgroundColor: '#f8fafc', // slate-50
           elevation: 0,
@@ -78,36 +80,22 @@ export default function AdminLayout() {
           borderBottomWidth: 1,
           borderBottomColor: '#e2e8f0', // slate-200
         },
+        headerTitle: '',
+
+
         headerTitleStyle: {
           fontFamily: 'Quicksand-Bold',
           fontSize: 18,
         },
-        headerLeft: () => (
-          <Pressable onPress={() => router.replace('/(tabs)/')} className="ml-3">
-            {({ pressed }) => (
-              <View className={`flex-row items-center rounded-lg p-2 ${pressed ? 'bg-indigo-100' : 'bg-transparent'}`}>
-                <Ionicons name="home-outline" size={20} color="#4f46e5" />
-                <Text className="text-indigo-600 font-quicksand-bold text-base ml-1.5">Inicio</Text>
-              </View>
-            )}
-          </Pressable>
-        ),
-        headerRight: () => (
-          <Pressable onPress={() => { router.push('/(admin)/settings') }}>
-            {
-              ({ pressed }) => (
-                <View className={`flex mr-5 p-2 rounded-lg ${pressed ? 'bg-indigo-100' : 'bg-transparent'}`}>
-                  <Ionicons name="settings-outline" size={28} color={'#4f46e5'} />
-                </View>
-              )
-            }
-          </Pressable>
-        )
+
+        headerLeft: () => <HeaderLeft />,
+        headerRight: () => <HeaderRigth />,
+
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Inicio',
+          tabBarLabel: 'Resumen',
           tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" color={color} size={size} />,
         }}
       />
@@ -116,7 +104,7 @@ export default function AdminLayout() {
         name="(raffles)"
         options={{
           title: 'Sorteos',
-          tabBarIcon: ({ color, size }) => <Ionicons name="list-outline" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="ticket-outline" color={color} size={size} />,
           // 2. Ocultamos el header del Tab, porque el Stack de adentro ya tiene el suyo.
           headerShown: false,
         }}
@@ -125,6 +113,8 @@ export default function AdminLayout() {
         name="create-raffle"
         options={{
           title: 'Crear',
+          headerShown: false,
+          tabBarLabel: 'Nuevo Sorteo',
           tabBarIcon: ({ color, size }) => <Ionicons name="add-circle-outline" color={color} size={size} />,
         }}
       />
@@ -132,6 +122,7 @@ export default function AdminLayout() {
         name="verifications"
         options={{
           title: 'Verificaciones',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => <Ionicons name="shield-checkmark-outline" color={color} size={size} />,
           tabBarBadge: pendingCount && pendingCount > 0 ? pendingCount : undefined,
         }}
@@ -139,6 +130,7 @@ export default function AdminLayout() {
       {/* Ocultamos las rutas que no son pestañas */}
       <Tabs.Screen name="purchases/[purchaseId]" options={{ href: null }} />
       <Tabs.Screen name='settings' options={{ href: null }} />
+
     </Tabs>
   );
 }

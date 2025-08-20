@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useMutation } from 'convex/react';
 import * as ImagePicker from 'expo-image-picker';
-import { Stack, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Image, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -167,7 +167,6 @@ const CreateRaffle = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
-      <Stack.Screen options={{ title: 'Crear Nuevo Sorteo' }} />
       <KeyboardAwareScrollView
         contentContainerClassName='flex-1'
         enableOnAndroid={true}

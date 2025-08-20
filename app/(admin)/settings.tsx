@@ -79,9 +79,9 @@ const Settings = () => {
       })
       return
     }
-    const cleanedName = createPaymentMethodForm.name.trim().replace(/\s+/g, '');
+    const cleanedName = createPaymentMethodForm.name.trim();
+    const cleanedUserName = createPaymentMethodForm.userName.trim();
     const cleanedPaymentsNumber = createPaymentMethodForm.paymentsNumber.trim().replace(/\s+/g, '');
-    const cleanedUserName = createPaymentMethodForm.userName.trim().replace(/\s+/g, '');
 
     setIsCreatingPaymentMethod(true)
     try {
@@ -287,7 +287,7 @@ const Settings = () => {
             <Text className="text-sm text-slate-600 mb-4">Agrega o elimina los métodos de pago que los usuarios verán al comprar.</Text>
 
             {/* Formulario para agregar */}
-            <View className='space-y-3 mb-4'>
+            <View className='space-y-3 gap-2 mb-4'>
               <TextInput
                 className="flex-1 bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium"
                 placeholder='Nequi - daviplata'
@@ -313,7 +313,7 @@ const Settings = () => {
             </View>
 
             {/* Lista de métodos existentes */}
-            <View className="border-t border-slate-200 pt-3 space-y-2">
+            <View className="border-t border-slate-200 pt-3 space-y-3 gap-2">
               {paymentMethods === undefined && <ActivityIndicator className="mt-2" />}
               {paymentMethods?.map((method: PaymentMethod) => (
                 <View key={method._id} className="flex-row items-center justify-between bg-slate-50 p-3 rounded-lg">
@@ -321,13 +321,13 @@ const Settings = () => {
                     <Text className="font-quicksand-bold text-slate-700">{method.name}</Text>
                   </View>
                   <View style={{ flex: 1, alignItems: 'flex-start' }}>
-                    <Text className="font-quicksand-medium text-slate-500">{method.paymentsNumber}</Text>
-                  </View>
-                  <View style={{ flex: 1, alignItems: 'flex-start' }}>
                     <Text className="font-quicksand-medium text-slate-500">{method.userName}</Text>
                   </View>
+                  <View style={{ flex: 1, alignItems: 'flex-start' }}>
+                    <Text className="font-quicksand-medium text-slate-500">{method.paymentsNumber}</Text>
+                  </View>
                   <TouchableOpacity onPress={() => deletePaymentMethod({ paymentMethodId: method._id as Id<'paymentMethods'> })} className="h-9 w-9 items-center justify-center active:bg-red-100 rounded-full">
-                    <Ionicons name="trash-outline" size={20} color="#ef4444" />
+                    <Ionicons name="trash-outline" size={22} color="#ef4444" />
                   </TouchableOpacity>
                 </View>
               ))}

@@ -128,10 +128,8 @@ const PurchaseDetailsPage = () => {
       text1: `${phoneNumber}`,
       text2: `copiado al portapapeles.`,
       visibilityTime: 2000
-
     });
   };
-
 
   // --- RENDERIZADO CONDICIONAL ---
   if (isLoading) {
@@ -220,8 +218,8 @@ const PurchaseDetailsPage = () => {
             {/* --- Sección de Métodos de Pago --- */}
             <View>
               <Text className="text-lg font-quicksand-bold text-slate-700 mb-2">Realiza tu pago aquí</Text>
-              <Text className="text-sm font-quicksand-medium text-slate-600 mb-4">Copia los datos de uno de los siguientes métodos. Una vez realizado, sube el comprobante más abajo.</Text>
-              <View className="space-y-2">
+              <Text className="text-sm font-quicksand-medium text-slate-600 mb-4">Copia los datos de pago. Una vez realizado, sube el comprobante más abajo.</Text>
+              <View className="space-y-2 gap-2">
                 {paymentMethods?.map((method) => (
                   <Pressable key={method._id} className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl p-2 justify-between active:bg-slate-400">
                     <View style={{ flex: 1 }}>
@@ -246,7 +244,7 @@ const PurchaseDetailsPage = () => {
 
             {/* --- Sección para Subir Comprobante --- */}
             <View className="border-t border-slate-200/80 pt-5">
-              <Text className="text-lg font-quicksand-bold text-slate-700 mb-3">Sube tu comprobante de pago</Text>
+              <Text className="text-lg font-quicksand-bold text-slate-700 mb-3">Sube tu comprobante</Text>
               <Pressable onPress={pickImage} className="bg-slate-100 border-2 border-dashed border-slate-300 h-48 rounded-xl justify-center items-center overflow-hidden active:bg-slate-200/70 transition-colors">
                 {imageAsset ? (
                   <>
