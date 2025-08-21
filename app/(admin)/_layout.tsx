@@ -1,28 +1,22 @@
 import { api } from '@/convex/_generated/api';
 import { Ionicons } from '@expo/vector-icons';
-import { usePaginatedQuery } from 'convex/react';
+import { Authenticated, Unauthenticated, usePaginatedQuery, useQuery } from 'convex/react';
 import * as Notifications from 'expo-notifications';
-import { Tabs, useRouter } from 'expo-router';
+import { Redirect, Tabs, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Platform } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import HeaderLeft from '../components/HeaderLeft';
-import HeaderRigth from '../components/HeaderRigth';
 
-export default function AdminLayout() {
-  // 1. Todos los hooks se declaran al principio del componente.
+function AdminProtectedLayout() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { results: purchases, status, loadMore
-  } = usePaginatedQuery(
-    api.tickets.getPendingConfirmationPurchases,
-    {},
-    {
-      initialNumItems: 10
-    });
+
+  // Obtenemos el usuario actual para verificar su rol
+  const convexUser = useQuery(api.users.getCurrent);
+  const { results: purchases } = usePaginatedQuery(api.tickets.getPendingConfirmationPurchases, {}, { initialNumItems: 10 });
   const pendingCount = purchases?.length;
 
-  // 2. El listener (efecto secundario) se envuelve en un useEffect.
+  // El listener de notificaciones se mantiene igual
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener(response => {
       const purchaseId = response.notification.request.content.data.purchaseId as string | undefined;
@@ -33,27 +27,37 @@ export default function AdminLayout() {
       }
     });
 
-    // 3. Se devuelve una función de limpieza para eliminar el listener cuando
-    //    el componente se desmonte, evitando fugas de memoria.
     return () => {
       subscription.remove();
     };
-  }, [router]); // Se añade `router` como dependencia del efecto.
+  }, [router]);
+
+  // Mientras se verifica el usuario, mostramos un indicador de carga
+  if (convexUser === undefined) {
+    return (
+      <View className="flex-1 justify-center items-center bg-slate-50">
+        <ActivityIndicator size="large" color="#4f46e5" />
+      </View>
+    );
+  }
+
+  // Si el usuario no es admin (o no tiene registro en Convex), lo redirigimos a la home de usuarios
+  if (convexUser === null || convexUser.userType !== 'admin') {
+    return <Redirect href="/(tabs)/" />;
+  }
 
   return (
+    // Si llegamos aquí, el usuario es admin y puede ver el layout de pestañas
     <Tabs
       initialRouteName="index"
       screenOptions={{
         tabBarActiveTintColor: '#4f46e5', // indigo-600
         tabBarInactiveTintColor: '#64748b', // slate-500
-        // headerShown: false,
         tabBarStyle: {
           backgroundColor: '#ffffff',
           borderWidth: 1,
           borderColor: '#e2e8f0',
-          // 1. Altura controlada: base + área segura inferior (notch).
           height: (Platform.OS === 'android' ? 60 : 70) + insets.bottom,
-          // 2. Padding para empujar el contenido hacia arriba desde el notch.
           paddingBottom: insets.bottom,
           paddingTop: 8,
         },
@@ -72,7 +76,8 @@ export default function AdminLayout() {
             }),
           },
         }),
-        // headerTitleAlign: 'center',
+
+        headerTitleAlign: 'center',
         headerStyle: {
           backgroundColor: '#f8fafc', // slate-50
           elevation: 0,
@@ -80,32 +85,42 @@ export default function AdminLayout() {
           borderBottomWidth: 1,
           borderBottomColor: '#e2e8f0', // slate-200
         },
-        headerTitle: '',
-
-
         headerTitleStyle: {
           fontFamily: 'Quicksand-Bold',
           fontSize: 18,
         },
-
-        headerLeft: () => <HeaderLeft />,
-        headerRight: () => <HeaderRigth />,
-
+        headerLeft: () => (
+          <Pressable onPress={() => router.replace('/(tabs)/')} className="ml-3">
+            {({ pressed }) => (
+              <View className={`flex-row items-center rounded-lg p-2 ${pressed ? 'bg-indigo-100' : 'bg-transparent'}`}>
+                <Ionicons name="home-outline" size={20} color="#4f46e5" />
+                <Text className="text-indigo-600 font-quicksand-bold text-base ml-1.5">Inicio</Text>
+              </View>
+            )}
+          </Pressable>
+        ),
+        headerRight: () => (
+          <Pressable onPress={() => { router.push('/(admin)/settings') }}>
+            {({ pressed }) => (
+              <View className={`flex mr-5 p-2 rounded-lg ${pressed ? 'bg-indigo-100' : 'bg-transparent'}`}>
+                <Ionicons name="settings-outline" size={28} color={'#4f46e5'} />
+              </View>
+            )}
+          </Pressable>
+        )
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          tabBarLabel: 'Resumen',
+          title: 'Inicio',
           tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" color={color} size={size} />,
         }}
       />
       <Tabs.Screen
-        // 1. Apuntamos al GRUPO de rutas, no a un archivo específico.
         name="(raffles)"
         options={{
           title: 'Sorteos',
-          tabBarIcon: ({ color, size }) => <Ionicons name="ticket-outline" color={color} size={size} />,
-          // 2. Ocultamos el header del Tab, porque el Stack de adentro ya tiene el suyo.
+          tabBarIcon: ({ color, size }) => <Ionicons name="list-outline" color={color} size={size} />,
           headerShown: false,
         }}
       />
@@ -113,8 +128,6 @@ export default function AdminLayout() {
         name="create-raffle"
         options={{
           title: 'Crear',
-          headerShown: false,
-          tabBarLabel: 'Nuevo Sorteo',
           tabBarIcon: ({ color, size }) => <Ionicons name="add-circle-outline" color={color} size={size} />,
         }}
       />
@@ -122,7 +135,6 @@ export default function AdminLayout() {
         name="verifications"
         options={{
           title: 'Verificaciones',
-          headerShown: false,
           tabBarIcon: ({ color, size }) => <Ionicons name="shield-checkmark-outline" color={color} size={size} />,
           tabBarBadge: pendingCount && pendingCount > 0 ? pendingCount : undefined,
         }}
@@ -130,7 +142,19 @@ export default function AdminLayout() {
       {/* Ocultamos las rutas que no son pestañas */}
       <Tabs.Screen name="purchases/[purchaseId]" options={{ href: null }} />
       <Tabs.Screen name='settings' options={{ href: null }} />
-
     </Tabs>
+  );
+}
+
+export default function AdminLayout() {
+  return (
+    <>
+      <Authenticated>
+        <AdminProtectedLayout />
+      </Authenticated>
+      <Unauthenticated>
+        <Redirect href="/login" />
+      </Unauthenticated>
+    </>
   );
 }
