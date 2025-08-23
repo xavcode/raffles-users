@@ -27,7 +27,7 @@ const SignIn = () => {
 
         <View >
           <SocialButton strategy="oauth_google" icon={icons.google} text="Continuar con Google" />
-          <SocialButton strategy="oauth_facebook" icon={icons.facebook} text="Continuar con Facebook" />
+          {/* <SocialButton strategy="oauth_facebook" icon={icons.facebook} text="Continuar con Facebook" /> */}
         </View>
       </View>
     </SafeAreaView>

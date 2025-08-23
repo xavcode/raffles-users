@@ -1,3 +1,4 @@
+import ModalPurchase from '@/app/components/ModalPurchase';
 import { PURCHASE_STATUS } from '@/constants/status';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
@@ -7,7 +8,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale'; // Asegúrate de que este import sea correcto
-import Checkbox from 'expo-checkbox';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
@@ -299,52 +299,27 @@ const PurchaseDetailsPage = () => {
                 )}
               </Pressable>
             </View>
+
+
+
+
+
+            {/* --- Modal de Confirmación de Comprobante --- */}
+            {confirmPaymentRecipeModalVisible && (
+
+              <ModalPurchase
+                confirmPaymentRecipeModalVisible={confirmPaymentRecipeModalVisible}
+                setConfirmPaymentRecipeModalVisible={setConfirmPaymentRecipeModalVisible}
+                imageAsset={imageAsset}
+                isChecked={isChecked}
+                setChecked={setChecked}
+                isProcessing={isProcessing}
+                setIsProcessing={setIsProcessing}
+                handleConfirmPayment={handleConfirmPayment}
+              />
+            )}
           </View>
         )}
-
-        {/* --- Modal de Confirmación de Comprobante --- */}
-        {confirmPaymentRecipeModalVisible && (
-          <Modal
-            visible={true}
-            transparent={true}
-            animationType="fade"
-            onRequestClose={() => setConfirmPaymentRecipeModalVisible(false)}
-          >
-            <SafeAreaView className="flex-1 bg-black/80" edges={['top', 'bottom']}>
-              {/* Contenedor principal del modal */}
-              <View className="flex-1 justify-center items-center">
-                {/* Botón para cerrar el modal */}
-                <TouchableOpacity
-                  className="absolute top-5 right-5 bg-black/50 p-2 rounded-full z-10"
-                  onPress={() => setConfirmPaymentRecipeModalVisible(false)}
-                >
-                  <Ionicons name="close" size={28} color="white" />
-                </TouchableOpacity>
-
-                {/* Imagen con zoom */}
-                <SnapbackZoom>
-                  <Image source={{ uri: imageAsset?.uri }} style={{ width: screenWidth, height: screenHeight }} resizeMode="contain" />
-                </SnapbackZoom>
-              </View>
-
-              {/* Panel inferior de confirmación */}
-              <View className="bg-white p-5 rounded-t-2xl">
-                <Text className="text-lg font-quicksand-bold text-slate-800 mb-3">Confirmar envío</Text>
-                <Pressable onPress={() => setChecked(!isChecked)} className="flex-row items-center mb-5">
-                  <Checkbox value={isChecked} onValueChange={setChecked} color={isChecked ? '#22c55e' : '#64748b'} />
-                  <Text className="text-base font-quicksand-medium text-slate-700 ml-3">Confirmo que este es mi comprobante de pago.</Text>
-                </Pressable>
-                <Pressable
-                  onPress={handleConfirmPayment}
-                  disabled={!isChecked || isProcessing}
-                  className="bg-green-500 h-12 rounded-lg justify-center items-center flex-row active:bg-green-600 disabled:bg-green-300">
-                  {isProcessing ? <ActivityIndicator color="white" /> : <><Ionicons name="send-outline" size={20} color="white" /><Text className="text-white font-quicksand-bold text-base ml-2">Enviar Comprobante</Text></>}
-                </Pressable>
-              </View>
-            </SafeAreaView>
-          </Modal>
-        )}
-
 
         {/* Mensaje de espera y botón para el ADMIN */}
         {purchase.status === PENDING_CONFIRMATION && (
