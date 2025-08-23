@@ -2,10 +2,11 @@ import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { formatCOP } from '@/utils/format';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useMutation, useQuery } from 'convex/react';
 import * as ImagePicker from 'expo-image-picker';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -30,26 +31,51 @@ const EditRafflePage = () => {
   const [imageUrl, setImageUrl] = useState('');
   const [ticketPrice, setTicketPrice] = useState('');
   const [totalTickets, setTotalTickets] = useState('');
+  const [winCondition, setWinCondition] = useState('');
   const [winningTicket, setWinningTicket] = useState('');
+
+  const [startTime, setStartTime] = useState(new Date());
+  const [endTime, setEndTime] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [datePickerTarget, setDatePickerTarget] = useState<'start' | 'end'>('start');
 
   const [isSaving, setIsSaving] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  // useEffect(() => {
-  //   if (raffle) {
-  //     setTitle(raffle.title);
-  //     setDescription(raffle.description);
-  //     setPrize(String(raffle.prize));
-  //     setImageUrl(raffle.imageUrl);
-  //     setTicketPrice(String(raffle.ticketPrice));
-  //     setTotalTickets(String(raffle.totalTickets));
-  //     if (raffle.winningTicketNumber) {
-  //       setWinningTicket(String(raffle.winningTicketNumber));
-  //     }
-  //   }
-  // }, [raffle]);
+  useEffect(() => {
+    if (raffle) {
+      setTitle(raffle.title);
+      setDescription(raffle.description);
+      setPrize(String(raffle.prize));
+      setImageUrl(raffle.imageUrl);
+      setTicketPrice(String(raffle.ticketPrice));
+      setTotalTickets(String(raffle.totalTickets));
+      setWinCondition(raffle.winCondition ?? '');
+      setStartTime(new Date(raffle.startTime));
+      setEndTime(new Date(raffle.endTime));
+      if (raffle.winningTicketNumber) {
+        setWinningTicket(String(raffle.winningTicketNumber));
+      }
+    }
+  }, [raffle]);
+
+  const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      if (datePickerTarget === 'start') {
+        setStartTime(selectedDate);
+      } else {
+        setEndTime(selectedDate);
+      }
+    }
+  };
+
+  const showDatepickerFor = (target: 'start' | 'end') => {
+    setDatePickerTarget(target);
+    setShowDatePicker(true);
+  };
 
   const cloudName = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -75,7 +101,6 @@ const EditRafflePage = () => {
 
     setIsSaving(true);
     try {
-
       await updateRaffle({
         id: id as Id<'raffles'>,
         title,
@@ -84,6 +109,9 @@ const EditRafflePage = () => {
         imageUrl,
         totalTickets: totalTicketsNumber,
         ticketPrice: ticketPriceNumber,
+        winCondition,
+        startTime: startTime.getTime(),
+        endTime: endTime.getTime(),
       });
       Toast.show({ type: 'success', text1: 'Éxito', text2: 'Sorteo actualizado correctamente.' });
     } catch (error) {
@@ -216,6 +244,7 @@ const EditRafflePage = () => {
           <View className="space-y-5">
             <View><Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Título</Text><TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" value={title} onChangeText={setTitle} editable={!isFinished} /></View>
             <View><Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Descripción</Text><TextInput className="bg-slate-100 border border-slate-200 h-28 rounded-lg px-4 text-base font-quicksand-medium align-top pt-3" value={description} onChangeText={setDescription} multiline editable={!isFinished} /></View>
+            <View><Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Condición del Sorteo</Text><TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" value={winCondition} onChangeText={setWinCondition} editable={!isFinished} placeholder="Ej: Lotería de Nariño, últimos 2 dígitos" /></View>
             <View><Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Premio (en COP)</Text><TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" value={prize} onChangeText={setPrize} keyboardType="numeric" editable={!isFinished} /></View>
             <View>
               <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Imagen del Sorteo</Text>
@@ -239,6 +268,28 @@ const EditRafflePage = () => {
                   </View>
                 )}
               </Pressable>
+            </View>
+            <View className="flex-row gap-x-4">
+              <View className="flex-1">
+                <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Fecha de Inicio</Text>
+                <Pressable
+                  onPress={() => showDatepickerFor('start')}
+                  disabled={isFinished}
+                  className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 justify-center disabled:opacity-70"
+                >
+                  <Text className="text-base font-quicksand-medium text-slate-800">{startTime.toLocaleDateString('es-CO')}</Text>
+                </Pressable>
+              </View>
+              <View className="flex-1">
+                <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Fecha del Sorteo</Text>
+                <Pressable
+                  onPress={() => showDatepickerFor('end')}
+                  disabled={isFinished}
+                  className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 justify-center disabled:opacity-70"
+                >
+                  <Text className="text-base font-quicksand-medium text-slate-800">{endTime.toLocaleDateString('es-CO')}</Text>
+                </Pressable>
+              </View>
             </View>
             <View className="flex-row gap-x-4">
               <View className="flex-1"><Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Total Boletos</Text><TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" value={totalTickets} onChangeText={setTotalTickets} keyboardType="numeric" editable={!isFinished} /></View>
@@ -302,6 +353,15 @@ const EditRafflePage = () => {
               </Pressable>
             </View>
           </View>
+        )}
+        {showDatePicker && (
+          <DateTimePicker
+            value={datePickerTarget === 'start' ? startTime : endTime}
+            mode="date"
+            display="default"
+            onChange={handleDateChange}
+            minimumDate={new Date()}
+          />
         )}
       </KeyboardAwareScrollView>
     </SafeAreaView>

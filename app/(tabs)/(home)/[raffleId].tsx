@@ -2,6 +2,7 @@
 
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
+import { formatUtcToLocal } from '@/utils/date';
 import { useUser } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
@@ -236,13 +237,13 @@ export default function RaffleDetailsScreen() {
               <Image source={{ uri: raffle.imageUrl }} className="w-full h-56 bg-slate-200" resizeMode="cover" />
               <View className="absolute bottom-0 left-0 right-0 p-4 bg-black/40">
                 <Text className="text-white font-quicksand-bold text-xl" numberOfLines={1}>{raffle.title}</Text>
-                <Text className="text-white font-quicksand-semibold text-sm mt-1">Gana {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(raffle.prize ?? 0)}</Text>
+                <Text className="text-white font-quicksand-semibold text-sm mt-1">Gana {typeof (raffle.prize) === 'number' ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(raffle.prize ?? 0) : raffle.prize}</Text>
               </View>
             </TouchableOpacity>
           )}
         </View>
         <View className="p-5 bg-white border-b border-gray-200 -mt-2 rounded-t-2xl">
-          <Text className="text-base text-gray-600">{raffle.description}</Text>
+          <Text className="text-base text-gray-600">Fecha: {formatUtcToLocal(raffle.endTime, "d 'de' MMMM")}</Text>
           {raffle.winCondition ? (
             <Text className="text-sm text-gray-500 mt-2">{raffle.winCondition}</Text>
           ) : null}
