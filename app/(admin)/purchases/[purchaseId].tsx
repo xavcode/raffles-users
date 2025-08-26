@@ -1,32 +1,20 @@
-import { PURCHASE_STATUS } from '@/constants/status';
+import PurchaseDetails from '@/app/components/PurchaseDetail';
+import { PURCHASE_STATUS, PURCHASE_STATUS_STYLES } from '@/constants/status';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { formatCOP } from '@/utils/format';
-import { Ionicons } from '@expo/vector-icons';
-import { useMutation, useQuery } from 'convex/react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Authenticated, Unauthenticated, useMutation, useQuery } from 'convex/react';
+import { Redirect, Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Dimensions, Image, Modal, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import { SnapbackZoom } from "react-native-zoom-toolkit";
 
-
-
-const PURCHASE_STATUS_STYLES = {
-  pending_payment: { label: 'Pendiente', bg: 'bg-amber-100', text: 'text-amber-700', icon: 'time-outline' as const },
-  pending_confirmation: { label: 'Verificando', bg: 'bg-blue-100', text: 'text-blue-700', icon: 'hourglass-outline' as const },
-  completed: { label: 'Pagado', bg: 'bg-green-100', text: 'text-green-700', icon: 'checkmark-circle-outline' as const },
-  expired: { label: 'Expirado', bg: 'bg-slate-100', text: 'text-slate-600', icon: 'close-circle-outline' as const },
-  rejected: { label: 'Rechazado', bg: 'bg-red-100', text: 'text-red-700', icon: 'alert-circle-outline' as const }
-};
 
 const PENDING_CONFIRMATION = PURCHASE_STATUS.PENDING_CONFIRMATION
 
 const AdminPurchaseDetailsPage = () => {
-  const { purchaseId } = useLocalSearchParams<{ purchaseId: string }>();
+  const { purchaseId } = useLocalSearchParams<{ purchaseId: Id<'purchases'> }>();
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -92,8 +80,20 @@ const AdminPurchaseDetailsPage = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
-      <Stack.Screen options={{ title: 'Verificar Compra' }} />
-      <ScrollView contentContainerClassName="p-4">
+      <Stack.Screen options={{ headerShown: false }} />
+      <Authenticated>
+        {/* <Stack.Screen options={{ title: 'Verificar Compra' }} /> */}
+        <PurchaseDetails
+          purchaseId={purchaseId}
+          handleApproval={handleApproval}
+          handleRejection={handleRejection}
+          isProcessing={isProcessing}
+        />
+
+
+
+
+        {/* <ScrollView contentContainerClassName="p-4">
         <View className="bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50 mb-6">
           <View className="flex-row justify-between items-center mb-4">
             <Text className="text-xl font-quicksand-bold text-slate-800 w-8/12" numberOfLines={2}>{raffle?.title}</Text>
@@ -167,8 +167,13 @@ const AdminPurchaseDetailsPage = () => {
             </Pressable>
           </View>
         )}
-      </ScrollView>
+      </ScrollView> */}
+      </Authenticated>
+      <Unauthenticated>
+        <Redirect href="/(auth)/sign-in" />
+      </Unauthenticated>
     </SafeAreaView>
+
   );
 };
 

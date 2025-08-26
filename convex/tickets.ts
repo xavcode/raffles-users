@@ -463,3 +463,119 @@ export const getPendingConfirmationPurchases = query({
     return { page: purchasesWithDetails, isDone, continueCursor };
   },
 });
+
+export const getAllPurchasesWithDetails = query({
+  args: {
+    paginationOpts: paginationOptsValidator,
+    status: v.optional(v.union(
+      v.literal("completed"),
+      v.literal("pending_confirmation"),
+      v.literal("pending_payment"),
+      v.literal("expired")
+    ))
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("No autenticado. No se pueden obtener las compras.");
+    }
+
+    const userMakingRequest = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!userMakingRequest || userMakingRequest.userType !== "admin") {
+      throw new Error("No autorizado. Se requieren permisos de administrador.");
+    }
+
+    const query = ctx.db.query("purchases");
+    const paginatedPurchases = await (args.status
+      ? query.withIndex("by_status", (q) => q.eq("status", args.status!))
+      : query
+    )
+      .order("desc")
+      .paginate(args.paginationOpts);
+
+    const { page: purchases, isDone, continueCursor } = paginatedPurchases;
+
+    if (purchases.length === 0) return { page: [], isDone: true, continueCursor };
+
+    const raffleIds = [...new Set(purchases.map(p => p.raffleId))];
+    const userIds = [...new Set(purchases.map(p => p.userId))];
+
+    const [raffles, users] = await Promise.all([
+      Promise.all(raffleIds.map(id => ctx.db.get(id))),
+      Promise.all(userIds.map(id => ctx.db.get(id)))
+    ]);
+
+    const rafflesById = new Map(raffles.filter(Boolean).map(r => [r!._id, r]));
+    const usersById = new Map(users.filter(Boolean).map(u => [u!._id, u]));
+
+    const purchasesWithDetails = purchases.map((purchase) => {
+      const raffle = rafflesById.get(purchase.raffleId);
+      const user = usersById.get(purchase.userId);
+      return { ...purchase, raffleTitle: raffle?.title ?? "Sorteo no encontrado", userFirstName: user?.firstName ?? "Usuario", userLastName: user?.lastName ?? "", userEmail: user?.email ?? "email no disponible" };
+    });
+    return { page: purchasesWithDetails, isDone, continueCursor };
+  },
+});
+
+export const getAllCompletedPurchasesForReport = query({
+  args: {
+    startDate: v.optional(v.float64()),
+    endDate: v.optional(v.float64()),
+  },
+  handler: async (ctx, args) => {
+    // Admin validation
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("No autenticado.");
+    }
+    const userMakingRequest = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    if (!userMakingRequest || userMakingRequest.userType !== "admin") {
+      throw new Error("No autorizado.");
+    }
+
+    // Fetch all completed purchases
+    const purchases = await ctx.db
+      .query("purchases")
+      .withIndex("by_status", (q) => {
+        const query = q.eq("status", "completed");
+        if (args.startDate && args.endDate) {
+          // Add a day's worth of milliseconds to include the entire end date
+          return query.gte("_creationTime", args.startDate).lte("_creationTime", args.endDate + 86400000);
+        } else if (args.startDate) {
+          return query.gte("_creationTime", args.startDate);
+        } else if (args.endDate) {
+          return query.lte("_creationTime", args.endDate + 86400000);
+        }
+        return query;
+      })
+      .order("desc")
+      .collect();
+
+    if (purchases.length === 0) return [];
+
+    // Optimization to avoid N+1 problem
+    const raffleIds = [...new Set(purchases.map(p => p.raffleId))];
+    const userIds = [...new Set(purchases.map(p => p.userId))];
+
+    const [raffles, users] = await Promise.all([
+      Promise.all(raffleIds.map(id => ctx.db.get(id))),
+      Promise.all(userIds.map(id => ctx.db.get(id)))
+    ]);
+
+    const rafflesById = new Map(raffles.filter(Boolean).map(r => [r!._id, r]));
+    const usersById = new Map(users.filter(Boolean).map(u => [u!._id, u]));
+
+    return purchases.map((purchase) => {
+      const raffle = rafflesById.get(purchase.raffleId);
+      const user = usersById.get(purchase.userId);
+      return { ...purchase, raffleTitle: raffle?.title ?? "Sorteo no encontrado", userFirstName: user?.firstName ?? "Usuario", userLastName: user?.lastName ?? "", userEmail: user?.email ?? "email no disponible" };
+    });
+  },
+});

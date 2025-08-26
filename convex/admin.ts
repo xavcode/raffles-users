@@ -1,5 +1,6 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { api } from "./_generated/api";
+import { action, mutation, query } from "./_generated/server";
 import { paymentMethodsFields } from "./schema";
 
 /**
@@ -21,12 +22,21 @@ export const getMetrics = query({
         // Purchases
         const purchases = await ctx.db.query("purchases").collect();
         const pendingConfirmations = purchases.filter((p) => p.status === "pending_confirmation").length;
+        const expiredPurchases = purchases.filter((p) => p.status === "expired").length;
         const completedPurchases = purchases.filter((p) => p.status === "completed");
         const totalRevenue = completedPurchases.reduce((sum, p) => sum + (p.totalAmount ?? 0), 0);
+        const averagePurchaseValue = completedPurchases.length > 0 ? totalRevenue / completedPurchases.length : 0;
+
+        // Tasa de venta promedio para sorteos finalizados
+        const finishedRafflesWithSales = raffles.filter(r => r.status === 'finished' && r.totalTickets > 0);
+        const totalSellThroughRate = finishedRafflesWithSales.reduce((sum, r) => sum + ((r.ticketsSold ?? 0) / r.totalTickets), 0);
+        const averageSellThroughRate = finishedRafflesWithSales.length > 0 ? (totalSellThroughRate / finishedRafflesWithSales.length) * 100 : 0;
 
         // Users
         const users = await ctx.db.query("users").collect();
         const totalUsers = users.length;
+        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        const newUsersLast7Days = users.filter(u => u._creationTime > sevenDaysAgo).length;
 
         // Top raffles por ventas (ticketsSold)
         const topRafflesByTicketsSold = [...raffles]
@@ -51,9 +61,59 @@ export const getMetrics = query({
                 totalUsers,
                 pendingConfirmations,
                 totalRevenue,
+                averagePurchaseValue,
+                averageSellThroughRate,
+                newUsersLast7Days,
+                expiredPurchases,
             },
             topRafflesByTicketsSold,
         };
+    },
+});
+
+export const generateSalesReport = action({
+    args: {
+        startDate: v.optional(v.float64()),
+        endDate: v.optional(v.float64()),
+    },
+    handler: async (ctx, args) => {
+        // La validación de admin ya está dentro de la query que llamamos
+        const purchasesWithDetails = await ctx.runQuery(
+            api.tickets.getAllCompletedPurchasesForReport, { startDate: args.startDate, endDate: args.endDate }
+        );
+
+        if (purchasesWithDetails.length === 0) {
+            // Devuelve un string vacío si no hay datos, el frontend lo manejará
+            return "";
+        }
+
+        // Encabezados del CSV
+        const headers = [
+            "ID Compra",
+            "Fecha",
+            "Sorteo",
+            "Comprador",
+            "Email",
+            "Boletos",
+            "Monto Total (COP)"
+        ];
+
+        const csvRows = [headers.join(",")];
+
+        for (const purchase of purchasesWithDetails) {
+            const row = [
+                purchase._id,
+                new Date(purchase._creationTime).toLocaleString('es-CO', { timeZone: 'America/Bogota' }),
+                `"${purchase.raffleTitle.replace(/"/g, '""')}"`, // Escapa comillas dobles
+                `"${(purchase.userFirstName + ' ' + purchase.userLastName).replace(/"/g, '""')}"`,
+                purchase.userEmail,
+                purchase.ticketCount,
+                purchase.totalAmount
+            ];
+            csvRows.push(row.join(","));
+        }
+
+        return csvRows.join("\n");
     },
 });
 
@@ -127,5 +187,3 @@ export const setReleaseTime = mutation({
         }
     }
 });
-
-

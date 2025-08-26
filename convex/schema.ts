@@ -36,7 +36,9 @@ export default defineSchema({
     prize: v.optional(v.float64()),
   })
     .index("by_creator", ["creatorId"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_status_winnerId", ["status", "winnerId"]),
+
 
   tickets: defineTable({
     raffleId: v.id("raffles"),
