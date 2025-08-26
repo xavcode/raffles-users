@@ -1,6 +1,7 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
 export const getRaffles = query({
@@ -267,4 +268,44 @@ export const cancelRaffle = mutation({
     await ctx.db.patch(args.id, { status: "cancelled" });
     return true;
   }
+});
+
+export const getFinishedRafflesWithWinners = query({
+  handler: async (ctx) => {
+    // 1. Obtener todos los sorteos finalizados que tengan un ganador
+
+    const finishedRaffles = await ctx.db
+      .query("raffles")
+      .withIndex("by_status_winnerId", q =>
+        q.eq("status", "finished")
+      )
+      .order("desc")
+      .collect();
+
+    if (finishedRaffles.length === 0) {
+      return [];
+    }
+
+    // 2. Obtener los IDs de los ganadores para buscarlos todos de una vez
+    const winnerIds = finishedRaffles.map(r => r.winnerId as Id<'users'>);
+
+    // 3. Buscar los datos de todos los usuarios ganadores
+    const winners = await Promise.all(winnerIds.map(id => ctx.db.get(id)));
+    const winnersById = new Map(winners.filter(Boolean).map(u => [u!._id, u]));
+
+    // 4. Combinar los datos del sorteo y del ganador
+    const results = finishedRaffles.map(raffle => {
+      const winner = winnersById.get(raffle.winnerId as Id<'users'>);
+      return {
+        raffleId: raffle._id,
+        raffleTitle: raffle.title,
+        rafflePrize: raffle.prize,
+        winningTicketNumber: raffle.winningTicketNumber,
+        finishedAt: raffle.endTime,
+        winnerName: winner ? `${winner.firstName} ${winner.lastName}` : "Usuario no encontrado",
+      };
+    });
+
+    return results;
+  },
 });

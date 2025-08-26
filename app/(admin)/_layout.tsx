@@ -139,9 +139,18 @@ function AdminProtectedLayout() {
           tabBarBadge: pendingCount && pendingCount > 0 ? pendingCount : undefined,
         }}
       />
+      <Tabs.Screen
+        name="purchases" // Apunta al nuevo directorio /purchases
+        options={{
+          title: 'Ventas',
+          tabBarIcon: ({ color, size }) => <Ionicons name="receipt-outline" color={color} size={size} />,
+        }}
+      />
       {/* Ocultamos las rutas que no son pestañas */}
-      <Tabs.Screen name="purchases/[purchaseId]" options={{ href: null }} />
       <Tabs.Screen name='settings' options={{ href: null }} />
+      <Tabs.Screen name='winners/index' options={{ href: null }} />
+      <Tabs.Screen name='reports/index' options={{ href: null }} />
+
     </Tabs>
   );
 }
