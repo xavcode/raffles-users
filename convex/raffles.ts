@@ -3,27 +3,164 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { raffleFields } from "./schema";
 
+
+
+// export const getRaffles = query({
+//   args: {
+//     // todos los sorteos (para el admin) o solo los activos (para usuarios).
+//     status: v.optional(v.string()),
+//     search: v.optional(v.string()), // Agregado para búsqueda
+//     paginationOpts: paginationOptsValidator,
+//   },
+//   handler: async (ctx, args) => {
+//     let queryBuilder;
+//     // Si se provee un estado, usamos el índice para una búsqueda eficiente.
+//     if (args.status) {
+//       queryBuilder = ctx.db
+//         .query("raffles")
+//         .withIndex("by_status", (q) => q.eq("status", args.status as any));
+//     } else {
+//       queryBuilder = ctx.db.query("raffles");
+//     }
+
+//     // Aplicar filtro de búsqueda si existe
+//     if (args.search) {
+//       queryBuilder = queryBuilder.filter(q =>
+//         q.or(
+//           q.eq(q.field("title"), args.search),
+//           q.eq(q.field("userName"), args.search)
+//         )
+//       );
+//     }
+
+//     return await queryBuilder.order("desc").paginate(args.paginationOpts);
+//   }
+// });
 export const getRaffles = query({
   args: {
-    // Hacemos el filtro de estado opcional para poder obtener
-    // todos los sorteos (para el admin) o solo los activos (para usuarios).
-    status: v.optional(v.string()),
     paginationOpts: paginationOptsValidator,
+    status: v.optional(v.union(v.literal("active"), v.literal("finished"))),
+    search: v.optional(v.string()), // Argumento de búsqueda
   },
   handler: async (ctx, args) => {
-    let queryBuilder;
-    // Si se provee un estado, usamos el índice para una búsqueda eficiente.
-    if (args.status) {
-      queryBuilder = ctx.db
+    // Si hay un término de búsqueda, usamos el índice de búsqueda
+    if (args.search) {
+      let searchResult = ctx.db
         .query("raffles")
-        .withIndex("by_status", (q) => q.eq("status", args.status as any));
-    } else {
-      queryBuilder = ctx.db.query("raffles");
+        .withSearchIndex("by_searchable_text", (q) =>
+          q.search("searchableId", args.search!)
+        );
+
+      // Si también hay un filtro de estado, lo aplicamos
+      if (args.status) {
+        searchResult = searchResult.filter((q) =>
+          q.eq(q.field("status"), args.status)
+        );
+      }
+
+      return await searchResult.paginate(args.paginationOpts);
     }
-    return await queryBuilder.order("desc").paginate(args.paginationOpts);
-  }
+
+    // Si no hay búsqueda, se mantiene la lógica original
+    const queryBuilder = ctx.db
+      .query("raffles")
+      .withIndex("by_status", (q) => q.eq("status", args.status ?? "active"))
+      .order("desc");
+
+    return await queryBuilder.paginate(args.paginationOpts);
+  },
 });
+
+
+export const getMyRaffles = query({
+  args: {
+    search: v.optional(v.string()), // Agregado para búsqueda
+    paginationOpts: paginationOptsValidator
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      // Retorna una paginación vacía pero usando .paginate para mantener el tipo
+      return await ctx.db.query("raffles")
+        .withIndex("by_creator", q => q.eq("creatorId", "nonexistent_id" as any))
+        .order("desc")
+        .paginate(args.paginationOpts);
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", q => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) {
+      return await ctx.db.query("raffles")
+        .withIndex("by_creator", q => q.eq("creatorId", "nonexistent_id" as any))
+        .order("desc")
+        .paginate(args.paginationOpts);
+    }
+
+    let queryBuilder = ctx.db
+      .query("raffles")
+      .withIndex("by_creator", q => q.eq("creatorId", user._id));
+
+    // Aplicar filtro de búsqueda si existe
+    if (args.search) {
+      queryBuilder = queryBuilder.filter(q =>
+        q.or(
+          q.eq(q.field("title"), args.search),
+          q.eq(q.field("userName"), args.search)
+        )
+      );
+    }
+
+    return await queryBuilder.order("desc").paginate(args.paginationOpts);
+  },
+});
+
+// export const getMyRaffles = query({
+//   args: {
+//     paginationOpts: paginationOptsValidator,
+//     search: v.optional(v.string()), // Argumento de búsqueda
+//   },
+//   handler: async (ctx, args) => {
+//     const identity = await ctx.auth.getUserIdentity();
+//     if (!identity) {
+//       return { page: [], isDone: true, continueCursor: "" };
+//     }
+
+//     const user = await ctx.db
+//       .query("users")
+//       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.tokenIdentifier))
+//       .unique();
+
+//     if (!user) {
+//       return { page: [], isDone: true, continueCursor: "" };
+//     }
+
+//     // Si hay búsqueda, la aplicamos filtrando solo las rifas del usuario
+//     if (args.search) {
+//       return await ctx.db
+//         .query("raffles")
+//         .withSearchIndex("by_searchable_text", (q) =>
+//           q.search("searchableText", args.search!)
+//         )
+//         .filter((q) => q.eq(q.field("creatorId"), user._id)) // Filtramos por el ID del creador
+//         .paginate(args.paginationOpts);
+//     }
+
+//     // Lógica original si no hay búsqueda
+//     const queryBuilder = ctx.db
+//       .query("raffles")
+//       .withIndex("by_creator", (q) => q.eq("creatorId", user._id))
+//       .order("desc");
+
+//     return await queryBuilder.paginate(args.paginationOpts);
+//   },
+// });
+
+
 
 export const getById = query({
   args: { id: v.id("raffles") },
@@ -34,17 +171,9 @@ export const getById = query({
 });
 
 export const createRaffle = mutation({
-  args: {
-    title: v.string(),
-    description: v.string(),
-    totalTickets: v.float64(),
-    ticketPrice: v.float64(),
-    prize: v.number(),
-    startTime: v.float64(),
-    endTime: v.float64(),
-    imageUrl: v.string(),
-    winCondition: v.optional(v.string()),
-  },
+
+  args: (({ creatorId, userName, ticketsSold, status, winnerId, winningTicketNumber, searchableId, enabledPurchases, ...rest }) => v.object(rest))(raffleFields),
+
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
@@ -56,23 +185,28 @@ export const createRaffle = mutation({
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .unique();
 
-    if (!user || user.userType !== "admin") {
-      throw new Error("No tienes permisos de administrador para crear un sorteo.");
+    if (!user) {
+      throw new Error("No se encontró un usuario correspondiente para crear la rifa.");
     }
+
+    const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`; // Generar un sufijo alfanumérico único
+    const raffleId = `raffle_${uniqueSuffix}`;
 
     const newRaffleId = await ctx.db.insert("raffles", {
       ...args,
+      searchableId: raffleId, // Asignar el ID único generado
       creatorId: user._id,
+      userName: user.userName as Id<'users'>,
+      enabledPurchases: true,
       ticketsSold: 0,
       status: "active",
     });
 
-    await ctx.scheduler.runAfter(0, internal.notifications.sendToAllUsers, {
-      title: "🎉 ¡Nuevo Sorteo Disponible!",
-      message: `¡No te pierdas la oportunidad de ganar en nuestro nuevo sorteo: "${args.title}"!`,
+    // await ctx.scheduler.runAfter(0, internal.notifications.sendToAllUsers, {
+    //   title: "🎉 ¡Nuevo Sorteo Disponible!",
+    //   message: `¡No te pierdas la oportunidad de ganar en nuestro nuevo sorteo: "${args.title}"!`,
 
-    });
-
+    // });
     return newRaffleId;
   },
 });
@@ -103,12 +237,21 @@ export const updateRaffle = mutation({
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .unique();
 
-    if (!user || user.userType !== "admin") {
-      throw new Error("No tienes permisos de administrador para modificar un sorteo.");
+    if (!user) {
+      throw new Error("Usuario no encontrado.");
     }
 
     const { id, ...rest } = args;
     const oldRaffle = await ctx.db.get(id);
+    if (!oldRaffle) {
+      throw new Error("Sorteo no encontrado.");
+    }
+
+    // Solo el creador del sorteo puede modificarlo.
+    if (oldRaffle.creatorId !== user._id) {
+      throw new Error("No tienes permisos para modificar este sorteo.");
+    }
+
     // La lógica de notificación del ganador se ha movido a `finishRaffle`
     if (rest.status === 'finished' && oldRaffle?.status !== 'finished') {
       throw new Error("Para finalizar un sorteo, utiliza la función 'finishRaffle' en lugar de 'updateRaffle'.");
@@ -158,13 +301,20 @@ export const deleteRaffle = mutation({
     if (!identity) {
       throw new Error("No estás autenticado.");
     }
+
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .unique();
-    if (!user || user.userType !== "admin") {
-      throw new Error("No tienes permisos de administrador para eliminar un sorteo.");
+    if (!user) {
+      throw new Error("Usuario no encontrado.");
     }
+
+    const raffleToDelete = await ctx.db.get(args.id);
+    if (!raffleToDelete) throw new Error("Sorteo no encontrado.");
+
+    // Solo el creador del sorteo puede eliminarlo.
+    if (raffleToDelete.creatorId !== user._id) throw new Error("No tienes permisos para eliminar este sorteo.");
 
     // 2. VERIFICACIÓN CRÍTICA: Comprobar si el sorteo tiene boletos vendidos.
     const ticketsSold = await ctx.db
@@ -203,8 +353,18 @@ export const finishRaffle = mutation({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("No estás autenticado.");
 
-    const user = await ctx.db.query("users").withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject)).unique();
-    if (!user || user.userType !== "admin") throw new Error("No tienes permisos de administrador.");
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    if (!user) throw new Error("Usuario no encontrado.");
+
+    const raffleToFinish = await ctx.db.get(args.id);
+    if (!raffleToFinish) throw new Error("Sorteo no encontrado.");
+
+    // Solo el creador puede finalizar su propio sorteo.
+    if (raffleToFinish.creatorId !== user._id)
+      throw new Error("No tienes permisos para finalizar este sorteo.");
 
     const { id, winningTicketNumber } = args;
 
@@ -258,10 +418,18 @@ export const cancelRaffle = mutation({
     // Verificación de permisos de administrador.
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("No autenticado.");
-    const user = await ctx.db.query("users").withIndex("by_clerk_id", q => q.eq("clerkId", identity.subject)).unique();
-    if (!user || user.userType !== "admin") {
-      throw new Error("No tienes permisos de administrador.");
-    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    if (!user) throw new Error("Usuario no encontrado.");
+
+    const raffleToCancel = await ctx.db.get(args.id);
+    if (!raffleToCancel) throw new Error("Sorteo no encontrado.");
+
+    // Solo el creador puede cancelar su propio sorteo.
+    if (raffleToCancel.creatorId !== user._id) throw new Error("No tienes permisos para cancelar este sorteo.");
 
     // Simplemente marcamos el sorteo como 'cancelled'.
     // Esto es un "soft delete" que preserva todo el historial de compras y tickets.

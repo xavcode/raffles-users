@@ -1,14 +1,15 @@
 // app/raffles/[id].tsx o similar
 
+import HeaderLeft from '@/app/components/HeaderLeft';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { formatUtcToLocal } from '@/utils/date';
 import { useUser } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Image, Modal, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, Image, Modal, Pressable, ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { SnapbackZoom } from 'react-native-zoom-toolkit';
@@ -83,14 +84,22 @@ export default function RaffleDetailsScreen() {
   const [selectedTickets, setSelectedTickets] = useState(new Set<number>());
   const [isProcessing, setIsProcessing] = useState(false);
   const [isImageModalVisible, setIsImageModalVisible] = useState(false);
-  // const soldTickets = useMutation(api.tickets.soldTickets);
 
   // 1. Importamos useUser para saber si el usuario está logueado.
   const { isSignedIn } = useUser();
-  const settings = useQuery(api.admin.getSettings);
+  // const settings = useQuery(api.admin.getSettingsRaffle);
 
   // Hooks de Convex
   const raffle = useQuery(api.raffles.getById, { id: raffleId as Id<'raffles'> });
+  const enabledPurchases = raffle?.enabledPurchases
+  const setRafflePurchasesEnabled = useMutation(api.admin.setRafflePurchasesEnabled);
+  // Obtenemos el documento del usuario actual desde Convex para poder comparar su ID.
+  // NOTA: Esto asume que tienes una query `getMe` en `convex/users.ts` que devuelve el usuario logueado.
+  const currentUser = useQuery(api.users.getCurrent);
+
+  // Comprobamos si el ursuario actual es el creador de la rifa.
+  const isCreator = useMemo(() => currentUser && raffle && currentUser._id === raffle.creatorId, [currentUser, raffle]);
+
   const nonAvailableTickets = useQuery(api.tickets.getNonAvailableTickets, { raffleId: raffleId as Id<'raffles'> });
   const reserveTicketsMutation = useMutation(api.tickets.reserveTickets);
 
@@ -229,8 +238,42 @@ export default function RaffleDetailsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
+      <Stack.Screen options={{
+        title: 'Detalles del Sorteo',
+        // Renderizamos los botones de editar/eliminar solo si el usuario es el creador.
+        headerRight: () => (isCreator && raffle ? <HeaderLeft raffle={raffle} /> : null)
+      }} />
       <ScrollView className="flex-1 bg-gray-50 relative">
         {/* Hero con overlay */}
+
+        {/* Sección: Habilitar/Deshabilitar compras (Switch) */}
+        {isCreator && (
+          <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 m-4">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center">
+                <Ionicons name="cart-outline" size={18} color="#64748b" />
+                <Text className="ml-2 text-base font-quicksand-bold text-slate-800">Habilitar compras</Text>
+              </View>
+              <Switch
+                value={raffle.enabledPurchases}
+                onValueChange={async (next) => {
+                  // La UI se actualiza optimísticamente gracias a Convex.
+                  try {
+                    await setRafflePurchasesEnabled({ raffleId: raffle._id, enabled: next });
+                    Toast.show({ type: 'success', text1: 'Actualizado', text2: next ? 'Compras habilitadas' : 'Compras deshabilitadas' });
+                  } catch (e) {
+                    // Convex revierte el cambio en la UI si la mutación falla.
+                    Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo actualizar el estado.' });
+                  }
+                }}
+                thumbColor={raffle.enabledPurchases ? '#4f46e5' : undefined}
+              />
+            </View>
+            <Text className="text-xs text-slate-500 mt-2">Si las deshabilitas, los usuarios no podrán reservar/comprar boletos temporalmente.</Text>
+          </View>
+        )}
+
+
         <View>
           {raffle.imageUrl && (
             <TouchableOpacity activeOpacity={0.9} onPress={() => setIsImageModalVisible(true)}>
@@ -288,11 +331,11 @@ export default function RaffleDetailsScreen() {
           {isSignedIn ? (
             <Pressable
               onPress={handleReserve}
-              disabled={isProcessing || selectedTickets.size === 0 || settings?.purchasesEnabled === false}
-              className={`rounded-xl py-3 items-center active:opacity-80 disabled:opacity-50 ${settings?.purchasesEnabled === false ? 'bg-slate-300' : 'bg-primary'}`}
+              disabled={isProcessing || selectedTickets.size === 0 || enabledPurchases === false}
+              className={`rounded-xl py-3 items-center active:opacity-80 disabled:opacity-50 ${enabledPurchases === false ? 'bg-slate-300' : 'bg-primary'}`}
             >
               <Text className="text-white font-quicksand-bold">
-                {settings?.purchasesEnabled === false
+                {enabledPurchases === false
                   ? 'Compras deshabilitadas'
                   : isProcessing
                     ? 'Procesando...'

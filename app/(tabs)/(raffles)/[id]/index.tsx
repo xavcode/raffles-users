@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useMutation, useQuery } from 'convex/react';
 import * as ImagePicker from 'expo-image-picker';
-import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { Link, Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -237,7 +237,11 @@ const EditRafflePage = () => {
   const isLoading = isSaving || isFinishing || isDeleting || isUploading;
 
   return (
+
     <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
+      <Stack.Screen name="[id]/index" options={{ title: 'Editar', headerRight: () => <Text>Editar</Text> }}
+
+      />
       <KeyboardAwareScrollView contentContainerClassName="p-4 pb-8" extraScrollHeight={20} enableOnAndroid={true}>
         <View className="bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50">
           <Text className="text-lg font-quicksand-bold text-slate-800 mb-4">Información General</Text>
@@ -365,6 +369,8 @@ const EditRafflePage = () => {
         )}
       </KeyboardAwareScrollView>
     </SafeAreaView>
+
+
   );
 };
 

@@ -60,10 +60,10 @@ const profile = () => {
             )}
             <View className="bg-white rounded-xl p-4 shadow-sm">
               <Text className="text-lg font-quicksand-bold text-gray-700 mb-4">Cuenta</Text>
-              <Link href={"./edit-profile"} asChild>
+              <Link href={"/(tabs)/profile/edit-profile"} asChild>
                 <Pressable className="flex-row items-center justify-between p-3 rounded-lg active:bg-gray-100">
                   <View className="flex-row items-center">
-                    <FontAwesome name="user-o" size={20} color="#4B5563" />
+                    <Ionicons name="person-outline" size={20} color="#4B5563" />
                     <Text className="text-gray-800 font-quicksand-semibold text-base ml-4">Editar Perfil</Text>
                   </View>
                   <FontAwesome name="chevron-right" size={16} color="#9CA3AF" />

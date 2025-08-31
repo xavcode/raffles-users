@@ -11,7 +11,7 @@ import { es } from 'date-fns/locale'; // Asegúrate de que este import sea corre
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Clipboard, Dimensions, Image, Modal, Platform, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Clipboard, Dimensions, Image, Modal, Platform, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { SnapbackZoom } from 'react-native-zoom-toolkit';
@@ -30,7 +30,7 @@ const PENDING_CONFIRMATION = PURCHASE_STATUS.PENDING_CONFIRMATION;
 const IS_ADMIN = 'admin'
 
 const PurchaseDetailsPage = () => {
-  const { purchaseId } = useLocalSearchParams<{ purchaseId: string }>();
+  const { purchaseId } = useLocalSearchParams<{ purchaseId: Id<"purchases"> }>();
   const [imageAsset, setImageAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isImageModalVisible, setIsImageModalVisible] = useState(false);
@@ -45,7 +45,7 @@ const PurchaseDetailsPage = () => {
 
   const purchaseDetails = useQuery(
     api.tickets.getPurchaseDetails,
-    purchaseId ? { purchaseId: purchaseId as Id<'purchases'> } : 'skip'
+    purchaseId ? { purchaseId } : 'skip'
   );
   const convexUser = useQuery(api.users.getCurrent);
   const settings = useQuery(api.admin.getSettings);
@@ -58,14 +58,8 @@ const PurchaseDetailsPage = () => {
     throw new Error("Las variables de entorno de Cloudinary no están configuradas.");
   }
 
-  const formData = new FormData();
-  formData.append('upload_preset', uploadPreset);
-
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-
-  //  Función para abrir la galería de imágenes del dispositivo
   const pickImage = async () => {
-    // No se necesitan permisos para abrir la galería, pero sí para la cámara.
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
@@ -73,21 +67,22 @@ const PurchaseDetailsPage = () => {
     });
 
     if (!result.canceled) {
-      // Guardamos la URI del primer asset seleccionado
       setImageAsset(result.assets[0]);
     }
   };
-  // --- ESTADO DE CARGA UNIFICADO ---
-  // La pantalla está cargando si CUALQUIERA de los datos esenciales aún no ha llegado.
-  const isLoading = purchaseDetails === undefined || convexUser === undefined || settings === undefined;
 
+  // La pantalla está cargando si CUALQUIERA de los datos esenciales aún no ha llegado.
+  const isLoading = purchaseDetails === undefined || convexUser === undefined || settings === undefined || paymentMethods === undefined;
 
   // --- MANEJADORES DE EVENTOS ---
   const handleConfirmPayment = async () => {
-    if (!purchaseId) return;
+    if (!purchaseId || !imageAsset) return;
+
     setIsProcessing(true);
+    const formData = new FormData();
+    formData.append('upload_preset', uploadPreset!);
+
     try {
-      if (!imageAsset) return
       // Cerramos el modal de confirmación antes de empezar a subir
       setConfirmPaymentRecipeModalVisible(false);
       if (Platform.OS === 'web') {
@@ -119,8 +114,12 @@ const PurchaseDetailsPage = () => {
         text2: 'Los administradores han sido notificados sobre tu pago.',
       });
     } catch (error) {
-      Alert.alert('Error', 'Hubo un error al notificar el pago. Por favor, inténtalo de nuevo.');
       console.error("Error notifying payment:", error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error al subir el comprobante',
+        text2: 'Por favor, revisa tu conexión e inténtalo de nuevo.',
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -168,7 +167,7 @@ const PurchaseDetailsPage = () => {
   const { purchase, raffle, tickets } = purchaseDetails;
 
   // Si el usuario no es el dueño de la compra NI es un admin, no puede ver la página.
-  if (convexUser?._id !== purchase.userId && convexUser?.userType !== 'admin') {
+  if (convexUser?._id !== purchase.userId && convexUser?.userType !== IS_ADMIN) {
     return <SafeAreaView className="flex-1 bg-slate-50 justify-center items-center p-4"><Text className="text-center font-quicksand-medium text-slate-600">No tienes permiso para ver los detalles de esta compra.</Text></SafeAreaView>;
   }
 

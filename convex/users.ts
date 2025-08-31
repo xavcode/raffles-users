@@ -6,35 +6,39 @@ import { internalMutation, internalQuery, mutation, query } from "./_generated/s
  * Si el usuario no existe en la tabla `users`, lo crea.
  * Esta función es útil para asegurar que un usuario exista antes de realizar acciones.
  */
-export const getOrCreateUser = mutation({
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("No hay un usuario autenticado.");
-    }
+// export const getOrCreateUser = mutation({
+//   handler: async (ctx) => {
+//     const identity = await ctx.auth.getUserIdentity();
+//     if (!identity) {
+//       throw new Error("No hay un usuario autenticado.");
+//     }
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
+//     const user = await ctx.db
+//       .query("users")
+//       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+//       .unique();
 
-    if (user) {
-      return user;
-    }
+//     if (user) {
+//       return user;
+//     }
 
-    // Si el usuario no existe, lo creamos
-    const newUser = {
-      email: identity.email,
-      firstName: identity.givenName ?? "",
-      lastName: identity.familyName ?? "",
-      clerkId: identity.subject,
-      balance: 0, // Saldo inicial
-      userType: "member" as "member", // Asegúrate de que sea un literal
-    };
-    const newUserId = await ctx.db.insert("users", newUser);
-    return await ctx.db.get(newUserId);
-  },
-});
+//     // Si el usuario no existe, lo creamos
+//     const newUser = {
+//       email: identity.email,
+//       firstName: identity.givenName ?? "",
+//       lastName: identity.familyName ?? "",
+//       clerkId: identity.subject,
+//       balance: 0,
+//       userType: "free" as "free",
+//       freeRafflesResetDate: 0,
+//       raffleCredits: 0,
+//       subscriptionTier: "free" as "free", // 
+//       freeRafflesUsedThisMonth: 0, //  
+//     };
+//     const newUserId = await ctx.db.insert("users", newUser);
+//     return await ctx.db.get(newUserId);
+//   },
+// });
 
 /**
  * Obtiene el documento del usuario actual que ha iniciado sesión.
@@ -58,21 +62,37 @@ export const getCurrent = query({
 });
 
 export const createUser = internalMutation({
+
+
+
   args: {
     clerkId: v.string(),
     email: v.optional(v.string()),
     firstName: v.string(),
     lastName: v.string(),
-    userType: v.union(v.literal("admin"), v.literal("member")),
+    userType: v.union(v.literal("admin"), v.literal("free")),
+    phone: v.optional(v.string()), // Agregado
+    raffleCredits: v.number(), // Agregado
+    subscriptionTier: v.union(v.literal('free'), v.literal('premium')), // Agregado y corregido a union
+    freeRafflesUsedThisMonth: v.number(), // Agregado
+    freeRafflesResetDate: v.number(), // Agregado
   },
   handler: async (ctx, args) => {
+    const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substring(2, 6)}`; // Timestamp + hash corto
+    const userName = `${args.firstName}_${args.lastName}_${uniqueSuffix}`;
     await ctx.db.insert("users", {
       clerkId: args.clerkId,
       email: args.email,
       firstName: args.firstName,
       lastName: args.lastName,
+      userName: userName, // Agregado
       balance: 0,
       userType: args.userType,
+      // phone: args.phone ?? "", // Agregado y con default
+      raffleCredits: args.raffleCredits,
+      subscriptionTier: args.subscriptionTier,
+      freeRafflesUsedThisMonth: args.freeRafflesUsedThisMonth,
+      freeRafflesResetDate: args.freeRafflesResetDate,
     });
   },
 });
@@ -145,7 +165,7 @@ export const getByEmail = query({
 });
 
 export const updateRole = mutation({
-  args: { email: v.string(), role: v.union(v.literal('admin'), v.literal('member')) },
+  args: { email: v.string(), role: v.union(v.literal('admin'), v.literal('free')) },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error('No autenticado');
@@ -161,8 +181,6 @@ export const updateRole = mutation({
 
 export const getUsersWithPushTokens = internalQuery({
   handler: async (ctx) => {
-    // Si agregas un índice sobre pushToken:
-    // .index("by_pushToken", ["pushToken"])
     return await ctx.db
       .query("users")
       .withIndex("by_pushToken", q => q.gt("pushToken", undefined))

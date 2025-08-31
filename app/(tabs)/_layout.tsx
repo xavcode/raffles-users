@@ -103,16 +103,23 @@ const TabsLayout = () => {
           }}
         />
         <Tabs.Screen
-          name="profile"
+          name="profile/index"
           options={{
             title: 'Perfil',
             tabBarIcon: ({ color }) => <Ionicons name="person-outline" color={color} size={26} />,
           }}
         />
-
+        <Tabs.Screen
+          name="settings"
+          options={{
+            title: 'Configuración',
+            tabBarIcon: ({ color }) => <Ionicons name="settings-outline" color={color} size={26} />,
+          }}
+        />
         {/* Rutas que no son pestañas se ocultan con href: null */}
-        <Tabs.Screen name="edit-profile" options={{ href: null }} />
+        <Tabs.Screen name="profile/edit-profile" options={{ href: null }} />
         <Tabs.Screen name="oauth-native-callback" options={{ href: null }} />
+        <Tabs.Screen name="(raffles)" options={{ href: null }} />
       </Tabs>
     </>
   );

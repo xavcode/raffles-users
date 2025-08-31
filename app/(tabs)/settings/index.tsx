@@ -2,9 +2,8 @@ import { api } from '@/convex/_generated/api'
 import { Doc, Id } from '@/convex/_generated/dataModel'
 import { Ionicons } from '@expo/vector-icons'
 import { useMutation, useQuery } from 'convex/react'
-import { Stack } from 'expo-router'
 import React, { useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Pressable, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
@@ -13,13 +12,15 @@ type UserPreview = {
   email: string
   firstName?: string
   lastName?: string
-  role: 'member' | 'admin'
+  role: 'free' | 'admin'
 }
 
 
 type PaymentMethod = Doc<'paymentMethods'>
 
 const Settings = () => {
+
+
 
   const [reservationMinutes, setReservationMinutes] = useState<string>('30')
   const [savedReservationMinutes, setSavedReservationMinutes] = useState<string>('30')
@@ -34,8 +35,8 @@ const Settings = () => {
   const [isSavingRole, setIsSavingRole] = useState(false)
   const [isCreatingPaymentMethod, setIsCreatingPaymentMethod] = useState(false)
 
-  const settings = useQuery(api.admin.getSettings)
-  const setPurchasesEnabled = useMutation(api.admin.setPurchasesEnabled)
+  const settings = useQuery(api.admin.getSettingsRaffle)
+  const setRafflePurchasesEnabled = useMutation(api.admin.setRafflePurchasesEnabled)
   const setReleaseTime = useMutation(api.admin.setReleaseTime)
   const updateRole = useMutation(api.users.updateRole)
   const createPaymentMethod = useMutation(api.admin.createPaymentMethod)
@@ -44,6 +45,7 @@ const Settings = () => {
 
 
   const isReservationDirty = useMemo(() => reservationMinutes !== savedReservationMinutes, [reservationMinutes, savedReservationMinutes])
+  const convexUser = useQuery(api.users.getCurrent)
 
   useEffect(() => {
     if (settings) {
@@ -89,7 +91,8 @@ const Settings = () => {
         name: cleanedName,
         paymentsNumber: cleanedPaymentsNumber,
         userName: cleanedUserName,
-        isActive: true
+        isActive: true,
+        ownerId: convexUser?._id as Id<'users'>
       })
       Toast.show({
         type: 'success',
@@ -136,11 +139,11 @@ const Settings = () => {
       email: searchedUser.email ?? '',
       firstName: searchedUser.firstName,
       lastName: searchedUser.lastName,
-      role: (searchedUser.userType as 'member' | 'admin') ?? 'member'
+      role: (searchedUser.userType as 'free' | 'admin') ?? 'free'
     })
   }, [searchedUser, queryEmail])
 
-  const handleChangeRole = async (role: 'member' | 'admin') => {
+  const handleChangeRole = async (role: 'free' | 'admin') => {
     if (!userResult) return
     try {
       setIsSavingRole(true)
@@ -156,7 +159,8 @@ const Settings = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
-      <Stack.Screen options={{ title: 'Configuración', headerLargeTitle: true }} />
+
+      {/* <Stack.Screen options={{ title: 'Configuración', headerLargeTitle: true }} /> */}
       <KeyboardAwareScrollView
         contentContainerClassName='flex-1'
         enableOnAndroid={true}
@@ -169,30 +173,7 @@ const Settings = () => {
           className="p-4 pb-10"
           keyboardShouldPersistTaps="always"
         >
-          {/* Sección: Habilitar/Deshabilitar compras (Switch) */}
-          <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mb-5">
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center">
-                <Ionicons name="cart-outline" size={18} color="#64748b" />
-                <Text className="ml-2 text-base font-quicksand-bold text-slate-800">Habilitar compras</Text>
-              </View>
-              <Switch
-                value={purchasesEnabledLocal}
-                onValueChange={async (next) => {
-                  setPurchasesEnabledLocal(next)
-                  try {
-                    await setPurchasesEnabled({ enabled: next })
-                    Toast.show({ type: 'success', text1: 'Actualizado', text2: next ? 'Compras habilitadas' : 'Compras deshabilitadas' })
-                  } catch (e) {
-                    setPurchasesEnabledLocal(!next)
-                    Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo actualizar el estado de compras.' })
-                  }
-                }}
-                thumbColor={purchasesEnabledLocal ? '#4f46e5' : undefined}
-              />
-            </View>
-            <Text className="text-xs text-slate-500 mt-2">Si las deshabilitas, los usuarios no podrán reservar/comprar boletos temporalmente.</Text>
-          </View>
+
 
           {/* Sección: Reservas */}
           <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mb-5">
@@ -254,15 +235,15 @@ const Settings = () => {
                     <Text className="text-xs text-slate-500" numberOfLines={1}>{userResult.email}</Text>
                   </View>
                   <View className="px-2.5 py-1 rounded-full bg-slate-200">
-                    <Text className="text-xs font-quicksand-bold text-slate-700 uppercase">{userResult.role === 'member' ? 'Usuario' : 'Admin'}</Text>
+                    <Text className="text-xs font-quicksand-bold text-slate-700 uppercase">{userResult.role === 'free' ? 'Usuario' : 'Admin'}</Text>
                   </View>
                 </View>
 
                 <View className="flex-row gap-x-3 mt-1">
                   <Pressable
-                    onPress={() => handleChangeRole('member')}
-                    disabled={isSavingRole || userResult.role === 'member'}
-                    className={`flex-1 h-11 rounded-lg items-center justify-center ${userResult.role === 'member' ? 'bg-slate-300' : 'bg-slate-200 active:bg-slate-300'}`}
+                    onPress={() => handleChangeRole('free')}
+                    disabled={isSavingRole || userResult.role === 'free'}
+                    className={`flex-1 h-11 rounded-lg items-center justify-center ${userResult.role === 'free' ? 'bg-slate-300' : 'bg-slate-200 active:bg-slate-300'}`}
                   >
                     <Text className="font-quicksand-bold text-slate-800">Miembro</Text>
                   </Pressable>

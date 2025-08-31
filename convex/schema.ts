@@ -1,8 +1,9 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
-export const paymentMethodsFields = {
-  name: v.string(), // Ej: "Nequi", "Daviplata"
+export const paymentMethodFields = {
+  ownerId: v.id("users"),
+  name: v.string(), // ej Nequi - Daviplata
   paymentsNumber: v.string(),
   userName: v.string(),
   description: v.optional(v.string()),
@@ -12,32 +13,84 @@ export const paymentMethodsFields = {
       qrCodeUrl: v.optional(v.string()),
       phoneNumber: v.optional(v.string()),
       instructions: v.optional(v.string()),
-      // Puedes agregar más campos opcionales según lo necesites
     })
   ),
-  createdBy: v.optional(v.id("users"),)
+  createdBy: v.optional(v.id("users")),
 }
 
+export const userFields = {
+
+  // --- Identificación y Perfil ---
+  clerkId: v.string(), // ID único de Clerk, usado para enlazar la sesión.
+  firstName: v.string(),
+  lastName: v.string(),
+  email: v.optional(v.string()), // Opcional, ya que algunos métodos de login podrían no proveerlo.
+  phone: v.optional(v.string()), // Para contacto o verificación.
+  pushToken: v.optional(v.string()), // Token para notificaciones push.
+  userName: v.optional(v.string()),
+
+  // --- Permisos de la Plataforma ---
+  userType: v.union(v.literal("admin"), v.literal("free")), // "admin" es Super Admin, "member" es usuario normal.
+
+  // --- Monederos y Monetización ---
+  balance: v.float64(), // Saldo en dinero real (ej. COP) para comprar boletos. Se inicializa en 0.
+  raffleCredits: v.float64(), // "Moneda" virtual para crear sorteos. Se inicializa en 0.
+
+  // --- Estado de Suscripción (gestionado por RevenueCat) ---
+  subscriptionTier: v.union(v.literal("free"), v.literal("premium")), // Nivel de suscripción actual.
+  subscriptionId: v.optional(v.string()), // ID de la suscripción de RevenueCat/Play Store.
+  subscriptionExpiresAt: v.optional(v.float64()), // Timestamp de cuándo caduca la suscripción.
+
+  // --- Límites del Plan Gratuito ---
+  freeRafflesUsedThisMonth: v.float64(), // Contador de sorteos gratuitos usados.
+  freeRafflesResetDate: v.float64(), // Timestamp de cuándo se debe resetear el contador.
+}
+
+export const raffleFields = {
+  creatorId: v.id("users"),
+  userName: v.string(),
+  description: v.string(),
+  endTime: v.float64(),
+  imageUrl: v.string(),
+  startTime: v.float64(),
+  winCondition: v.optional(v.string()),
+  status: v.string(),
+  ticketPrice: v.float64(),
+  ticketsSold: v.float64(),
+  title: v.string(),
+  totalTickets: v.float64(),
+  winnerId: v.optional(v.id("users")),
+  winningTicketNumber: v.optional(v.float64()),
+  prize: v.optional(v.float64()),
+  creatorName: v.optional(v.string()),
+  searchableId: v.optional(v.string()),
+  enabledPurchases: v.boolean()
+
+}
+
+
 export default defineSchema({
-  raffles: defineTable({
-    creatorId: v.id("users"),
-    description: v.string(),
-    endTime: v.float64(),
-    imageUrl: v.string(),
-    startTime: v.float64(),
-    winCondition: v.optional(v.string()),
-    status: v.string(),
-    ticketPrice: v.float64(),
-    ticketsSold: v.float64(),
-    title: v.string(),
-    totalTickets: v.float64(),
-    winnerId: v.optional(v.id("users")),
-    winningTicketNumber: v.optional(v.float64()),
-    prize: v.optional(v.float64()),
-  })
+
+  users: defineTable(userFields)
+    // Índices para búsquedas eficientes
+    .index("by_clerk_id", ["clerkId"])
+    .index("by_email", ["email"])
+    .index("by_subscriptionId", ["subscriptionId"]) // Para que los webhooks de RevenueCat encuentren al usuario.
+    .index("by_pushToken", ["pushToken"])
+    .index("by_userType_pushToken", ["userType", "pushToken"])
+    .index("by_userName", ["userName"]), // New index for userName
+
+
+  raffles: defineTable(raffleFields)
     .index("by_creator", ["creatorId"])
     .index("by_status", ["status"])
-    .index("by_status_winnerId", ["status", "winnerId"]),
+    .index("by_status_winnerId", ["status", "winnerId"])
+    .index("by_searchable_Id", ["searchableId"]) // Nuevo índice para el raffleId único
+    .searchIndex("by_searchable_text", {
+      searchField: "searchableId",
+      // Podemos filtrar por estado dentro de la búsqueda para más eficiencia
+      filterFields: ["status"]
+    }),
 
 
   tickets: defineTable({
@@ -100,23 +153,9 @@ export default defineSchema({
     .index("by_raffleId_status", ["raffleId", "status"])
     .index("by_user_and_raffle", ["userId", "raffleId"]),
 
-  users: defineTable({
-    balance: v.optional(v.float64()),
-    clerkId: v.string(),
-    email: v.optional(v.string()),
-    firstName: v.string(),
-    lastName: v.string(),
-    phone: v.optional(v.string()),
-    pushToken: v.optional(v.string()),
-    userType: v.optional(v.union(v.literal("admin"), v.literal("member"))),
-  })
-    .index("by_clerk_id", ["clerkId"])
-    .index("by_email", ["email"])
-    .index("by_pushToken", ["pushToken"])
-    .index("by_userType_pushToken", ["userType", "pushToken"]),
 
-
-  paymentMethods: defineTable(paymentMethodsFields),
+  paymentMethods: defineTable(paymentMethodFields)
+    .index("by_owner", ["ownerId"]),
 
   notifications: defineTable({
     type: v.string(), // e.g., "payment_confirmation_pending"

@@ -13,13 +13,18 @@ export const handleClerkWebhook = httpAction(async (ctx, request) => {
         case "user.created":
             // Se extrae el userType de los metadatos públicos de Clerk.
             // Si no está definido o no es "admin", se asigna "member" por defecto.
-            const userType = (event.data.public_metadata.userType as string) === "admin" ? "admin" : "member";
+            const userType = (event.data.public_metadata.userType as string) === "admin" ? "admin" : "free";
             await ctx.runMutation(internal.users.createUser, {
                 clerkId: event.data.id,
                 email: event.data.email_addresses[0]?.email_address,
                 firstName: `${event.data.first_name ?? ""}`.trim(),
                 lastName: event.data.last_name ?? "",
                 userType: userType,
+                phone: "",
+                raffleCredits: 0,
+                subscriptionTier: "free",
+                freeRafflesUsedThisMonth: 0,
+                freeRafflesResetDate: 0,
             });
             break;
 

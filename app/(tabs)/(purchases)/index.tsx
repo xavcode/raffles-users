@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePaginatedQuery, useQuery } from 'convex/react';
 import { Link, router } from 'expo-router';
 import React from 'react';
-import { ActivityIndicator, FlatList, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import GlobalHeader from '../../components/GlobalHeader';
 
@@ -20,8 +20,8 @@ const PurchaseListItem = ({ purchase }: { purchase: PurchaseWithDetails }) => {
   const formattedAmount = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(purchase.totalAmount);
 
   return (
-    <Link href={`./${purchase._id}`} asChild>
-      <TouchableOpacity activeOpacity={0.8} className="bg-white mx-4 mb-3 rounded-2xl shadow-sm shadow-slate-200/60 overflow-hidden">
+    <Link href={`/(tabs)/(purchases)/${purchase._id.toString()}`} asChild>
+      <Pressable className="bg-white mx-4 mb-3 rounded-2xl shadow-sm shadow-slate-200/60 overflow-hidden active:opacity-70">
         <View className="p-4">
           {/* Header */}
           <View className="flex-row justify-between items-start mb-3">
@@ -51,7 +51,7 @@ const PurchaseListItem = ({ purchase }: { purchase: PurchaseWithDetails }) => {
           <Text className="text-xs font-quicksand-medium text-slate-500">{purchaseDate}</Text>
           <Ionicons name="chevron-forward-outline" size={18} color="#94a3b8" />
         </View>
-      </TouchableOpacity>
+      </Pressable>
     </Link>
   );
 };

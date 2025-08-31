@@ -183,7 +183,7 @@ const CreateRaffle = () => {
           <View className="bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50">
             <View className="mb-5">
               <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Título del Sorteo</Text>
-              <TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: Rifa Pro-fondos" value={title} onChangeText={setTitle} />
+              <TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: Sorteo Pro-fondos" value={title} onChangeText={setTitle} />
             </View>
             <View className="mb-5">
               <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Descripción</Text>
