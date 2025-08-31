@@ -264,3 +264,17 @@ export const setReleaseTime = mutation({
     }
   }
 });
+
+// export const getSettings = query({
+//   handler: async (ctx) => {
+//     const settings = await ctx.db.query('settings').first();
+//     if (!settings) {
+//       return { purchasesEnabled: true, releaseTime: 30, maintenanceMessage: undefined };
+//     }
+//     return {
+//       purchasesEnabled: settings.purchasesEnabled,
+//       releaseTime: settings.releaseTime,
+//       maintenanceMessage: settings.maintenanceMessage,
+//     };
+//   },
+// });

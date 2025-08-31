@@ -48,7 +48,7 @@ const PurchaseDetailsPage = () => {
     purchaseId ? { purchaseId } : 'skip'
   );
   const convexUser = useQuery(api.users.getCurrent);
-  const settings = useQuery(api.admin.getSettings);
+  const settings = useQuery(api.admin.getSettingsRaffle);
   const paymentMethods = useQuery(api.admin.getPaymentMethods);
 
   const cloudName = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
@@ -72,7 +72,7 @@ const PurchaseDetailsPage = () => {
   };
 
   // La pantalla está cargando si CUALQUIERA de los datos esenciales aún no ha llegado.
-  const isLoading = purchaseDetails === undefined || convexUser === undefined || settings === undefined || paymentMethods === undefined;
+  const isLoading = purchaseDetails === undefined || convexUser === undefined || paymentMethods === undefined;
 
   // --- MANEJADORES DE EVENTOS ---
   const handleConfirmPayment = async () => {
@@ -190,6 +190,7 @@ const PurchaseDetailsPage = () => {
               <Text className={`ml-1 text-xs font-quicksand-bold ${statusStyle.text}`}>{statusStyle.label}</Text>
             </View>
           </View>
+          <Text className="text-xl font-quicksand-bold text-slate-500 w-8/12" numberOfLines={2}>{raffle?.userName}</Text>
           <View className="mt-4 border-t border-slate-200/60 pt-4 space-y-3">
             <View className="flex-row justify-between items-baseline">
               <Text className="text-sm font-quicksand-medium text-slate-500">Fecha de compra</Text>

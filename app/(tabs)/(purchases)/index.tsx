@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import GlobalHeader from '../../components/GlobalHeader';
 
 
-type PurchaseWithDetails = Doc<'purchases'> & { raffleTitle: string };
+type PurchaseWithDetails = Doc<'purchases'> & { raffleTitle: string, creatorUserName: string };
 
 const PurchaseListItem = ({ purchase }: { purchase: PurchaseWithDetails }) => {
   const statusStyle = PURCHASE_STATUS_STYLES[purchase.status as keyof typeof PURCHASE_STATUS_STYLES] || PURCHASE_STATUS_STYLES.expired;
@@ -20,12 +20,12 @@ const PurchaseListItem = ({ purchase }: { purchase: PurchaseWithDetails }) => {
   const formattedAmount = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(purchase.totalAmount);
 
   return (
-    <Link href={`/(tabs)/(purchases)/${purchase._id.toString()}`} asChild>
+    <Link href={`/purchases/${purchase._id.toString()}`} asChild>
       <Pressable className="bg-white mx-4 mb-3 rounded-2xl shadow-sm shadow-slate-200/60 overflow-hidden active:opacity-70">
         <View className="p-4">
-          {/* Header */}
-          <View className="flex-row justify-between items-start mb-3">
-            <Text className="text-base font-quicksand-bold text-slate-800 w-8/12" numberOfLines={2}>
+          {/* Header: Title and Status */}
+          <View className="flex-row justify-between items-start mb-4">
+            <Text className="text-base font-quicksand-bold text-slate-800 flex-1 mr-2" numberOfLines={2}>
               {purchase.raffleTitle}
             </Text>
             <View className={`flex-row items-center px-2.5 py-1 rounded-full ${statusStyle.bg}`}>
@@ -33,20 +33,30 @@ const PurchaseListItem = ({ purchase }: { purchase: PurchaseWithDetails }) => {
               <Text className={`ml-1.5 text-xs font-quicksand-bold ${statusStyle.text}`}>{statusStyle.label}</Text>
             </View>
           </View>
-          {/* Details */}
-          <View className="flex-row items-center">
-            <View className="flex-row items-center">
-              <Ionicons name="cash-outline" size={16} color="#475569" />
-              <Text className="text-sm font-quicksand-bold text-primary ml-1.5">{formattedAmount}</Text>
+
+          {/* Body: Details */}
+          <View>
+            {/* Seller Info */}
+            <View className="flex-row items-center mb-3">
+              <Text className="text-sm font-quicksand-medium text-slate-500 mr-2">Vendido por:</Text>
+              <Text className="text-sm font-quicksand-bold text-slate-700 uppercase">{purchase.creatorUserName}</Text>
             </View>
-            <View className="w-px h-4 bg-slate-200 mx-3" />
+
+            {/* Purchase Details */}
             <View className="flex-row items-center">
-              <Ionicons name="ticket-outline" size={16} color="#475569" />
-              <Text className="text-sm font-quicksand-semibold text-slate-600 ml-1.5">{purchase.ticketCount} Boletos</Text>
+              <View className="flex-row items-center">
+                <Ionicons name="cash-outline" size={16} color="#475569" />
+                <Text className="text-sm font-quicksand-bold text-primary ml-1.5">{formattedAmount}</Text>
+              </View>
+              <View className="w-px h-4 bg-slate-200 mx-3" />
+              <View className="flex-row items-center">
+                <Ionicons name="ticket-outline" size={16} color="#475569" />
+                <Text className="text-sm font-quicksand-semibold text-slate-600 ml-1.5">{purchase.ticketCount} Boletos</Text>
+              </View>
             </View>
           </View>
         </View>
-        {/* Footer */}
+        {/* Footer: Date and Chevron */}
         <View className="bg-slate-50/70 px-4 py-2 border-t border-slate-200/80 flex-row justify-between items-center">
           <Text className="text-xs font-quicksand-medium text-slate-500">{purchaseDate}</Text>
           <Ionicons name="chevron-forward-outline" size={18} color="#94a3b8" />

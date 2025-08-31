@@ -1,6 +1,7 @@
 // import { useAuth } from '@clerk/clerk-expo';
+import { api } from '@/convex/_generated/api';
 import { Ionicons } from '@expo/vector-icons';
-import { useConvexAuth } from 'convex/react';
+import { useConvexAuth, usePaginatedQuery, useQuery } from 'convex/react';
 import * as Notifications from 'expo-notifications';
 import { Tabs, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
@@ -8,10 +9,13 @@ import { ActivityIndicator, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const TabsLayout = () => {
-  // const { isLoaded } = useAuth();
-  const { isLoading, isAuthenticated } = useConvexAuth(); // Hook 1
+
+  const { isLoading, isAuthenticated } = useConvexAuth();
   const insets = useSafeAreaInsets();
-  const router = useRouter(); // Hook 2
+  const router = useRouter();
+  const convexUser = useQuery(api.users.getCurrent);
+  const { results: purchases } = usePaginatedQuery(api.tickets.getPendingConfirmationPurchases, {}, { initialNumItems: 10 });
+  const pendingCount = purchases?.length;
 
   // Este efecto secundario es para manejar las notificaciones PUSH.
   // Es una funcionalidad NATIVA (iOS/Android) y no existe en la web.
@@ -114,6 +118,14 @@ const TabsLayout = () => {
           options={{
             title: 'Configuración',
             tabBarIcon: ({ color }) => <Ionicons name="settings-outline" color={color} size={26} />,
+          }}
+        />
+        <Tabs.Screen
+          name="verifications"
+          options={{
+            title: 'Verificaciones',
+            tabBarIcon: ({ color, size }) => <Ionicons name="shield-checkmark-outline" color={color} size={size} />,
+            tabBarBadge: pendingCount && pendingCount > 0 ? pendingCount : undefined,
           }}
         />
         {/* Rutas que no son pestañas se ocultan con href: null */}

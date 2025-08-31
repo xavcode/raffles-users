@@ -79,6 +79,7 @@ export const reserveTickets = mutation({
     const reservationExpiry = Date.now() + releaseMinutes * 60 * 1000; // en minutos
     const purchaseId = await ctx.db.insert("purchases", {
       userId: user._id,
+      creatorId: raffle.creatorId,
       raffleId: args.raffleId,
       ticketCount: args.ticketNumbers.length,
       totalAmount: raffle.ticketPrice * args.ticketNumbers.length,
@@ -351,15 +352,26 @@ export const getUserPurchasesWithDetails = query({
     const raffles = await Promise.all(raffleIds.map(id => ctx.db.get(id)));
     const rafflesById = new Map(raffles.filter(Boolean).map(r => [r!._id, r]));
 
-    // 3. Construimos la respuesta con los datos ya obtenidos, sin más consultas a la BD.
-    //    Devolvemos un objeto "resumen" mucho más ligero, sin la lista de boletos.
+    // 3. Extraemos los IDs de los creadores de los sorteos que acabamos de obtener.
+    const creatorIds = [...new Set(raffles.filter(Boolean).map(r => r!.creatorId))];
+
+    // 4. Obtenemos los datos de los usuarios creadores en otro lote.
+    const creators = await Promise.all(creatorIds.map(id => ctx.db.get(id)));
+    const creatorsById = new Map(creators.filter(Boolean).map(c => [c!._id, c]));
+
+    // 5. Construimos la respuesta final, ahora con acceso a los datos del creador.
     const purchasesWithDetails = purchases.map((purchase) => {
       const raffle = rafflesById.get(purchase.raffleId);
+      // Buscamos al creador usando el creatorId del sorteo.
+      const creator = raffle ? creatorsById.get(raffle.creatorId) : undefined;
+
       return {
         ...purchase,
         raffleTitle: raffle?.title ?? "Sorteo no encontrado",
         raffleImageUrl: raffle?.imageUrl,
         raffleStatus: raffle?.status,
+        // Añadimos el nombre de usuario del creador.
+        creatorUserName: creator?.userName ?? "N/A",
       };
     });
 
@@ -426,10 +438,27 @@ export const getPurchaseDetails = query({
 export const getPendingConfirmationPurchases = query({
   args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, args) => {
+    // 1. Obtener la identidad del usuario actual (el creador de la rifa)
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      // Si no está logueado, no hay nada que mostrar
+      return { page: [], isDone: true, continueCursor: "" };
+    }
+
+    const creator = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!creator) {
+      // Si el usuario no existe en nuestra DB, no hay nada que mostrar
+      return { page: [], isDone: true, continueCursor: "" };
+    }
 
     const paginatedPurchases = await ctx.db
       .query("purchases")
-      .withIndex("by_status", (q) => q.eq("status", "pending_confirmation"))
+      // 2. Usar el nuevo índice para buscar compras por el ID del creador y el estado
+      .withIndex("by_creator_and_status", (q) => q.eq("creatorId", creator._id).eq("status", "pending_confirmation"))
       .order("desc")
       .paginate(args.paginationOpts);
 
@@ -437,26 +466,26 @@ export const getPendingConfirmationPurchases = query({
 
     if (purchases.length === 0) return { page: [], isDone: true, continueCursor };
 
-    // OPTIMIZACIÓN: Solucionamos el problema N+1 obteniendo todos los datos en lotes.
+    // 3. La optimización N+1 sigue siendo válida y eficiente
     const raffleIds = [...new Set(purchases.map(p => p.raffleId))];
-    const userIds = [...new Set(purchases.map(p => p.userId))];
+    const buyerIds = [...new Set(purchases.map(p => p.userId))];
 
-    const [raffles, users] = await Promise.all([
+    const [raffles, buyers] = await Promise.all([
       Promise.all(raffleIds.map(id => ctx.db.get(id))),
-      Promise.all(userIds.map(id => ctx.db.get(id)))
+      Promise.all(buyerIds.map(id => ctx.db.get(id)))
     ]);
 
     const rafflesById = new Map(raffles.filter(Boolean).map(r => [r!._id, r]));
-    const usersById = new Map(users.filter(Boolean).map(u => [u!._id, u]));
+    const buyersById = new Map(buyers.filter(Boolean).map(u => [u!._id, u]));
 
     const purchasesWithDetails = purchases.map((purchase) => {
       const raffle = rafflesById.get(purchase.raffleId);
-      const user = usersById.get(purchase.userId);
+      const buyer = buyersById.get(purchase.userId);
       return {
         ...purchase,
         raffleTitle: raffle?.title ?? "Sorteo no encontrado",
-        userFirstName: user?.firstName ?? "Usuario desconocido",
-        userLastName: user?.lastName ?? "Usuario desconocido",
+        userFirstName: buyer?.firstName ?? "Usuario desconocido",
+        userLastName: buyer?.lastName ?? "",
       };
     });
 

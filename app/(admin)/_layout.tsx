@@ -42,9 +42,9 @@ function AdminProtectedLayout() {
   }
 
   // Si el usuario no es admin (o no tiene registro en Convex), lo redirigimos a la home de usuarios
-  if (convexUser === null || convexUser.userType !== 'admin') {
-    return <Redirect href="/(tabs)/" />;
-  }
+  // if (convexUser === null || convexUser.userType !== 'admin') {
+  //   return <Redirect href="/(tabs)/" />;
+  // }
 
   return (
     // Si llegamos aquí, el usuario es admin y puede ver el layout de pestañas

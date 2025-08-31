@@ -133,6 +133,7 @@ export default defineSchema({
     .index("by_status", ["status"]),
 
   purchases: defineTable({
+    creatorId: v.id("users"),
     userId: v.id("users"),
     raffleId: v.id("raffles"),
     transactionId: v.optional(v.id("transactions")),
@@ -151,7 +152,10 @@ export default defineSchema({
     .index("by_raffle", ["raffleId"])
     .index("by_status", ["status"])
     .index("by_raffleId_status", ["raffleId", "status"])
-    .index("by_user_and_raffle", ["userId", "raffleId"]),
+    .index("by_user_and_raffle", ["userId", "raffleId"])
+    .index("by_creator_and_status", ["creatorId", "status"]),
+
+
 
 
   paymentMethods: defineTable(paymentMethodFields)
