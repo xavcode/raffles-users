@@ -200,14 +200,25 @@ export const aprovalPurchase = mutation({
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .unique();
-    if (!requester || requester.userType !== "admin") {
-      throw new Error("Permisos insuficientes");
+    if (!requester) {
+      throw new Error("Usuario no encontrado");
     }
 
     const purchase = await ctx.db.get(args.purchaseId);
     if (!purchase) {
       throw new Error("No se encontró la compra.");
     }
+
+    const raffle = await ctx.db.get(purchase.raffleId);
+    if (!raffle) {
+      throw new Error("Sorteo no encontrado.");
+    }
+
+    // Validar que el usuario que aprueba es el creador de la rifa
+    if (requester._id !== raffle.creatorId) {
+      throw new Error("Permisos insuficientes: Solo el creador de la rifa puede aprobar pagos.");
+    }
+
     if (purchase.status !== 'pending_confirmation') {
       throw new Error("Esta compra no está esperando confirmación.");
     }
@@ -225,21 +236,21 @@ export const aprovalPurchase = mutation({
       await ctx.db.patch(ticket._id, { status: "sold", reservedUntil: undefined });
     }
     // 3. Actualizar el contador de boletos vendidos en el sorteo
-    const raffle = await ctx.db.get(purchase.raffleId);
-    if (raffle) {
-      await ctx.db.patch(raffle._id, { ticketsSold: raffle.ticketsSold + purchase.ticketCount });
+    const raffleUpdate = await ctx.db.get(purchase.raffleId); // Volvemos a obtenerlo por si fue modificado en el ínterin
+    if (raffleUpdate) {
+      await ctx.db.patch(raffleUpdate._id, { ticketsSold: raffleUpdate.ticketsSold + purchase.ticketCount });
     }
     // --- INICIO: Lógica de Notificación ---
     if (purchase.userId) {
       const user = await ctx.db.get(purchase.userId);
-      const raffle = await ctx.db.get(purchase.raffleId);
+      const raffleForNotification = await ctx.db.get(purchase.raffleId); // Para notificación
 
       // Si el usuario tiene un pushToken, le enviamos la notificación
       if (user && user.pushToken) {
         await ctx.scheduler.runAfter(0, internal.notifications.sendPushNotification, {
           pushToken: user.pushToken,
           title: "✅ Pago Aprobado!",
-          message: `Tus boletos para "${raffle?.title}" han sido asignados. ¡Mucha suerte!`,
+          message: `Tus boletos para "${raffleForNotification?.title}" han sido asignados. ¡Mucha suerte!`,
         });
       }
     }
@@ -248,9 +259,12 @@ export const aprovalPurchase = mutation({
 });
 
 export const rejectPurchase = mutation({
-  args: { purchaseId: v.id("purchases") },
+  args: {
+    purchaseId: v.id("purchases"),
+    reason: v.string(), // Nuevo argumento para la razón de rechazo
+  },
   handler: async (ctx, args) => {
-    // Validación: solo un admin puede rechazar pagos
+    // Validación: solo el creador de la rifa puede rechazar pagos
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error("No autenticado");
@@ -259,8 +273,8 @@ export const rejectPurchase = mutation({
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .unique();
-    if (!requester || requester.userType !== "admin") {
-      throw new Error("Permisos insuficientes");
+    if (!requester) {
+      throw new Error("Usuario no encontrado");
     }
 
     const purchase = await ctx.db.get(args.purchaseId);
@@ -268,14 +282,23 @@ export const rejectPurchase = mutation({
       throw new Error("Compra no encontrada.");
     }
 
+    const raffle = await ctx.db.get(purchase.raffleId);
+    if (!raffle) {
+      throw new Error("Sorteo no encontrado.");
+    }
+
+    // Validar que el usuario que rechaza es el creador de la rifa
+    if (requester._id !== raffle.creatorId) {
+      throw new Error("Permisos insuficientes: Solo el creador de la rifa puede rechazar pagos.");
+    }
+
     // Solo se pueden rechazar las compras que están pendientes de confirmación
     if (purchase.status !== 'pending_confirmation') {
       throw new Error("Esta compra no puede ser rechazada en su estado actual.");
     }
 
-    // 1. Marcar la compra como expirada
-    await ctx.db.patch(args.purchaseId, { status: "expired" });
-    // await ctx.db.patch(args.purchaseId, { status: "rejected" });
+    // 1. Marcar la compra como rechazada y guardar la razón
+    await ctx.db.patch(args.purchaseId, { status: "rejected", rejectionReason: args.reason });
 
     // 2. Buscar y liberar los boletos asociados
     const ticketsToUpdate = await ctx.db
@@ -293,14 +316,14 @@ export const rejectPurchase = mutation({
     }
     if (purchase.userId) {
       const user = await ctx.db.get(purchase.userId);
-      const raffle = await ctx.db.get(purchase.raffleId);
+      const raffleForNotification = await ctx.db.get(purchase.raffleId); // Para notificación
 
       // Si el usuario tiene un pushToken, le enviamos la notificación
       if (user && user.pushToken) {
         await ctx.scheduler.runAfter(0, internal.notifications.sendPushNotification, {
           pushToken: user.pushToken,
           title: "❌ ¡Pago Rechazado!",
-          message: `Tu pago de ${ticketsToUpdate.length} boletos para "${raffle?.title}" ha sido rechazado`,
+          message: `Tu pago de ${ticketsToUpdate.length} boletos para "${raffleForNotification?.title}" ha sido rechazado por la siguiente razón: ${args.reason}`,
         });
       }
     }
@@ -436,7 +459,10 @@ export const getPurchaseDetails = query({
 });
 
 export const getPendingConfirmationPurchases = query({
-  args: { paginationOpts: paginationOptsValidator },
+  args: {
+    creatorId: v.optional(v.id("users")), // Ahora acepta creatorId para filtrar
+    paginationOpts: paginationOptsValidator
+  },
   handler: async (ctx, args) => {
     // 1. Obtener la identidad del usuario actual (el creador de la rifa)
     const identity = await ctx.auth.getUserIdentity();
@@ -486,6 +512,7 @@ export const getPendingConfirmationPurchases = query({
         raffleTitle: raffle?.title ?? "Sorteo no encontrado",
         userFirstName: buyer?.firstName ?? "Usuario desconocido",
         userLastName: buyer?.lastName ?? "",
+        rejectionReason: purchase.rejectionReason, // Añadimos el campo de rechazo
       };
     });
 

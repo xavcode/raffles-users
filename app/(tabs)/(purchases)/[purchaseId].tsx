@@ -3,6 +3,8 @@ import { PURCHASE_STATUS } from '@/constants/status';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 
+import Paymentmethods from '@/app/components/Paymentmethods'; // Importar el componente Paymentmethods
+import toastConfig from '@/app/components/ToastConfig'; // Importar la configuración del toast
 import { formatCOP } from '@/utils/format';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
@@ -10,8 +12,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale'; // Asegúrate de que este import sea correcto
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
-import { ActivityIndicator, Clipboard, Dimensions, Image, Modal, Platform, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { ActivityIndicator, Dimensions, Image, Modal, Platform, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { SnapbackZoom } from 'react-native-zoom-toolkit';
@@ -37,6 +39,10 @@ const PurchaseDetailsPage = () => {
   const [isChecked, setChecked] = useState(false);
   const [confirmPaymentRecipeModalVisible, setConfirmPaymentRecipeModalVisible] = useState(false);
 
+  // Refs para los toasts locales de los modales
+  const paymentsModalToastRef = useRef(null);
+  const imageModalToastRef = useRef(null);
+
   // --- MUTATIONS ---
 
   const notifyPaymentMutation = useMutation(api.tickets.adminNotifyPayment);
@@ -49,7 +55,12 @@ const PurchaseDetailsPage = () => {
   );
   const convexUser = useQuery(api.users.getCurrent);
   const settings = useQuery(api.admin.getSettingsRaffle);
-  const paymentMethods = useQuery(api.admin.getPaymentMethods);
+
+  // Nueva query para obtener los métodos de pago del creador de la rifa
+  const creatorPaymentMethods = useQuery(
+    api.admin.getPaymentMethods,
+    purchaseDetails?.raffle?.creatorId ? { ownerId: purchaseDetails.raffle.creatorId } : 'skip'
+  );
 
   const cloudName = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -72,7 +83,7 @@ const PurchaseDetailsPage = () => {
   };
 
   // La pantalla está cargando si CUALQUIERA de los datos esenciales aún no ha llegado.
-  const isLoading = purchaseDetails === undefined || convexUser === undefined || paymentMethods === undefined;
+  const isLoading = purchaseDetails === undefined || convexUser === undefined || creatorPaymentMethods === undefined;
 
   // --- MANEJADORES DE EVENTOS ---
   const handleConfirmPayment = async () => {
@@ -125,16 +136,6 @@ const PurchaseDetailsPage = () => {
     }
   };
 
-  const handleCopyToClipboard = async (phoneNumber: string) => {
-    if (!phoneNumber) return;
-    Clipboard.setString(phoneNumber);
-    Toast.show({
-      type: 'success',
-      text1: `${phoneNumber}`,
-      text2: `copiado al portapapeles.`,
-      visibilityTime: 2000
-    });
-  };
 
   const handleconfirmPaymentRecipe = () => {
     // Reseteamos el estado del checkbox para asegurar que siempre aparezca desmarcado
@@ -176,13 +177,14 @@ const PurchaseDetailsPage = () => {
   };
   const purchaseDate = format(new Date(purchase._creationTime), "d 'de' MMMM, yyyy' -' h:mm a", { locale: es });
   const formattedAmount = formatCOP(purchase.totalAmount);
+  const isRejectedPurchase = purchase.status === 'rejected'; // Nueva variable para la condición
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
       <Stack.Screen options={{ title: 'Detalle de la Compra' }} />
-      <ScrollView contentContainerClassName="p-4 space-y-5">
+      <ScrollView contentContainerClassName="p-4 space-y-4">
         {/* --- Card de Información Principal --- */}
-        <View className="bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50">
+        <View className="bg-white p-4 rounded-2xl shadow-sm shadow-slate-300/50">
           <View className="flex-row justify-between items-start">
             <Text className="text-xl font-quicksand-bold text-slate-800 w-8/12" numberOfLines={2}>{raffle?.title}</Text>
             <View className={`flex-row items-center px-2.5 py-1 rounded-full ${statusStyle.bg}`}>
@@ -191,7 +193,7 @@ const PurchaseDetailsPage = () => {
             </View>
           </View>
           <Text className="text-xl font-quicksand-bold text-slate-500 w-8/12" numberOfLines={2}>{raffle?.userName}</Text>
-          <View className="mt-4 border-t border-slate-200/60 pt-4 space-y-3">
+          <View className="mt-3 border-t border-slate-200/60 pt-3 space-y-2">
             <View className="flex-row justify-between items-baseline">
               <Text className="text-sm font-quicksand-medium text-slate-500">Fecha de compra</Text>
               <Text className="text-sm font-quicksand-semibold text-slate-700">{purchaseDate}</Text>
@@ -203,9 +205,20 @@ const PurchaseDetailsPage = () => {
           </View>
         </View>
 
+        {/* Muestra la razón de rechazo si la compra fue rechazada */}
+        {isRejectedPurchase && purchase.rejectionReason && (
+          <View className="bg-red-50 border border-red-200/80 p-4 rounded-xl flex-row items-start">
+            <Ionicons name="alert-circle-outline" size={24} color="#ef4444" />
+            <View className="ml-3 flex-1">
+              <Text className="text-red-800 font-quicksand-bold text-base">Compra Rechazada</Text>
+              <Text className="text-red-700 font-quicksand-medium text-sm mt-1">Razón: {purchase.rejectionReason}</Text>
+            </View>
+          </View>
+        )}
+
         {/* Mostramos el comprobante si ya fue subido */}
         {purchase.imageUrl && (
-          <View className="bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50">
+          <View className="bg-white p-4 rounded-2xl shadow-sm shadow-slate-300/50">
             <Text className="text-lg font-quicksand-bold text-slate-700 mb-3">Comprobante Enviado</Text>
             <TouchableOpacity
               activeOpacity={0.8}
@@ -224,39 +237,24 @@ const PurchaseDetailsPage = () => {
           </View>
         )}
 
-        {/* Botón para el USUARIO: Solo si es el dueño y la compra está pendiente */}
+        {/* Sección de Métodos de Pago para el USUARIO: Solo si es el dueño y la compra está pendiente */}
         {convexUser?._id === purchase.userId && purchase.status === PENDING_PAYMENT && (
-          <View className="bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50 space-y-5">
-            {/* --- Sección de Métodos de Pago --- */}
+          <View className="bg-white p-4 rounded-2xl shadow-sm shadow-slate-300/50 space-y-4">
             <View>
               <Text className="text-lg font-quicksand-bold text-slate-700 mb-2">Realiza tu pago aquí</Text>
-              <Text className="text-sm font-quicksand-medium text-slate-600 mb-4">Copia los datos de pago. Una vez realizado, sube el comprobante más abajo.</Text>
-              <View className="space-y-2 gap-2">
-                {paymentMethods?.map((method) => (
-                  <Pressable key={method._id} className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl p-2 justify-between active:bg-slate-400">
-                    <View style={{ flex: 1 }}>
-                      <Text className="text-xs font-quicksand-medium text-slate-500">Entidad</Text>
-                      <Text className="text-base font-quicksand-bold text-slate-800 mb-1">{method.name}</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text className="text-xs font-quicksand-medium text-slate-500">Titular</Text>
-                      <Text className="text-sm font-quicksand-semibold text-slate-700">{method.userName}</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text className="text-xs font-quicksand-medium text-slate-500">Número</Text>
-                      <Text className="text-sm font-quicksand-semibold text-slate-700">{method.paymentsNumber}</Text>
-                    </View>
-                    <TouchableOpacity onPress={() => handleCopyToClipboard(method.paymentsNumber)} className="h-9 w-9 items-center justify-center active:bg-red-100 rounded-full">
-                      <Ionicons name="copy-outline" size={32} color="#94a3b8" />
-                    </TouchableOpacity>
-                  </Pressable>
-                ))}
-              </View>
+              <Text className="text-sm font-quicksand-medium text-slate-600 mb-3">Copia los datos de pago. Una vez realizado, sube el comprobante más abajo.</Text>
+              {creatorPaymentMethods && creatorPaymentMethods.length > 0 ? (
+                <Paymentmethods paymentMethods={creatorPaymentMethods} />
+              ) : (
+                <Text className="text-center text-sm text-slate-500 py-3">El creador de la rifa no ha configurado métodos de pago.</Text>
+              )}
+              {/* <Toast config={toastConfig} /> */}
             </View>
 
 
+
             {/* --- Sección para Subir Comprobante --- */}
-            <View className="border-t border-slate-200/80 pt-5">
+            <View className="border-t border-slate-200/80 pt-4">
               <Text className="text-lg font-quicksand-bold text-slate-700 mb-3">Sube tu comprobante</Text>
               <Pressable onPress={pickImage} className="bg-slate-100 border-2 border-dashed border-slate-300 h-48 rounded-xl justify-center items-center overflow-hidden active:bg-slate-200/70 transition-colors">
                 {imageAsset ? (
@@ -303,7 +301,6 @@ const PurchaseDetailsPage = () => {
 
 
 
-
             {/* --- Modal de Confirmación de Comprobante --- */}
             {confirmPaymentRecipeModalVisible && (
 
@@ -331,7 +328,7 @@ const PurchaseDetailsPage = () => {
           </View>
         )}
 
-        <View className="bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50">
+        <View className="bg-white p-4 rounded-2xl shadow-sm shadow-slate-300/50">
           <Text className="text-lg font-quicksand-bold text-slate-700 mb-2">Boletos Adquiridos ({tickets.length})</Text>
           <View className="flex-row flex-wrap justify-center -m-1 pt-2">
             {
@@ -360,6 +357,7 @@ const PurchaseDetailsPage = () => {
               <Ionicons name="close" size={28} color="white" />
             </TouchableOpacity>
           </View>
+          <Toast config={toastConfig} />
         </Modal>
       )}
     </SafeAreaView>

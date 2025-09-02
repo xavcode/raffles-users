@@ -90,8 +90,8 @@ const RootLayoutNav = () => {
                 <NetworkProvider>
                   <ClerkLoaded>
                     <Slot />
-                    <Toast config={toastConfig} />
                     <OfflineBanner />
+                    <Toast config={toastConfig} />
                     {/* <InitialLayout /> */}
                   </ClerkLoaded>
                 </NetworkProvider>

@@ -22,6 +22,7 @@ const toastConfig = {
         minHeight: 70, // Aseguramos una altura mínima para que sea más grande
         paddingVertical: 8, // Añadimos padding vertical para darle más altura
         backgroundColor: '#F0FDF4',
+        zIndex: 9999, // Para que se vea sobre el toast de error
       }}
       contentContainerStyle={{ paddingHorizontal: 15 }}
       text1Style={{
@@ -49,6 +50,7 @@ const toastConfig = {
         minHeight: 70,
         paddingVertical: 10,
         backgroundColor: '#FEF2F2',
+        zIndex: 9999, // Para que se vea sobre el toast de error
       }}
       contentContainerStyle={{ paddingHorizontal: 15 }}
       text1Style={{
@@ -76,6 +78,7 @@ const toastConfig = {
         minHeight: 70,
         paddingVertical: 10,
         backgroundColor: '#EFF6FF',
+        zIndex: 9999, // Para que se vea sobre el toast de error
       }}
       contentContainerStyle={{ paddingHorizontal: 15 }}
       text1Style={{
@@ -94,7 +97,7 @@ const toastConfig = {
     <BaseToast
       {...props}
       // Sobrescribimos los estilos para que sea naranja
-      style={{ borderLeftColor: '#F59E0B' }} // Un color naranja de Tailwind (amber-500)
+      style={{ borderLeftColor: '#F59E0B', zIndex: 9999 }} // Un color naranja de Tailwind (amber-500)
       contentContainerStyle={{ paddingHorizontal: 15 }}
       // Puedes mantener las fuentes que ya usas
       text1Style={{

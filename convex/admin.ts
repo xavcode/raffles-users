@@ -123,6 +123,7 @@ export const getSettingsRaffle = query({
   handler: async (ctx) => {
     const settings = await ctx.db.query('settings').first();
     if (!settings) {
+      // Valores por defecto si no hay configuraciones
       return { purchasesEnabled: true, releaseTime: 30, maintenanceMessage: undefined };
     }
     return {
@@ -181,30 +182,12 @@ export const deletePaymentMethod = mutation({
 });
 
 export const getPaymentMethods = query({
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      // Si no hay usuario autenticado, no devolver métodos de pago.
-      return [];
-    }
-
-    // Buscar el documento del usuario basado en su identity de Clerk/Auth
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => // CORRECCIÓN: Usar 'clerkId' y 'identity.subject' para consistencia
-        q.eq("clerkId", identity.subject)
-      )
-      .unique();
-
-    if (!user) {
-      // Si el usuario no se encuentra en la tabla de usuarios, no devolver nada.
-      return [];
-    }
-
-    // Devolver solo los métodos de pago que pertenecen al usuario actual.
+  args: { ownerId: v.id("users") },
+  handler: async (ctx, args) => {
+    // Devolver solo los métodos de pago que pertenecen al ownerId proporcionado.
     return await ctx.db
       .query("paymentMethods")
-      .withIndex("by_owner", (q) => q.eq("ownerId", user._id))
+      .withIndex("by_owner", (q) => q.eq("ownerId", args.ownerId))
       .collect();
   },
 });
@@ -247,34 +230,20 @@ export const setRafflePurchasesEnabled = mutation({
   }
 });
 
-export const setReleaseTime = mutation({
-  args: { minutes: v.number() },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error('No autenticado');
-    const admin = await ctx.db.query('users').withIndex('by_clerk_id', q => q.eq('clerkId', identity.subject)).unique();
-    if (!admin || admin.userType !== 'admin') throw new Error('Permisos insuficientes');
-    const minutes = args.minutes;
-    if (!Number.isFinite(minutes) || minutes < 1 || minutes > 240) throw new Error('Minutos inválidos');
-    const settings = await ctx.db.query('settings').first();
-    if (!settings) {
-      await ctx.db.insert('settings', { purchasesEnabled: true, releaseTime: minutes });
-    } else {
-      await ctx.db.patch(settings._id, { releaseTime: minutes });
-    }
-  }
-});
-
-// export const getSettings = query({
-//   handler: async (ctx) => {
+// export const setReleaseTime = mutation({
+//   args: { minutes: v.number() },
+//   handler: async (ctx, args) => {
+//     const identity = await ctx.auth.getUserIdentity();
+//     if (!identity) throw new Error('No autenticado');
+//     const admin = await ctx.db.query('users').withIndex('by_clerk_id', q => q.eq('clerkId', identity.subject)).unique();
+//     if (!admin || admin.userType !== 'admin') throw new Error('Permisos insuficientes');
+//     const minutes = args.minutes;
+//     if (!Number.isFinite(minutes) || minutes < 1 || minutes > 240) throw new Error('Minutos inválidos');
 //     const settings = await ctx.db.query('settings').first();
 //     if (!settings) {
-//       return { purchasesEnabled: true, releaseTime: 30, maintenanceMessage: undefined };
+//       await ctx.db.insert('settings', { purchasesEnabled: true, releaseTime: minutes });
+//     } else {
+//       await ctx.db.patch(settings._id, { releaseTime: minutes });
 //     }
-//     return {
-//       purchasesEnabled: settings.purchasesEnabled,
-//       releaseTime: settings.releaseTime,
-//       maintenanceMessage: settings.maintenanceMessage,
-//     };
-//   },
+//   }
 // });

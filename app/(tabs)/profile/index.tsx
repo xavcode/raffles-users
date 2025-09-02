@@ -1,111 +1,91 @@
-import { api } from '@/convex/_generated/api';
-// import { SignedIn, SignedOut, useAuth, useUser } from '@clerk/clerk-expo';
-
-import { useAuth, useUser } from '@clerk/clerk-expo';
-import { FontAwesome, Ionicons } from '@expo/vector-icons';
-import { Authenticated, AuthLoading, Unauthenticated, useQuery } from 'convex/react';
-import { Link, Stack } from 'expo-router';
-import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useMutation, useQuery } from 'convex/react';
+import { router } from 'expo-router';
+import React, { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { api } from '../../../convex/_generated/api';
 
-const profile = () => {
+const ProfileScreen = () => {
+  // Ya no necesitamos signOut de Clerk, solo redirigimos
+  // const { signOut } = useAuth();
 
-  const { signOut } = useAuth();
-  const { user } = useUser();
-  const convexUser = useQuery(api.users.getCurrent);
+  const currentUser = useQuery(api.users.getCurrent);
+  const updateUserMutation = useMutation(api.users.update); // Corregido: 'update' en lugar de 'updateUser'
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleSignOut = async () => {
+    // Al cerrar sesión, simplemente redirigimos
+    // En un futuro, si Convex tiene una función de logout, la llamaríamos aquí.
+    router.replace('/(auth)/sign-in');
+  };
+
+  if (currentUser === undefined) {
+    return (
+      <SafeAreaView className="flex-1 bg-slate-50 justify-center items-center">
+        <ActivityIndicator size="large" color="#4f46e5" />
+      </SafeAreaView>
+    );
+  }
+
+  if (currentUser === null) {
+    return (
+      <SafeAreaView className="flex-1 bg-slate-50">
+        <View className="flex-1 justify-center items-center p-8">
+          <Image source={require('../../../assets/images/avatar.png')} className="w-24 h-24 rounded-full mb-4" />
+          <Text className="text-xl font-quicksand-bold text-slate-700 mb-2">No Has Iniciado Sesión</Text>
+          <Text className="text-base font-quicksand-medium text-slate-500 text-center mb-6">Inicia sesión para ver y administrar tu perfil.</Text>
+          <Pressable onPress={() => router.replace('/(auth)/sign-in')} className="bg-primary px-6 py-3 rounded-xl active:opacity-80">
+            <Text className="text-white font-quicksand-bold text-base">Iniciar Sesión</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
-      <AuthLoading>
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#6366F1" />
+      <View className="flex-1 p-4">
+        <View className="items-center mb-6">
+          <Image
+            source={require('../../../assets/images/avatar.png')}
+            className="w-28 h-28 rounded-full border-4 border-white shadow-md"
+          />
+          <Text className="text-2xl font-quicksand-bold text-slate-800 mt-4">{currentUser.firstName} {currentUser.lastName}</Text>
+          {currentUser.userName && (
+            <Text className="text-base font-quicksand-medium text-slate-500">@{currentUser.userName}</Text>
+          )}
+          {currentUser.email && (
+            <Text className="text-sm font-quicksand-medium text-slate-500 mt-1">{currentUser.email}</Text>
+          )}
         </View>
-      </AuthLoading>
-      <Authenticated>
-        {/* This Stack.Screen is for the signed-in state, ensuring a consistent header */}
-        <Stack.Screen
-          options={{
-            headerTitle: 'Perfil',
-            headerLargeTitle: true,
-            headerShadowVisible: false,
-            headerStyle: { backgroundColor: '#f8fafc' },
-            headerTitleStyle: { fontFamily: 'Quicksand-Bold' },
-          }}
-        />
-        {convexUser === undefined ? (
-          <View className="flex-1 justify-center items-center">
-            <ActivityIndicator size="large" color="#6366F1" />
-          </View>
-        ) : (
-          <View className="p-6">
-            <View className="items-center mb-8">
-              <Image source={{ uri: user?.imageUrl }} className="w-28 h-28 rounded-full mb-4 border-4 border-primary" />
-              <Text className="text-2xl font-quicksand-bold text-gray-800">{convexUser?.firstName} {convexUser?.lastName}</Text>
-              <Text className="text-base text-gray-500 mt-1">{convexUser?.email}</Text>
-            </View>
 
-            {!convexUser?.phone && (
-              <View className="bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded-md mb-6">
-                <View className="flex-row items-center">
-                  <Ionicons name="warning-outline" size={24} color="#F59E0B" />
-                  <View className="ml-3 flex-1">
-                    <Text className="text-base font-quicksand-bold text-yellow-800">¡Acción requerida!</Text>
-                    <Text className="text-sm text-yellow-700 mt-1">
-                      Agrega tu número de teléfono para poder recibir los pagos de los premios que ganes.
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            )}
-            <View className="bg-white rounded-xl p-4 shadow-sm">
-              <Text className="text-lg font-quicksand-bold text-gray-700 mb-4">Cuenta</Text>
-              <Link href={"/(tabs)/profile/edit-profile"} asChild>
-                <Pressable className="flex-row items-center justify-between p-3 rounded-lg active:bg-gray-100">
-                  <View className="flex-row items-center">
-                    <Ionicons name="person-outline" size={20} color="#4B5563" />
-                    <Text className="text-gray-800 font-quicksand-semibold text-base ml-4">Editar Perfil</Text>
-                  </View>
-                  <FontAwesome name="chevron-right" size={16} color="#9CA3AF" />
-                </Pressable>
-              </Link>
-              <View className="h-px bg-gray-200 my-2" />
-              <Pressable
-                onPress={() => signOut()}
-                className="flex-row items-center p-3 rounded-lg active:bg-gray-100"
-              >
-                <Ionicons name="log-out-outline" size={22} color="#EF4444" />
-                <Text className="text-red-500 font-quicksand-semibold text-base ml-4">Cerrar Sesión</Text>
-              </Pressable>
+        <View className="bg-white rounded-2xl shadow-sm shadow-slate-300/50 p-4 mb-4">
+          <Pressable
+            onPress={() => router.push('/profile/edit-profile')}
+            className="flex-row items-center justify-between py-3 border-b border-slate-200/60"
+          >
+            <View className="flex-row items-center">
+              <Ionicons name="pencil-outline" size={20} color="#4f46e5" />
+              <Text className="text-base font-quicksand-medium text-slate-700 ml-3">Editar Perfil</Text>
             </View>
-          </View>
-        )}
-      </Authenticated>
-      <Unauthenticated>
-        <Stack.Screen
-          options={{
-            headerTitle: 'Perfil',
-            headerLargeTitle: true,
-            headerShadowVisible: false,
-            headerStyle: { backgroundColor: '#f8fafc' },
-            headerTitleStyle: { fontFamily: 'Quicksand-Bold' },
-          }}
-        />
-        <View className="flex-1 justify-center items-center px-8 -mt-10">
-          <Ionicons name="person-circle-outline" size={64} color="#cbd5e1" />
-          <Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">Tu perfil te espera</Text>
-          <Text className="text-sm font-quicksand-medium text-slate-400 text-center mt-1 mb-6">
-            Inicia sesión para editar tus datos, ver tus sorteos y más.
-          </Text>
-          <Link href="/(auth)/sign-in" asChild>
-            <Pressable className="bg-primary px-8 py-3 rounded-lg active:opacity-80">
-              <Text className="text-white font-quicksand-bold text-base">Iniciar Sesión</Text>
-            </Pressable>
-          </Link>
+            <Ionicons name="chevron-forward-outline" size={20} color="#94a3b8" />
+          </Pressable>
+
+          <Pressable
+            onPress={handleSignOut}
+            className="flex-row items-center justify-between py-3"
+          >
+            <View className="flex-row items-center">
+              <Ionicons name="log-out-outline" size={20} color="#ef4444" />
+              <Text className="text-base font-quicksand-medium text-red-500 ml-3">Cerrar Sesión</Text>
+            </View>
+            <Ionicons name="chevron-forward-outline" size={20} color="#94a3b8" />
+          </Pressable>
         </View>
-      </Unauthenticated>
+      </View>
     </SafeAreaView>
-  )
-}
+  );
+};
 
-export default profile
+export default ProfileScreen

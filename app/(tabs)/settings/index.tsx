@@ -1,12 +1,13 @@
-import { api } from '@/convex/_generated/api'
-import { Doc, Id } from '@/convex/_generated/dataModel'
-import { Ionicons } from '@expo/vector-icons'
-import { useMutation, useQuery } from 'convex/react'
-import React, { useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import Toast from 'react-native-toast-message'
+import Paymentmethods from '@/app/components/Paymentmethods'; // Importar el componente Paymentmethods
+import { api } from '@/convex/_generated/api';
+import { Doc, Id } from '@/convex/_generated/dataModel';
+import { Ionicons } from '@expo/vector-icons';
+import { useMutation, useQuery } from 'convex/react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 
 type UserPreview = {
   email: string
@@ -37,15 +38,15 @@ const Settings = () => {
 
   const settings = useQuery(api.admin.getSettingsRaffle)
   const setRafflePurchasesEnabled = useMutation(api.admin.setRafflePurchasesEnabled)
-  const setReleaseTime = useMutation(api.admin.setReleaseTime)
+  // const setReleaseTime = useMutation(api.admin.setReleaseTime)
   const updateRole = useMutation(api.users.updateRole)
   const createPaymentMethod = useMutation(api.admin.createPaymentMethod)
-  const paymentMethods = useQuery(api.admin.getPaymentMethods)
   const deletePaymentMethod = useMutation(api.admin.deletePaymentMethod)
 
 
   const isReservationDirty = useMemo(() => reservationMinutes !== savedReservationMinutes, [reservationMinutes, savedReservationMinutes])
   const convexUser = useQuery(api.users.getCurrent)
+  const paymentMethods = useQuery(api.admin.getPaymentMethods, convexUser?._id ? { ownerId: convexUser._id } : 'skip')
 
   useEffect(() => {
     if (settings) {
@@ -63,7 +64,7 @@ const Settings = () => {
     }
     try {
       setIsSavingReservation(true)
-      await setReleaseTime({ minutes })
+      // await setReleaseTime({ minutes })
       setSavedReservationMinutes(String(minutes))
       Toast.show({ type: 'success', text1: 'Guardado', text2: 'Tiempo de reserva actualizado.' })
     } finally {
@@ -296,25 +297,8 @@ const Settings = () => {
             {/* Lista de métodos existentes */}
             <View className="border-t border-slate-200 pt-3 space-y-3 gap-2">
               {paymentMethods === undefined && <ActivityIndicator className="mt-2" />}
-              {paymentMethods?.map((method: PaymentMethod) => (
-                <View key={method._id} className="flex-row items-center justify-between bg-slate-50 p-3 rounded-lg">
-                  <View style={{ flex: 1, alignItems: 'flex-start' }}>
-                    <Text className="font-quicksand-bold text-slate-700">{method.name}</Text>
-                  </View>
-                  <View style={{ flex: 1, alignItems: 'flex-start' }}>
-                    <Text className="font-quicksand-medium text-slate-500">{method.userName}</Text>
-                  </View>
-                  <View style={{ flex: 1, alignItems: 'flex-start' }}>
-                    <Text className="font-quicksand-medium text-slate-500">{method.paymentsNumber}</Text>
-                  </View>
-                  <TouchableOpacity onPress={() => deletePaymentMethod({ paymentMethodId: method._id as Id<'paymentMethods'> })} className="h-9 w-9 items-center justify-center active:bg-red-100 rounded-full">
-                    <Ionicons name="trash-outline" size={22} color="#ef4444" />
-                  </TouchableOpacity>
-                </View>
-              ))}
-              {paymentMethods?.length === 0 && (
-                <Text className="text-center text-sm text-slate-400 py-2">No hay métodos de pago agregados.</Text>
-              )}
+              {/* Reemplazamos la lista manual por el componente Paymentmethods */}
+              <Paymentmethods paymentMethods={paymentMethods} />
             </View>
           </View>
         </ScrollView>

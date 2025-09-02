@@ -5,22 +5,25 @@ import { Doc } from '@/convex/_generated/dataModel';
 import { formatUtcToLocal } from '@/utils/date';
 import { Ionicons } from '@expo/vector-icons';
 import { usePaginatedQuery, useQuery } from 'convex/react';
-import { Link, router } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import GlobalHeader from '../../components/GlobalHeader';
 
 
-type PurchaseWithDetails = Doc<'purchases'> & { raffleTitle: string, creatorUserName: string };
+type PurchaseWithDetails = Doc<'purchases'> & { raffleTitle: string, creatorUserName: string, rejectionReason?: string };
 
 const PurchaseListItem = ({ purchase }: { purchase: PurchaseWithDetails }) => {
   const statusStyle = PURCHASE_STATUS_STYLES[purchase.status as keyof typeof PURCHASE_STATUS_STYLES] || PURCHASE_STATUS_STYLES.expired;
   const purchaseDate = formatUtcToLocal(purchase._creationTime, "d MMM, yyyy 'a las' h:mm a");
   const formattedAmount = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(purchase.totalAmount);
+  console.log(purchase)
+
+  const isRejected = purchase.status === 'rejected'; // Variable para la condición
 
   return (
-    <Link href={`/purchases/${purchase._id.toString()}`} asChild>
+    <Link href={`./(purchases)/${purchase._id.toString()}`} asChild>
       <Pressable className="bg-white mx-4 mb-3 rounded-2xl shadow-sm shadow-slate-200/60 overflow-hidden active:opacity-70">
         <View className="p-4">
           {/* Header: Title and Status */}
@@ -54,6 +57,12 @@ const PurchaseListItem = ({ purchase }: { purchase: PurchaseWithDetails }) => {
                 <Text className="text-sm font-quicksand-semibold text-slate-600 ml-1.5">{purchase.ticketCount} Boletos</Text>
               </View>
             </View>
+            {isRejected && purchase.rejectionReason && (
+              <View className="mt-3 p-2 border-t border-red-100 bg-red-50 rounded-lg">
+                <Text className="text-xs font-quicksand-bold text-red-700">Razón de rechazo:</Text>
+                <Text className="text-xs font-quicksand-medium text-red-600 mt-0.5" numberOfLines={2}>{purchase.rejectionReason}</Text>
+              </View>
+            )}
           </View>
         </View>
         {/* Footer: Date and Chevron */}
@@ -68,6 +77,7 @@ const PurchaseListItem = ({ purchase }: { purchase: PurchaseWithDetails }) => {
 
 const MyPurchases = () => {
   const convexUser = useQuery(api.users.getCurrent);
+  const router = useRouter(); // Declarar useRouter
 
   const {
     results: userPurchases,
@@ -100,6 +110,8 @@ const MyPurchases = () => {
   if (convexUser === null) {
     return (
       <SafeAreaView className="flex-1 bg-slate-50">
+        <GlobalHeader />
+        {/* Contenido de fallback para usuarios no autenticados, sin el prop 'fallback' */}
         <View className="flex-1 justify-center items-center px-8">
           <Ionicons name="lock-closed-outline" size={64} color="#cbd5e1" />
           <Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">Inicia sesión para ver tus compras</Text>

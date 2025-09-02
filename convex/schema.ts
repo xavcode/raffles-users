@@ -64,8 +64,8 @@ export const raffleFields = {
   prize: v.optional(v.float64()),
   creatorName: v.optional(v.string()),
   searchableId: v.optional(v.string()),
-  enabledPurchases: v.boolean()
-
+  enabledPurchases: v.boolean(),
+  releaseTime: v.number(), // Nuevo campo para el tiempo de liberación de tickets
 }
 
 
@@ -144,9 +144,10 @@ export default defineSchema({
       v.literal("pending_payment"),
       v.literal(`pending_confirmation`),
       v.literal("expired"),
-      // v.literal("rejected"),
+      v.literal("rejected"),
       v.literal("completed")),
     expiresAt: v.optional(v.float64()), // Timestamp de cuando expira la reserva
+    rejectionReason: v.optional(v.string()), // Campo para la razón de rechazo
   })
     .index("by_user", ["userId"])
     .index("by_raffle", ["raffleId"])
@@ -172,6 +173,7 @@ export default defineSchema({
   }).index("by_isRead", ["isRead"]),
 
   settings: defineTable({
+    ownerId: v.id("users"),
     releaseTime: v.number(),
     purchasesEnabled: v.boolean(),
     maintenanceMessage: v.optional(v.string()),

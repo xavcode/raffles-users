@@ -27,6 +27,7 @@ const CreateRaffle = () => {
   const [endTime, setEndTime] = useState(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)); // Por defecto, 7 días
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [datePickerTarget, setDatePickerTarget] = useState<'start' | 'end'>('start');
+  const [releaseTime, setReleaseTime] = useState('30'); // Nuevo estado para el tiempo de liberación de tickets
 
   const [imageAsset, setImageAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const resetStates = () => {
@@ -39,6 +40,9 @@ const CreateRaffle = () => {
     setShowDatePicker(false);
     setDatePickerTarget('start');
     setImageAsset(null);
+    setTotalTickets('');
+    setTicketPrice('');
+    setReleaseTime('30'); // Reiniciar releaseTime
   }
 
   // 2. Función para abrir la galería de imágenes del dispositivo
@@ -83,13 +87,23 @@ const CreateRaffle = () => {
 
   const handleCreateRaffle = async () => {
     // Validamos que todos los campos, incluida la imagen, estén completos
-    if (!title || !description || !totalTickets || !ticketPrice || !prize || !imageAsset) {
+    if (!title || !description || !totalTickets || !ticketPrice || !prize || !imageAsset || !releaseTime) {
       Toast.show({
         type: 'error',
         text1: 'Error',
         text2: 'Por favor, completa todos los campos y selecciona una imagen.',
       })
 
+      return;
+    }
+
+    const parsedReleaseTime = parseInt(releaseTime, 10);
+    if (isNaN(parsedReleaseTime) || parsedReleaseTime < 1 || parsedReleaseTime > 240) {
+      Toast.show({
+        type: 'error',
+        text1: 'Tiempo de liberación inválido',
+        text2: 'El tiempo de liberación debe ser un número entre 1 y 240 minutos.',
+      });
       return;
     }
 
@@ -145,6 +159,7 @@ const CreateRaffle = () => {
         winCondition: winCondition,
         startTime: startTime.getTime(),
         endTime: endTime.getTime(),
+        releaseTime: parsedReleaseTime, // Incluir el nuevo campo releaseTime
       });
 
       Toast.show({
@@ -227,6 +242,19 @@ const CreateRaffle = () => {
                   <Text className="text-base font-quicksand-medium">{endTime.toLocaleDateString('es-CO')}</Text>
                 </Pressable>
               </View>
+            </View>
+
+            <View className="mb-5">
+              <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Tiempo de Liberación de Tickets (minutos)</Text>
+              <TextInput
+                className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium"
+                placeholder="Ej: 30 (entre 1 y 240 minutos)"
+                keyboardType="number-pad"
+                value={releaseTime}
+                onChangeText={setReleaseTime}
+                maxLength={3}
+                onFocus={handleFocusLastInputs}
+              />
             </View>
 
             <View className="flex-row gap-x-4 mb-5">

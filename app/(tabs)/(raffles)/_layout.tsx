@@ -24,7 +24,6 @@ export default function RafflesStackLayout() {
       <Stack.Screen name="raffle" options={{ title: 'Administrar Sorteos', headerShown: false }} />
       {/* Al navegar a estas pantallas, el Stack añadirá automáticamente un botón de "Atrás" a la izquierda. */}
       <Stack.Screen name="[id]/index" options={{ title: 'Editar Sorteo' }} />
-      <Stack.Screen name="[id]/sales" options={{ title: 'Ventas del Sorteo' }} />
     </Stack>
   );
 }

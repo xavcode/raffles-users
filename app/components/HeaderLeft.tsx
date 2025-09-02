@@ -1,43 +1,45 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMutation } from 'convex/react';
 import { Link, useRouter } from 'expo-router';
 import React from 'react';
-import { Alert, Pressable, View } from 'react-native';
-import { api } from '../../convex/_generated/api';
+import { Pressable, View } from 'react-native';
 import { Doc } from '../../convex/_generated/dataModel';
 
 type HeaderLeftProps = {
     raffle: Doc<"raffles">;
+    onDeleteRequest: () => void; // Nuevo prop para manejar la solicitud de eliminación
 };
 
-const HeaderLeft = ({ raffle }: HeaderLeftProps) => {
+const HeaderLeft = ({ raffle, onDeleteRequest }: HeaderLeftProps) => {
     const router = useRouter();
-    const deleteRaffle = useMutation(api.raffles.deleteRaffle);
+    // La mutación deleteRaffle ahora se llamará desde el modal de confirmación en el padre
+    // const deleteRaffle = useMutation(api.raffles.deleteRaffle);
 
+    // El manejador handleDelete ahora simplemente invoca el callback del padre
     const handleDelete = () => {
-        Alert.alert(
-            "Eliminar Sorteo",
-            "¿Estás seguro de que quieres eliminar este sorteo?",
-            [
-                { text: "Cancelar", style: "cancel" },
-                {
-                    text: "Eliminar",
-                    onPress: async () => {
-                        try {
-                            // Tu mutación `deleteRaffle` ya verifica si el usuario es el creador
-                            await deleteRaffle({ id: raffle._id });
-                            Alert.alert("Éxito", "El sorteo ha sido eliminado correctamente.");
-                            router.replace('/(tabs)/(home)');
-                        } catch (error) {
-                            // Muestra el error de la mutación (ej: "No tienes permisos", "Tiene boletos vendidos")
-                            Alert.alert("Error al eliminar", (error as Error).message);
-                        }
-                    },
-                    style: "destructive",
-                },
-            ]
-        );
+        onDeleteRequest();
     };
+
+    // Comentamos la antigua lógica de Alert.alert
+    // Alert.alert(
+    //     "Eliminar Sorteo",
+    //     "¿Estás seguro de que quieres eliminar este sorteo?",
+    //     [
+    //         { text: "Cancelar", style: "cancel" },
+    //         {
+    //             text: "Eliminar",
+    //             onPress: async () => {
+    //                 try {
+    //                     await deleteRaffle({ id: raffle._id });
+    //                     Alert.alert("Éxito", "El sorteo ha sido eliminado correctamente.");
+    //                     router.replace('/(tabs)/(home)');
+    //                 } catch (error) {
+    //                     Alert.alert("Error al eliminar", (error as Error).message);
+    //                 }
+    //             },
+    //             style: "destructive",
+    //         },
+    //     ]
+    // );
 
     return (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20, marginRight: 5 }}>

@@ -1,9 +1,8 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
-import { Id } from "./_generated/dataModel";
+import { Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
-import { raffleFields } from "./schema";
 
 
 
@@ -172,8 +171,18 @@ export const getById = query({
 
 export const createRaffle = mutation({
 
-  args: (({ creatorId, userName, ticketsSold, status, winnerId, winningTicketNumber, searchableId, enabledPurchases, ...rest }) => v.object(rest))(raffleFields),
-
+  args: v.object({
+    title: v.string(),
+    description: v.string(),
+    imageUrl: v.string(),
+    ticketPrice: v.float64(),
+    totalTickets: v.float64(),
+    startTime: v.float64(),
+    endTime: v.float64(),
+    winCondition: v.string(),
+    prize: v.optional(v.float64()),
+    releaseTime: v.number(), // Nuevo campo para el tiempo de liberación de tickets
+  }),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
@@ -219,12 +228,13 @@ export const updateRaffle = mutation({
     ticketPrice: v.optional(v.float64()),
     totalTickets: v.optional(v.float64()),
     imageUrl: v.optional(v.string()),
-    winCondition: v.string(),
-    startTime: v.float64(),
-    endTime: v.float64(),
+    winCondition: v.optional(v.string()), // Hacemos winCondition opcional aquí
+    startTime: v.optional(v.float64()), // Hacemos startTime opcional
+    endTime: v.optional(v.float64()),   // Hacemos endTime opcional
     prize: v.optional(v.float64()),
     status: v.optional(v.string()),
     winningTicketNumber: v.optional(v.float64()),
+    releaseTime: v.optional(v.number()), // Nuevo campo opcional para actualizar
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -266,30 +276,59 @@ export const getPurchasesForRaffle = query({
     raffleId: v.id("raffles"),
   },
   handler: async (ctx, args) => {
+    // 1. Obtener todas las compras para este sorteo (sin filtrar por estado inicialmente)
     const purchases = await ctx.db
       .query("purchases")
-      .withIndex("by_raffleId_status", (q) =>
-        q.eq("raffleId", args.raffleId).eq("status", "completed")
-      )
+      .withIndex("by_raffle", (q) => q.eq("raffleId", args.raffleId))
       .order("desc")
       .collect();
 
-    const purchasesWithUsers = await Promise.all(
-      purchases.map(async (purchase) => {
-        const user = await ctx.db.get(purchase.userId);
-        return {
-          ...purchase,
-          user: user ? {
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            phone: user.phone
-          } : null,
-        };
-      })
-    );
+    if (purchases.length === 0) {
+      return [];
+    }
 
-    return purchasesWithUsers;
+    // 2. Recopilar todos los userIds únicos de las compras
+    const userIds = [...new Set(purchases.map(p => p.userId))];
+
+    // 3. Obtener los detalles de todos los usuarios de una vez
+    const users = await Promise.all(userIds.map(id => ctx.db.get(id)));
+    const usersById = new Map(users.filter(Boolean).map(u => [u!._id, u]));
+
+    // 4. Obtener todos los tickets asociados a este sorteo
+    const allTickets = await ctx.db
+      .query("tickets")
+      .withIndex("by_raffle", (q) => q.eq("raffleId", args.raffleId))
+      .collect();
+
+    // Organizar tickets por purchaseId para un acceso eficiente
+    const ticketsByPurchaseId = new Map<Id<"purchases">, Doc<"tickets">[]>();
+    for (const ticket of allTickets) {
+      if (ticket.purchaseId) {
+        const existingTickets = ticketsByPurchaseId.get(ticket.purchaseId) || [];
+        existingTickets.push(ticket);
+        ticketsByPurchaseId.set(ticket.purchaseId, existingTickets);
+      }
+    }
+
+    // 5. Combinar los datos de compras, usuarios y tickets
+    const purchasesWithDetails = purchases.map((purchase) => {
+      const user = usersById.get(purchase.userId);
+      const associatedTickets = ticketsByPurchaseId.get(purchase._id) || [];
+
+      return {
+        ...purchase,
+        user: user ? {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          phone: user.phone
+        } : null,
+        tickets: associatedTickets,
+        // El status y rejectionReason ya están directamente en 'purchase'
+      };
+    });
+
+    return purchasesWithDetails;
   },
 });
 
