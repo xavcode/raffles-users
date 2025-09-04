@@ -4,12 +4,14 @@ import { formatUtcToLocal } from '@/utils/date';
 import { Ionicons } from '@expo/vector-icons';
 import { usePaginatedQuery, useQuery } from 'convex/react';
 import { Link, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Pressable, Text, TextInput, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import GlobalHeader from '../../components/GlobalHeader';
+import SearchBar from '../../components/SearchBar';
 
 type RaffleWithDetails = Doc<'raffles'> & { creatorName?: string }; // 'creatorName' ahora es opcional
+const ACTIVE = 'active';
 
 const FilterButton = ({ title, isActive, onPress }: { title: string, isActive: boolean, onPress: () => void }) => (
   <Pressable onPress={onPress} className={`px-4 py-2 rounded-full transition-colors ${isActive ? 'bg-primary' : 'bg-gray-200'}`}>
@@ -116,14 +118,7 @@ const HomeScreen = () => {
   const convexUser = useQuery(api.users.getCurrent);
 
   const [selectedTab, setSelectedTab] = useState<'active' | 'finished' | 'myRaffles'>('active');
-  const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-
-  // Efecto para "debounce" la búsqueda: espera 300ms después de que el usuario deja de escribir
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
 
   const isGeneralTab = selectedTab === 'active' || selectedTab === 'finished';
 
@@ -207,23 +202,9 @@ const HomeScreen = () => {
       <GlobalHeader />
 
       {/* Barra de Búsqueda */}
-      <View className="px-4 pt-2 pb-3 bg-gray-50">
-        <View className="flex-row items-center bg-white rounded-xl p-3 border border-gray-200/80 shadow-sm">
-          <Ionicons name="search" size={20} color="#9ca3af" />
-          <TextInput
-            placeholder="Buscar por nombre de rifa o creador..."
-            className="flex-1 ml-3 text-base font-quicksand-medium text-slate-800"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor="#9ca3af"
-          />
-          {searchQuery.length > 0 && (
-            <Pressable onPress={() => setSearchQuery('')} className="p-1">
-              <Ionicons name="close-circle" size={20} color="#cbd5e1" />
-            </Pressable>
-          )}
-        </View>
-      </View>
+      {selectedTab === ACTIVE ? (
+        <SearchBar onSearch={setDebouncedSearch} initialQuery={debouncedSearch} />
+      ) : null}
 
       {/* Barra de Pestañas */}
       <View className="flex-row justify-center space-x-3 px-4 pb-4 bg-gray-50 border-b border-gray-200">

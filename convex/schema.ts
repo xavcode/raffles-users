@@ -27,7 +27,8 @@ export const userFields = {
   email: v.optional(v.string()), // Opcional, ya que algunos métodos de login podrían no proveerlo.
   phone: v.optional(v.string()), // Para contacto o verificación.
   pushToken: v.optional(v.string()), // Token para notificaciones push.
-  userName: v.optional(v.string()),
+  userName: v.string(),
+  profileImageUrl: v.optional(v.string()), // Nuevo campo para la URL de la imagen de perfil del usuario
 
   // --- Permisos de la Plataforma ---
   userType: v.union(v.literal("admin"), v.literal("free")), // "admin" es Super Admin, "member" es usuario normal.
@@ -63,7 +64,8 @@ export const raffleFields = {
   winningTicketNumber: v.optional(v.float64()),
   prize: v.optional(v.float64()),
   creatorName: v.optional(v.string()),
-  searchableId: v.optional(v.string()),
+  customRaffleId: v.string(), // Nuevo campo para el ID de rifa legible
+  searchableText: v.string(), // Nuevo campo para la búsqueda de texto completo (combinará ID, título, username)
   enabledPurchases: v.boolean(),
   releaseTime: v.number(), // Nuevo campo para el tiempo de liberación de tickets
 }
@@ -85,9 +87,9 @@ export default defineSchema({
     .index("by_creator", ["creatorId"])
     .index("by_status", ["status"])
     .index("by_status_winnerId", ["status", "winnerId"])
-    .index("by_searchable_Id", ["searchableId"]) // Nuevo índice para el raffleId único
+    .index("by_customRaffleId", ["customRaffleId"]) // Nuevo índice para el customRaffleId
     .searchIndex("by_searchable_text", {
-      searchField: "searchableId",
+      searchField: "searchableText", // Ahora busca en el campo combinado
       // Podemos filtrar por estado dentro de la búsqueda para más eficiencia
       filterFields: ["status"]
     }),

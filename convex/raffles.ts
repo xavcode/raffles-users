@@ -4,7 +4,23 @@ import { internal } from "./_generated/api";
 import { Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
-
+// Función auxiliar para generar un customRaffleId único
+async function generateUniqueCustomRaffleId(ctx: any): Promise<string> {
+  let customRaffleId: string;
+  let isUnique = false;
+  do {
+    const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
+    const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase(); // 6 caracteres alfanuméricos en mayúsculas
+    customRaffleId = `${datePart}-${randomPart}`;
+    // Verificar unicidad: intentar obtener la rifa con este ID. Si no existe, es único.
+    const existingRaffle = await ctx.db
+      .query("raffles")
+      .withIndex("by_customRaffleId", (q: any) => q.eq("customRaffleId", customRaffleId))
+      .unique();
+    isUnique = existingRaffle === null;
+  } while (!isUnique);
+  return customRaffleId;
+}
 
 // export const getRaffles = query({
 //   args: {
@@ -44,29 +60,52 @@ export const getRaffles = query({
     search: v.optional(v.string()), // Argumento de búsqueda
   },
   handler: async (ctx, args) => {
-    // Si hay un término de búsqueda, usamos el índice de búsqueda
+    // Patrón para verificar si el término de búsqueda parece un customRaffleId
+    const customRaffleIdPattern = /^\d{8}-[A-Z0-9]{6}$/;
+    const isCustomRaffleIdSearch = args.search && customRaffleIdPattern.test(args.search);
+
+    let queryBuilder;
+
+    if (isCustomRaffleIdSearch) {
+      // Si parece un customRaffleId, intentar búsqueda exacta primero
+      queryBuilder = ctx.db
+        .query("raffles")
+        .withIndex("by_customRaffleId", (q) => q.eq("customRaffleId", args.search!));
+
+      if (args.status) {
+        queryBuilder = queryBuilder.filter((q) =>
+          q.eq(q.field("status"), args.status)
+        );
+      }
+      const exactMatch = await queryBuilder.first();
+      if (exactMatch) {
+        // Si encontramos una coincidencia exacta por ID, devolver solo esa.
+        return await ctx.db.query("raffles").filter(q => q.eq(q.field("_id"), exactMatch._id)).paginate(args.paginationOpts); // Devolver en formato paginado
+      }
+      // Si no hay coincidencia exacta por ID, entonces se cae a la búsqueda de texto completo
+    }
+
+    // Si no es una búsqueda por customRaffleId o no hubo coincidencia exacta, usar el searchIndex general
     if (args.search) {
       let searchResult = ctx.db
         .query("raffles")
         .withSearchIndex("by_searchable_text", (q) =>
-          q.search("searchableId", args.search!)
+          q.search("searchableText", args.search!)
         );
 
-      // Si también hay un filtro de estado, lo aplicamos
       if (args.status) {
         searchResult = searchResult.filter((q) =>
           q.eq(q.field("status"), args.status)
         );
       }
-
       return await searchResult.paginate(args.paginationOpts);
+    } else {
+      // Si no hay búsqueda en absoluto, se mantiene la lógica original
+      queryBuilder = ctx.db
+        .query("raffles")
+        .withIndex("by_status", (q) => q.eq("status", args.status ?? "active"))
+        .order("desc");
     }
-
-    // Si no hay búsqueda, se mantiene la lógica original
-    const queryBuilder = ctx.db
-      .query("raffles")
-      .withIndex("by_status", (q) => q.eq("status", args.status ?? "active"))
-      .order("desc");
 
     return await queryBuilder.paginate(args.paginationOpts);
   },
@@ -81,7 +120,6 @@ export const getMyRaffles = query({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
-      // Retorna una paginación vacía pero usando .paginate para mantener el tipo
       return await ctx.db.query("raffles")
         .withIndex("by_creator", q => q.eq("creatorId", "nonexistent_id" as any))
         .order("desc")
@@ -100,21 +138,24 @@ export const getMyRaffles = query({
         .paginate(args.paginationOpts);
     }
 
-    let queryBuilder = ctx.db
-      .query("raffles")
-      .withIndex("by_creator", q => q.eq("creatorId", user._id));
-
-    // Aplicar filtro de búsqueda si existe
+    let queryBuilder;
     if (args.search) {
-      queryBuilder = queryBuilder.filter(q =>
-        q.or(
-          q.eq(q.field("title"), args.search),
-          q.eq(q.field("userName"), args.search)
+      // Usar el searchIndex general y filtrar por creador
+      queryBuilder = ctx.db
+        .query("raffles")
+        .withSearchIndex("by_searchable_text", (q) =>
+          q.search("searchableText", args.search!)
         )
-      );
+        .filter((q) => q.eq(q.field("creatorId"), user._id));
+    } else {
+      // Lógica original si no hay búsqueda
+      queryBuilder = ctx.db
+        .query("raffles")
+        .withIndex("by_creator", q => q.eq("creatorId", user._id))
+        .order("desc");
     }
 
-    return await queryBuilder.order("desc").paginate(args.paginationOpts);
+    return await queryBuilder.paginate(args.paginationOpts);
   },
 });
 
@@ -198,14 +239,14 @@ export const createRaffle = mutation({
       throw new Error("No se encontró un usuario correspondiente para crear la rifa.");
     }
 
-    const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`; // Generar un sufijo alfanumérico único
-    const raffleId = `raffle_${uniqueSuffix}`;
+    const newCustomRaffleId = await generateUniqueCustomRaffleId(ctx);
 
     const newRaffleId = await ctx.db.insert("raffles", {
       ...args,
-      searchableId: raffleId, // Asignar el ID único generado
+      customRaffleId: newCustomRaffleId, // Asignar el ID único generado
       creatorId: user._id,
-      userName: user.userName as Id<'users'>,
+      userName: user.userName, // El userName ahora es string por schema
+      searchableText: `${newCustomRaffleId} ${args.title} ${user.userName}`, // Combinar para búsqueda de texto completo
       enabledPurchases: true,
       ticketsSold: 0,
       status: "active",

@@ -26,12 +26,12 @@ const EditProfilePage = () => {
   }, [convexUser]);
 
   const handleSave = async () => {
-    if (!firstName || !lastName || !phone) {
-      Toast.show({ type: 'error', text1: 'Campos incompletos', text2: 'Por favor, completa todos los campos.' });
+    if (!firstName || !lastName) {
+      Toast.show({ type: 'error', text1: 'Campos incompletos', text2: 'Por favor, completa tu nombre y apellido.' });
       return;
     }
-    if (phone.length !== 10 || !/^\d+$/.test(phone)) {
-      Toast.show({ type: 'error', text1: 'Número inválido', text2: 'El número de teléfono debe tener 10 dígitos.' });
+    if (phone && (phone.length !== 10 || !/^\d+$/.test(phone))) {
+      Toast.show({ type: 'error', text1: 'Número inválido', text2: 'El número de teléfono debe tener 10 dígitos o estar vacío.' });
       return;
     }
 
@@ -40,7 +40,7 @@ const EditProfilePage = () => {
       await updateUser({
         firstName,
         lastName,
-        phone,
+        phone: phone || undefined, // Envía undefined si el campo está vacío
       });
       Toast.show({ type: 'success', text1: 'Éxito', text2: 'Tu perfil ha sido actualizado.' });
       router.back();
@@ -61,29 +61,62 @@ const EditProfilePage = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1 bg-gray-50">
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1 bg-gray-50"
+        className="flex-1"
         keyboardVerticalOffset={90}
       >
         {/* <GlobalHeader /> */}
-        <Stack.Screen options={{ title: 'Editar Perfil', headerBackTitle: 'Atrás' }} />
-        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 20 }}>
-          <View className="p-6">
+        <Stack.Screen
+          options={{
+            headerTitle: 'Editar Perfil',
+            headerLargeTitle: false,
+            headerShadowVisible: false,
+            headerStyle: { backgroundColor: '#f8fafc' },
+            headerTitleStyle: { fontFamily: 'Quicksand-Bold', fontSize: 22 },
+            headerLeft: () => (
+              <Pressable onPress={() => router.back()} className="p-2 -ml-2">
+                <Ionicons name="arrow-back" size={24} color="#4B5563" />
+              </Pressable>
+            ),
+          }}
+        />
+        <ScrollView className="flex-1 p-6" contentContainerStyle={{ paddingBottom: 20 }}>
+          <View className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <View className="mb-4">
-              <Text className="text-base font-quicksand-semibold text-gray-600 mb-2">Nombre</Text>
-              <TextInput value={firstName} onChangeText={setFirstName} placeholder="Tu nombre" className="bg-white border border-gray-300 rounded-lg p-3 text-base text-gray-800" />
+              <Text className="text-base font-quicksand-semibold text-gray-700 mb-2">Nombre</Text>
+              <TextInput
+                value={firstName}
+                onChangeText={setFirstName}
+                placeholder="Tu nombre"
+                className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-base text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary-focus transition-all duration-150"
+                placeholderTextColor="#9ca3af"
+              />
             </View>
             <View className="mb-4">
-              <Text className="text-base font-quicksand-semibold text-gray-600 mb-2">Apellido</Text>
-              <TextInput value={lastName} onChangeText={setLastName} placeholder="Tu apellido" className="bg-white border border-gray-300 rounded-lg p-3 text-base text-gray-800" />
+              <Text className="text-base font-quicksand-semibold text-gray-700 mb-2">Apellido</Text>
+              <TextInput
+                value={lastName}
+                onChangeText={setLastName}
+                placeholder="Tu apellido"
+                className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-base text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary-focus transition-all duration-150"
+                placeholderTextColor="#9ca3af"
+              />
             </View>
             <View className="mb-6">
-              <Text className="text-base font-quicksand-semibold text-gray-600 mb-2">Número de Teléfono</Text>
-              <TextInput value={phone} onChangeText={setPhone} placeholder="Ej: 3001234567" keyboardType="number-pad" maxLength={10} className="bg-white border border-gray-300 rounded-lg p-3 text-base text-gray-800" />
-              <View className="flex-row bg-blue-100 p-3 rounded-md mt-3 items-start">
+              <Text className="text-base font-quicksand-semibold text-gray-700 mb-2">Número de Teléfono</Text>
+              <TextInput
+                value={phone}
+                onChangeText={setPhone}
+                placeholder="Ej: 3001234567"
+                keyboardType="number-pad"
+                maxLength={10}
+                className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-base text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary-focus transition-all duration-150"
+                placeholderTextColor="#9ca3af"
+              />
+              <View className="flex-row bg-blue-50 border border-blue-200 p-4 rounded-xl mt-3 items-start shadow-sm">
                 <Ionicons name="information-circle-outline" size={20} color="#2563EB" className="mt-px" />
                 <Text className="text-sm text-blue-800 ml-2 flex-1">
                   Este número de teléfono será utilizado para enviarte los pagos de los premios que ganes. Asegúrate de que sea correcto.
@@ -91,7 +124,12 @@ const EditProfilePage = () => {
               </View>
             </View>
 
-            <Pressable onPress={handleSave} disabled={isLoading} className={`bg-primary p-4 rounded-lg items-center active:opacity-80 ${isLoading ? 'opacity-50' : ''}`}>
+            <Pressable
+              onPress={handleSave}
+              disabled={isLoading}
+              className={`bg-primary p-4 rounded-lg items-center transition-opacity duration-150 ${isLoading ? 'opacity-50' : 'active:opacity-80'
+                }`}
+            >
               {isLoading ? <ActivityIndicator color="#FFFFFF" /> : <Text className="text-white font-quicksand-bold text-base">Guardar Cambios</Text>}
             </Pressable>
           </View>

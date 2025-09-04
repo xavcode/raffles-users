@@ -76,16 +76,16 @@ export const createUser = internalMutation({
     subscriptionTier: v.union(v.literal('free'), v.literal('premium')), // Agregado y corregido a union
     freeRafflesUsedThisMonth: v.number(), // Agregado
     freeRafflesResetDate: v.number(), // Agregado
+    userName: v.string(), // Añadir userName como argumento
+    profileImageUrl: v.optional(v.string()), // Agregado
   },
   handler: async (ctx, args) => {
-    const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substring(2, 6)}`; // Timestamp + hash corto
-    const userName = `${args.firstName}_${args.lastName}_${uniqueSuffix}`;
     await ctx.db.insert("users", {
       clerkId: args.clerkId,
       email: args.email,
       firstName: args.firstName,
       lastName: args.lastName,
-      userName: userName, // Agregado
+      userName: args.userName, // Usar el userName pasado como argumento
       balance: 0,
       userType: args.userType,
       // phone: args.phone ?? "", // Agregado y con default
@@ -93,6 +93,7 @@ export const createUser = internalMutation({
       subscriptionTier: args.subscriptionTier,
       freeRafflesUsedThisMonth: args.freeRafflesUsedThisMonth,
       freeRafflesResetDate: args.freeRafflesResetDate,
+      profileImageUrl: args.profileImageUrl, // Guardar la URL de la imagen de perfil
     });
   },
 });
@@ -100,7 +101,8 @@ export const update = mutation({
   args: {
     firstName: v.string(),
     lastName: v.string(),
-    phone: v.optional(v.string())
+    phone: v.optional(v.string()),
+    profileImageUrl: v.optional(v.string()), // Permitir actualizar la imagen de perfil
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -119,7 +121,8 @@ export const update = mutation({
     await ctx.db.patch(user._id, {
       firstName: args.firstName,
       lastName: args.lastName,
-      phone: args.phone
+      phone: args.phone,
+      profileImageUrl: args.profileImageUrl,
     });
   },
 });
@@ -194,5 +197,16 @@ export const getAdminsWithPushTokens = internalQuery({
       .query("users")
       .withIndex("by_userType_pushToken", q => q.eq("userType", "admin").gt("pushToken", undefined))
       .collect();
+  },
+});
+
+export const checkUserNameExists = internalQuery({
+  args: { userName: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_userName", (q) => q.eq("userName", args.userName))
+      .unique();
+    return user !== null;
   },
 });
