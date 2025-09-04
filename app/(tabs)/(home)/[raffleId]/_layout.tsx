@@ -26,14 +26,14 @@ export default function RaffleDetailsLayout() {
             }}
         >
             {/* La pantalla index ahora gestiona su propio header */}
-            {/* <Stack.Screen */}
-            {/*   name="index" */}
-            {/*   options={{ */}
-            {/*     title: 'Detalles del Sorteo', */}
-            {/*     // headerShown: false, // ¡Eliminamos esto para que el header sea visible! */}
-            {/*     headerRight: () => (isCreator && raffle ? <HeaderLeft raffle={raffle} onDeleteRequest={openDeleteModal} /> : null), */}
-            {/*   }} */}
-            {/* /> */}
+            <Stack.Screen
+                name="index"
+                options={{
+                    // title: 'Detalles del Sorteo',
+                    headerShown: false, // ¡Permitimos que index.tsx gestione su propio header!
+                    // headerRight: () => (isCreator && raffle ? <HeaderLeft raffle={raffle} onDeleteRequest={openDeleteModal} /> : null),
+                }}
+            />
             <Stack.Screen name="sales" options={{ title: 'Historial de Ventas' }} />
         </Stack>
     );

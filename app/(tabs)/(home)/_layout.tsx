@@ -14,7 +14,6 @@ export default function HomeStackLayout() {
         },
       }}>
       <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="[raffleId]" options={{ headerShown: false }} />
     </Stack>
   );
 }

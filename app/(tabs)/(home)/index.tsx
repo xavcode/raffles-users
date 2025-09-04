@@ -1,5 +1,5 @@
 import { api } from '@/convex/_generated/api';
-import { Doc } from '@/convex/_generated/dataModel';
+import { Doc, Id } from '@/convex/_generated/dataModel';
 import { formatUtcToLocal } from '@/utils/date';
 import { Ionicons } from '@expo/vector-icons';
 import { usePaginatedQuery, useQuery } from 'convex/react';
@@ -10,47 +10,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import GlobalHeader from '../../components/GlobalHeader';
 
 type RaffleWithDetails = Doc<'raffles'> & { creatorName?: string }; // 'creatorName' ahora es opcional
-
-const RaffleListItem = ({ raffle }: { raffle: RaffleWithDetails }) => {
-  const formattedPrize = typeof (raffle.prize) === 'number'
-    ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(raffle.prize)
-    : raffle.prize;
-
-  const endDate = raffle.endTime ? formatUtcToLocal(raffle.endTime, "d 'de' MMMM, yyyy") : 'N/A';
-  const remainingHours = raffle.endTime ? Math.max(0, Math.floor((raffle.endTime - Date.now()) / (1000 * 60 * 60))) : 0;
-
-  const statusText = raffle.enabledPurchases === false
-    ? "Compras Deshabilitadas"
-    : remainingHours > 0
-      ? `Termina en ${remainingHours} horas`
-      : "Finalizado";
-
-  return (
-    <Link href={`/(tabs)/(home)/${raffle._id}`} asChild>
-      <Pressable className="bg-white mx-4 mb-3 rounded-2xl shadow-sm shadow-slate-200/60 overflow-hidden active:opacity-70">
-        {raffle.imageUrl && (
-          <Image source={{ uri: raffle.imageUrl }} className="w-full h-40 bg-slate-200" resizeMode="cover" />
-        )}
-        <View className="p-4">
-          <Text className="text-sm font-quicksand-medium text-slate-500 mb-1">{raffle.creatorName}</Text>
-          <Text className="text-xl font-quicksand-bold text-slate-800 mb-2" numberOfLines={1}>{raffle.title}</Text>
-          <View className="flex-row items-center mb-1">
-            <Ionicons name="gift-outline" size={16} color="#475569" />
-            <Text className="text-base font-quicksand-semibold text-primary ml-2">{formattedPrize}</Text>
-          </View>
-          <View className="flex-row items-center">
-            <Ionicons name="time-outline" size={16} color="#475569" />
-            <Text className="text-sm font-quicksand-semibold text-slate-600 ml-2">{statusText}</Text>
-          </View>
-        </View>
-        <View className="bg-slate-50/70 px-4 py-2 border-t border-slate-200/80 flex-row justify-between items-center">
-          <Text className="text-xs font-quicksand-medium text-slate-500">Termina: {endDate}</Text>
-          <Ionicons name="chevron-forward-outline" size={18} color="#94a3b8" />
-        </View>
-      </Pressable>
-    </Link>
-  );
-};
 
 const FilterButton = ({ title, isActive, onPress }: { title: string, isActive: boolean, onPress: () => void }) => (
   <Pressable onPress={onPress} className={`px-4 py-2 rounded-full transition-colors ${isActive ? 'bg-primary' : 'bg-gray-200'}`}>
@@ -76,6 +35,81 @@ const RaffleCardSkeleton = () => (
     <View className="w-36 bg-slate-200 rounded-2xl" />
   </View>
 );
+
+const RaffleCard = ({ item, currentUserId }: { item: Doc<'raffles'>, currentUserId?: Id<'users'> }) => {
+  const formattedPrice = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(item.ticketPrice);
+  const progress = item.totalTickets > 0 ? (item.ticketsSold / item.totalTickets) * 100 : 0;
+  const isActive = item.status === 'active';
+  const isEnabledPurchases = item.enabledPurchases;
+
+  // Comprobamos si el usuario actual es el dueño de esta rifa.
+  const isOwner = currentUserId && item.creatorId === currentUserId;
+
+  const CardContent = (
+    <Pressable
+      className={`mx-4 mb-5 rounded-2xl shadow-sm flex-row overflow-hidden ${isActive ? 'active:opacity-80' : 'opacity-60'} ${isOwner ? 'bg-indigo-50' : 'bg-white'}`}
+      disabled={!isActive}
+    >
+      <View className="flex-1 p-3 justify-between">
+        <View>
+          <View className="flex-row items-start justify-between">
+            <Text className="text-base font-quicksand-bold text-slate-800 flex-1 mr-2" numberOfLines={2}>{item.title}</Text>
+          </View>
+          <Text className='text-sm font-quicksand-medium text-slate-500 mt-1'>
+            Por {item.userName}
+          </Text>
+          <Text className='text-sm font-quicksand-medium text-slate-500 mt-1'>
+            Fecha del sorteo {formatUtcToLocal(item.endTime, "d MMM")}
+          </Text>
+        </View>
+
+        <View className="mt-3">
+          <View className="w-full bg-slate-200 rounded-full h-2">
+            <View className="bg-primary h-2 rounded-full" style={{ width: `${progress}%` }} />
+          </View>
+          <Text className="text-xs font-quicksand-semibold text-slate-500 mt-1.5">{item.ticketsSold?.toString() ?? 0} / {item.totalTickets} vendidos</Text>
+          <View className="mt-3 p-2.5 rounded-lg items-center bg-slate-100 border border-slate-200/80">
+            {isActive ? (
+              <Text className="font-quicksand-bold text-base text-primary">{formattedPrice}</Text>
+            ) : (
+              <View className="flex-row items-center">
+                <Ionicons name="trophy" size={16} color="#475569" />
+                <Text className="font-quicksand-bold text-sm text-slate-600 ml-2">
+                  {item.winningTicketNumber
+                    ? `Ganador: #${item.winningTicketNumber.toString().padStart(3, '0')}`
+                    : 'Sorteo Finalizado'
+                  }
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </View>
+      <Image
+        source={{ uri: item.imageUrl }}
+        className="w-36 bg-slate-200 rounded-2xl"
+        resizeMode="cover"
+      />
+
+      {/* Marca de agua si las compras están deshabilitadas */}
+      {isActive && !isEnabledPurchases && !isOwner && (
+        <View className="absolute inset-0 bg-black/40 flex-1 justify-center items-center rounded-2xl">
+          <View className="border-2 border-yellow-400/80 py-2 px-4 rounded-lg -rotate-15 shadow-xl shadow-black/30">
+            <Text className="text-yellow-300 font-black text-base tracking-wider uppercase" >
+              Compras Pausadas
+            </Text>
+          </View>
+        </View>
+      )}
+    </Pressable>
+  );
+
+  return (
+    <Link href={`/(tabs)/(home)/${item._id}`} asChild>
+      {CardContent}
+    </Link>
+  );
+};
 
 const HomeScreen = () => {
   const router = useRouter();
@@ -145,7 +179,7 @@ const HomeScreen = () => {
       <SafeAreaView className="flex-1 bg-slate-50">
         <GlobalHeader />
         <View className="pt-4">
-          <ActivityIndicator className="my-8" color="#4f46e5" />
+          {[...Array(3)].map((_, index) => <RaffleCardSkeleton key={index} />)}
         </View>
       </SafeAreaView>
     );
@@ -208,7 +242,9 @@ const HomeScreen = () => {
         <FlatList
           data={raffles}
           keyExtractor={(item) => item._id.toString()}
-          renderItem={({ item }) => <RaffleListItem raffle={item} />}
+          renderItem={({ item }) => (
+            <RaffleCard item={item} currentUserId={convexUser?._id} />
+          )}
           contentContainerClassName="pt-4 pb-8"
           onEndReached={() => {
             if (status === 'CanLoadMore') {

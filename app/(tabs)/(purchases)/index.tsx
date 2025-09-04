@@ -18,7 +18,6 @@ const PurchaseListItem = ({ purchase }: { purchase: PurchaseWithDetails }) => {
   const statusStyle = PURCHASE_STATUS_STYLES[purchase.status as keyof typeof PURCHASE_STATUS_STYLES] || PURCHASE_STATUS_STYLES.expired;
   const purchaseDate = formatUtcToLocal(purchase._creationTime, "d MMM, yyyy 'a las' h:mm a");
   const formattedAmount = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(purchase.totalAmount);
-  console.log(purchase)
 
   const isRejected = purchase.status === 'rejected'; // Variable para la condición
 

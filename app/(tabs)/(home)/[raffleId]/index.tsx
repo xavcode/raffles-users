@@ -4,10 +4,11 @@ import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { formatUtcToLocal } from '@/utils/date';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native'; // Importar useNavigation
 import { useMutation, useQuery } from 'convex/react';
-import { Link, Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, FlatList, Image, Modal, Pressable, Switch, Text, TextInput, View } from 'react-native'; // Importar FlatList
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Dimensions, FlatList, Image, Modal, Pressable, Switch, Text, TextInput, View } from 'react-native'; // Importar FlatList
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import HeaderLeft from '../../../components/HeaderLeft'; // Ruta relativa correcta
@@ -79,6 +80,7 @@ const Ticket = React.memo(({ number, status, isSelected, onPress }: {
 export default function RaffleDetailsScreen() {
   const { raffleId } = useLocalSearchParams();
   const router = useRouter();
+  const navigation = useNavigation(); // Obtener el objeto de navegación
   const [selectedTickets, setSelectedTickets] = useState(new Set<number>());
   const [isProcessing, setIsProcessing] = useState(false);
   const [isImageModalVisible, setIsImageModalVisible] = useState(false);
@@ -262,6 +264,15 @@ export default function RaffleDetailsScreen() {
     />
   ), [selectedTickets, ticketStatusMap, handleTicketPress]);
 
+  useLayoutEffect(() => {
+    if (raffle) {
+      navigation.setOptions({
+        title: 'Detalles del Sorteo',
+        headerRight: () => (isCreator && raffle ? <HeaderLeft raffle={raffle} onDeleteRequest={openDeleteModal} /> : null),
+      });
+    }
+  }, [raffle, isCreator, openDeleteModal]);
+
   if (!raffle || nonAvailableTickets === undefined) {
     return (
       <View className="flex-1 justify-center items-center bg-gray-50">
@@ -273,12 +284,8 @@ export default function RaffleDetailsScreen() {
 
   // Manejador para la reserva de boletos
   const handleReserve = async () => {
-    if (selectedTickets.size === 0) {
-      Alert.alert("Sin selección", "Debes seleccionar al menos un boleto para reservar.");
-      return;
-    }
 
-    // 2. Lógica mejorada: revisamos en el frontend ANTES de llamar al backend.
+    // Revisamos en el frontend ANTES de llamar al backend.
     if (!currentUser?._id) { // Usamos currentUser para verificar si está logueado
       Toast.show({
         type: 'error',
@@ -422,12 +429,12 @@ export default function RaffleDetailsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <Stack.Screen
-        options={{
-          title: 'Detalles del Sorteo',
-          headerRight: () => (isCreator && raffle ? <HeaderLeft raffle={raffle} onDeleteRequest={openDeleteModal} /> : null),
-        }}
-      />
+      {/* <Stack.Screen */}
+      {/*   options={{ */}
+      {/*     title: 'Detalles del Sorteo', */}
+      {/*     headerRight: () => (isCreator && raffle ? <HeaderLeft raffle={raffle} onDeleteRequest={openDeleteModal} /> : null), */}
+      {/*   }} */}
+      {/* /> */}
 
       <FlatList
         ListHeaderComponent={RaffleDetailsHeader}
