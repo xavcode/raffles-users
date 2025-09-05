@@ -94,6 +94,7 @@ export const createUser = internalMutation({
       freeRafflesUsedThisMonth: args.freeRafflesUsedThisMonth,
       freeRafflesResetDate: args.freeRafflesResetDate,
       profileImageUrl: args.profileImageUrl, // Guardar la URL de la imagen de perfil
+      freeRafflesRemaining: 3, // Inicializar con 3 rifas gratuitas
     });
   },
 });
@@ -103,6 +104,7 @@ export const update = mutation({
     lastName: v.string(),
     phone: v.optional(v.string()),
     profileImageUrl: v.optional(v.string()), // Permitir actualizar la imagen de perfil
+    userName: v.optional(v.string()), // Permitir actualizar el userName
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -123,6 +125,7 @@ export const update = mutation({
       lastName: args.lastName,
       phone: args.phone,
       profileImageUrl: args.profileImageUrl,
+      userName: args.userName, // Actualizar el userName
     });
   },
 });

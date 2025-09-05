@@ -45,6 +45,7 @@ export const userFields = {
   // --- Límites del Plan Gratuito ---
   freeRafflesUsedThisMonth: v.float64(), // Contador de sorteos gratuitos usados.
   freeRafflesResetDate: v.float64(), // Timestamp de cuándo se debe resetear el contador.
+  freeRafflesRemaining: v.number(), // Nuevo campo para el conteo de rifas gratuitas restantes
 }
 
 export const raffleFields = {

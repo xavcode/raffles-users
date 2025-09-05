@@ -1,7 +1,7 @@
 import { api } from '@/convex/_generated/api';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { useMutation } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
@@ -28,6 +28,7 @@ const CreateRaffle = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [datePickerTarget, setDatePickerTarget] = useState<'start' | 'end'>('start');
   const [releaseTime, setReleaseTime] = useState('30'); // Nuevo estado para el tiempo de liberación de tickets
+  const convexUser = useQuery(api.users.getCurrent); // Obtener datos del usuario actual
 
   const [imageAsset, setImageAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const resetStates = () => {
@@ -180,6 +181,25 @@ const CreateRaffle = () => {
     }
   };
 
+  if (convexUser === undefined) {
+    return (
+      <SafeAreaView className="flex-1 bg-slate-50 justify-center items-center">
+        <ActivityIndicator size="large" color="#4f46e5" />
+      </SafeAreaView>
+    );
+  }
+
+  const freeRafflesCount = convexUser?.freeRafflesRemaining ?? 0;
+
+  const getRaffleCountStyles = () => {
+    if (freeRafflesCount === 3) return 'bg-green-100 border-green-300 text-green-800';
+    if (freeRafflesCount === 2) return 'bg-blue-100 border-blue-300 text-blue-800';
+    if (freeRafflesCount === 1) return 'bg-yellow-100 border-yellow-300 text-yellow-800';
+    return 'bg-red-100 border-red-300 text-red-800';
+  };
+
+  const isCreateButtonDisabled = isLoading || freeRafflesCount === 0;
+
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
       <KeyboardAwareScrollView
@@ -196,6 +216,16 @@ const CreateRaffle = () => {
           keyboardShouldPersistTaps="always" // Evita que el teclado se cierre al tocar fuera de un input
         >
           <View className="bg-white p-5 rounded-2xl shadow-sm shadow-slate-300/50">
+            {/* Contador de Rifas Gratuitas */}
+            {convexUser && ( // Asegurarse de que el usuario haya cargado
+              <View className={`mb-5 p-4 rounded-lg border flex-row items-center justify-center ${getRaffleCountStyles()}`}>
+                <Ionicons name="gift-outline" size={20} className={`mr-2 ${freeRafflesCount === 3 ? 'text-green-800' : freeRafflesCount === 2 ? 'text-blue-800' : freeRafflesCount === 1 ? 'text-yellow-800' : 'text-red-800'}`} />
+                <Text className={`font-quicksand-bold text-base ${getRaffleCountStyles().split(' ').find(cls => cls.startsWith('text-'))}`}>
+                  Rifas Gratuitas Restantes: {freeRafflesCount}
+                </Text>
+              </View>
+            )}
+
             <View className="mb-5">
               <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Título del Sorteo</Text>
               <TextInput className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: Sorteo Pro-fondos" value={title} onChangeText={setTitle} />
@@ -269,14 +299,16 @@ const CreateRaffle = () => {
             </View>
 
             <Pressable
-              className="bg-primary h-12 rounded-lg justify-center items-center active:opacity-80 disabled:bg-primary/60"
+              className={`h-12 rounded-lg justify-center items-center transition-colors duration-150 ${isCreateButtonDisabled ? 'bg-gray-400' : 'bg-primary active:opacity-80'}`}
               onPress={handleCreateRaffle}
-              disabled={isLoading}
+              disabled={isCreateButtonDisabled}
             >
               {isLoading ? (
                 <ActivityIndicator color="white" />
               ) : (
-                <Text className="text-white font-quicksand-bold text-base">Crear Sorteo</Text>
+                <Text className="text-white font-quicksand-bold text-base">
+                  {freeRafflesCount === 0 ? 'No tienes rifas gratuitas disponibles' : 'Crear Sorteo'}
+                </Text>
               )}
             </Pressable>
           </View>

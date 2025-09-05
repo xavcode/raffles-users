@@ -239,6 +239,11 @@ export const createRaffle = mutation({
       throw new Error("No se encontró un usuario correspondiente para crear la rifa.");
     }
 
+    // Lógica para verificar y decrementar freeRafflesRemaining
+    if (user.freeRafflesRemaining <= 0) {
+      throw new Error("No te quedan rifas gratuitas disponibles. Por favor, compra créditos para crear más.");
+    }
+
     const newCustomRaffleId = await generateUniqueCustomRaffleId(ctx);
 
     const newRaffleId = await ctx.db.insert("raffles", {
@@ -250,6 +255,11 @@ export const createRaffle = mutation({
       enabledPurchases: true,
       ticketsSold: 0,
       status: "active",
+    });
+
+    // Decrementar freeRafflesRemaining después de crear la rifa exitosamente
+    await ctx.db.patch(user._id, {
+      freeRafflesRemaining: user.freeRafflesRemaining - 1,
     });
 
     // await ctx.scheduler.runAfter(0, internal.notifications.sendToAllUsers, {
@@ -362,7 +372,8 @@ export const getPurchasesForRaffle = query({
           firstName: user.firstName,
           lastName: user.lastName,
           email: user.email,
-          phone: user.phone
+          phone: user.phone,
+          userName: user.userName, // Incluir userName
         } : null,
         tickets: associatedTickets,
         // El status y rejectionReason ya están directamente en 'purchase'

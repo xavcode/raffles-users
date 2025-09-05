@@ -11,8 +11,7 @@ import Toast from 'react-native-toast-message';
 
 type UserPreview = {
   email: string
-  firstName?: string
-  lastName?: string
+  userName: string // Usar userName en lugar de firstName y lastName
   role: 'free' | 'admin'
 }
 
@@ -138,8 +137,7 @@ const Settings = () => {
     }
     setUserResult({
       email: searchedUser.email ?? '',
-      firstName: searchedUser.firstName,
-      lastName: searchedUser.lastName,
+      userName: searchedUser.userName ?? '', // Asignar userName
       role: (searchedUser.userType as 'free' | 'admin') ?? 'free'
     })
   }, [searchedUser, queryEmail])
@@ -232,7 +230,7 @@ const Settings = () => {
               <View className="mt-2 border border-slate-200 rounded-xl p-3 bg-slate-50">
                 <View className="flex-row items-center justify-between mb-2">
                   <View className="flex-1 pr-2">
-                    <Text className="text-base font-quicksand-bold text-slate-800" numberOfLines={1}>{userResult.firstName} {userResult.lastName}</Text>
+                    <Text className="text-base font-quicksand-bold text-slate-800" numberOfLines={1}>{userResult.userName}</Text>
                     <Text className="text-xs text-slate-500" numberOfLines={1}>{userResult.email}</Text>
                   </View>
                   <View className="px-2.5 py-1 rounded-full bg-slate-200">

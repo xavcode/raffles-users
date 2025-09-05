@@ -1,6 +1,6 @@
 import { api } from '@/convex/_generated/api';
 import { registerForPushNotificationsAsync } from "@/libs/notifications";
-// import { SignedIn, SignedOut } from '@clerk/clerk-expo';
+
 import { Ionicons } from '@expo/vector-icons';
 import { Authenticated, Unauthenticated, useMutation, useQuery } from 'convex/react';
 import { Link } from 'expo-router';
@@ -32,7 +32,7 @@ const GlobalHeader = () => {
           {convexUser &&
             <View >
               {/* <Text className="text-lg font-quicksand-medium text-gray-500">Bienvenido,</Text> */}
-              <Text className="text-2xl font-quicksand-bold text-center  text-gray-800">{convexUser?.firstName} {convexUser?.lastName}</Text>
+              <Text className="text-2xl font-quicksand-bold text-center  text-gray-800">@{convexUser?.userName}</Text>
             </View>
           }
         </View>
@@ -53,7 +53,6 @@ const GlobalHeader = () => {
               <Text className="text-primary font-quicksand-bold ml-2">Inicia sesión</Text>
             </Pressable>
           </Link>
-          {/* <Text className="text-primary font-quicksand-bold ml-2">Inicia sesión</Text> */}
         </View>
       </Unauthenticated>
     </View>

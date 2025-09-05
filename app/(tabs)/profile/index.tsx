@@ -38,16 +38,23 @@ const profile = () => {
         ) : (
           <View className="p-6">
             <View className="items-center mb-8 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <Image
-                source={{ uri: user?.imageUrl }}
-                className="w-32 h-32 rounded-full mb-4 border-4 border-primary shadow-lg"
-              />
-              <Text className="text-3xl font-quicksand-bold text-gray-800">{convexUser?.firstName} {convexUser?.lastName}</Text>
+              <Image source={{ uri: user?.imageUrl }} className="w-32 h-32 rounded-full mb-4 border-4 border-primary shadow-lg" />
               {convexUser?.userName && (
-                <Text className="text-lg font-quicksand-medium text-gray-600 mt-1">@{convexUser.userName}</Text>
+                <Text className="text-3xl font-quicksand-bold text-gray-800">@{convexUser.userName}</Text>
+              )}
+              {!convexUser?.userName && convexUser?.firstName && convexUser?.lastName && (
+                <Text className="text-3xl font-quicksand-bold text-gray-800">{convexUser.firstName} {convexUser.lastName}</Text>
               )}
               {convexUser?.email && (
                 <Text className="text-base font-quicksand-regular text-gray-500 mt-1">{convexUser.email}</Text>
+              )}
+              {convexUser?.freeRafflesRemaining !== undefined && (
+                <View className="mt-4 p-2 px-4 bg-purple-50 rounded-full flex-row items-center space-x-2 border border-purple-200">
+                  <Ionicons name="gift-outline" size={20} color="#8B5CF6" />
+                  <Text className="text-base font-quicksand-bold text-purple-700">
+                    Rifas Gratuitas Restantes: {convexUser.freeRafflesRemaining}
+                  </Text>
+                </View>
               )}
             </View>
 

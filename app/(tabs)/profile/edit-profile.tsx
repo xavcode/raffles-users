@@ -12,22 +12,20 @@ const EditProfilePage = () => {
   const convexUser = useQuery(api.users.getCurrent);
   const updateUser = useMutation(api.users.update);
 
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [userName, setUserName] = useState('');
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (convexUser) {
-      setFirstName(convexUser.firstName ?? '');
-      setLastName(convexUser.lastName ?? '');
+      setUserName(convexUser.userName ?? '');
       setPhone(convexUser.phone ?? '');
     }
   }, [convexUser]);
 
   const handleSave = async () => {
-    if (!firstName || !lastName) {
-      Toast.show({ type: 'error', text1: 'Campos incompletos', text2: 'Por favor, completa tu nombre y apellido.' });
+    if (!userName) {
+      Toast.show({ type: 'error', text1: 'Campos incompletos', text2: 'Por favor, completa tu nombre de usuario.' });
       return;
     }
     if (phone && (phone.length !== 10 || !/^\d+$/.test(phone))) {
@@ -38,8 +36,7 @@ const EditProfilePage = () => {
     setIsLoading(true);
     try {
       await updateUser({
-        firstName,
-        lastName,
+        userName,
         phone: phone || undefined, // Envía undefined si el campo está vacío
       });
       Toast.show({ type: 'success', text1: 'Éxito', text2: 'Tu perfil ha sido actualizado.' });
@@ -86,21 +83,11 @@ const EditProfilePage = () => {
         <ScrollView className="flex-1 p-6" contentContainerStyle={{ paddingBottom: 20 }}>
           <View className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <View className="mb-4">
-              <Text className="text-base font-quicksand-semibold text-gray-700 mb-2">Nombre</Text>
+              <Text className="text-base font-quicksand-semibold text-gray-700 mb-2">Nombre de Usuario</Text>
               <TextInput
-                value={firstName}
-                onChangeText={setFirstName}
-                placeholder="Tu nombre"
-                className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-base text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary-focus transition-all duration-150"
-                placeholderTextColor="#9ca3af"
-              />
-            </View>
-            <View className="mb-4">
-              <Text className="text-base font-quicksand-semibold text-gray-700 mb-2">Apellido</Text>
-              <TextInput
-                value={lastName}
-                onChangeText={setLastName}
-                placeholder="Tu apellido"
+                value={userName}
+                onChangeText={setUserName}
+                placeholder="Tu nombre de usuario"
                 className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-base text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary-focus transition-all duration-150"
                 placeholderTextColor="#9ca3af"
               />

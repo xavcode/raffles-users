@@ -12,7 +12,7 @@ import { ActivityIndicator, FlatList, Image, Modal, Pressable, ScrollView, Text,
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type PurchaseWithUser = Doc<'purchases'> & {
-  user: { firstName: string; lastName: string; phone?: string; email?: string } | null;
+  user: { userName: string; phone?: string; email?: string } | null;
   tickets: Doc<'tickets'>[]; // Incluir los tickets directamente
   status: Doc<'purchases'>['status']; // Incluir el estado de la compra
   rejectionReason?: string; // Incluir la razón de rechazo
@@ -54,7 +54,7 @@ const PurchaseItem = ({ item }: { item: PurchaseWithUser }) => {
       <View className="flex-row justify-between items-start mb-4">
         <View className="flex-1 pr-4">
           <Text className="text-base font-quicksand-bold text-slate-800" numberOfLines={1}>
-            {item.user?.firstName ?? 'Usuario Anónimo'} {item.user?.lastName}
+            {item.user?.userName ?? 'Usuario Anónimo'}
           </Text>
           <Text className="text-sm font-quicksand-medium text-slate-500" numberOfLines={1}>
             {item.user?.phone || 'Sin telefono '}

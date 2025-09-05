@@ -57,7 +57,7 @@ const PurchaseDetails = ({ handleApproval, handleRejection, purchaseId, isProces
           </View>
         </View>
         <View className="border-t border-slate-100 pt-4 space-y-2">
-          <View className="flex-row justify-between"><Text className="font-quicksand-medium text-slate-500">Usuario:</Text><Text className="font-quicksand-bold text-slate-800">{user?.firstName ?? 'No disponible'} {user?.lastName}</Text></View>
+          <View className="flex-row justify-between"><Text className="font-quicksand-medium text-slate-500">Usuario:</Text><Text className="font-quicksand-bold text-slate-800">{user?.userName ?? 'No disponible'}</Text></View>
           <View className="flex-row justify-between"><Text className="font-quicksand-medium text-slate-500">Boletos:</Text><Text className="font-quicksand-bold text-slate-800">{purchase.ticketCount}</Text></View>
           <View className="flex-row justify-between"><Text className="font-quicksand-medium text-slate-500">Monto Total:</Text><Text className="font-quicksand-bold text-primary">{formattedAmount}</Text></View>
           <View className="flex-row justify-between"><Text className="font-quicksand-medium text-slate-500">Fecha:</Text><Text className="font-quicksand-semibold text-slate-600">{format(new Date(purchase._creationTime), "d MMM, yyyy h:mm a", { locale: es })}</Text></View>
