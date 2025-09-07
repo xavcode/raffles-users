@@ -213,3 +213,38 @@ export const checkUserNameExists = internalQuery({
     return user !== null;
   },
 });
+
+export const getUsersForAdmin = query({
+  args: {
+    search: v.optional(v.string()), // Opcional: para futuras búsquedas
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("No autenticado.");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    // Solo los administradores pueden ver esta lista completa de usuarios
+    if (!user || user.userType !== "admin") {
+      throw new Error("Permisos insuficientes.");
+    }
+
+    let users = await ctx.db.query("users").collect();
+
+    if (args.search) {
+      const searchQuery = args.search.toLowerCase();
+      users = users.filter(
+        (u) =>
+          u.userName.toLowerCase().includes(searchQuery) ||
+          (u.email && u.email.toLowerCase().includes(searchQuery))
+      );
+    }
+
+    return users;
+  },
+});

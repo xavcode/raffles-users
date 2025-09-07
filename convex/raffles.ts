@@ -568,3 +568,35 @@ export const getFinishedRafflesWithWinners = query({
     return results;
   },
 });
+
+export const getRafflesForAdmin = query({
+  args: {
+    search: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("No autenticado.");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    // Solo los administradores pueden ver esta lista completa de rifas
+    if (!user || user.userType !== "admin") {
+      throw new Error("Permisos insuficientes.");
+    }
+
+    let queryBuilder = ctx.db.query("raffles").order("desc");
+
+    if (args.search) {
+      queryBuilder = queryBuilder.withSearchIndex("by_searchable_text", (q) =>
+        q.search("searchableText", args.search!)
+      );
+    }
+
+    return await queryBuilder.collect();
+  },
+});

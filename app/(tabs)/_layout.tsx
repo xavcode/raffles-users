@@ -7,6 +7,7 @@ import { Tabs, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import GlobalHeader from '../components/GlobalHeader'; // Usar ruta relativa
 
 const TabsLayout = () => {
 
@@ -88,13 +89,14 @@ const TabsLayout = () => {
               }),
             },
           }),
-          headerShown: false, // Las pantallas internas manejarán sus propios encabezados.
+          headerShown: false, // Ahora mostramos el encabezado nativo por defecto
         }}
       >
         <Tabs.Screen
           name="(home)"
           options={{
             title: 'Sorteos',
+            header: () => <GlobalHeader />,
             // 4. Usamos Ionicons para consistencia y un tamaño adecuado.
             tabBarIcon: ({ color }) => <Ionicons name="list-outline" color={color} size={26} />,
           }}
@@ -103,6 +105,7 @@ const TabsLayout = () => {
           name="(purchases)"
           options={{
             title: 'Mis Compras',
+            header: () => <GlobalHeader />,
             tabBarIcon: ({ color }) => <Ionicons name="ticket-outline" color={color} size={26} />,
           }}
         />
@@ -110,6 +113,7 @@ const TabsLayout = () => {
           name="profile/index"
           options={{
             title: 'Perfil',
+            header: () => <GlobalHeader />,
             tabBarIcon: ({ color }) => <Ionicons name="person-outline" color={color} size={26} />,
           }}
         />
@@ -117,6 +121,7 @@ const TabsLayout = () => {
           name="settings"
           options={{
             title: 'Configuración',
+            header: () => <GlobalHeader />,
             tabBarIcon: ({ color }) => <Ionicons name="settings-outline" color={color} size={26} />,
           }}
         />
@@ -124,6 +129,7 @@ const TabsLayout = () => {
           name="verifications"
           options={{
             title: 'Verificaciones',
+            header: () => <GlobalHeader />,
             tabBarIcon: ({ color, size }) => <Ionicons name="shield-checkmark-outline" color={color} size={size} />,
             tabBarBadge: pendingCount && pendingCount > 0 ? pendingCount : undefined,
           }}
