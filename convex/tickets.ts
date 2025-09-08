@@ -174,13 +174,22 @@ export const adminNotifyPayment = mutation({
 
     // 2. Obtenemos datos del sorteo para un mensaje más descriptivo.
     const raffle = await ctx.db.get(purchase.raffleId);
+    if (!raffle) {
+      throw new Error("Rifa asociada a la compra no encontrada.");
+    }
 
-    // 3. Programamos la acción para enviar la notificación PUSH a los admins.
-    // Esto se ejecuta en segundo plano y no retrasa la respuesta al usuario.
-    await ctx.scheduler.runAfter(0, internal.notifications.sendPaymentConfirmationToAdmins, {
-      purchaseId: args.purchaseId,
-      title: "💰 Pago por Verificar",
-      message: `El usuario ${user.firstName ?? 'N/A'} ${user.lastName ?? 'N/A'} ha reportado un pago para el sorteo "${raffle?.title ?? 'N/A'}".`,
+    // Obtenemos los datos del creador de la rifa para enviarle la notificación.
+    const creatorUser = await ctx.db.get(raffle.creatorId);
+    if (!creatorUser || !creatorUser.pushToken) {
+      console.warn(`Creador de la rifa ${raffle.creatorId} no encontrado o sin pushToken. No se enviará notificación.`);
+      return { success: true }; // No es un error crítico si no se puede notificar.
+    }
+
+    // 3. Programamos la acción para enviar la notificación PUSH al creador de la rifa.
+    await ctx.scheduler.runAfter(0, internal.notifications.sendPushNotification, {
+      pushToken: creatorUser.pushToken,
+      title: "🔔 ¡Nueva Compra Pendiente!",
+      message: `El usuario ${user.firstName ?? 'N/A'} ${user.lastName ?? 'N/A'} ha reportado un pago para tu sorteo "${raffle.title ?? 'N/A'}". Revisa la compra para verificar y asignar los boletos.`,
     });
 
     return { success: true }; // Mantenemos la respuesta al cliente
