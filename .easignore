@@ -37,8 +37,6 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
-raffles-app-4d15d-firebase-adminsdk-fbsvc-ca8126d858.json
-
 
 /ios
 /android

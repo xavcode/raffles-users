@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Rifas",
-    "slug": "Raffles",
+    "name": "MilSorteos",
+    "slug": "milsorteos",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "rifas",
+    "scheme": "milsorteos",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "android": {
@@ -18,7 +18,7 @@
       "permissions": [
         "android.permission.POST_NOTIFICATIONS"
       ],
-      "package": "com.javier9015.Raffles"
+      "package": "com.milsorteos.app"
     },
     "web": {
       "bundler": "metro",
@@ -47,12 +47,12 @@
     "experiments": {
       "typedRoutes": true
     },
+    "owner": "javier9015",
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "3700fc83-17e6-4569-8a69-60e33a6573cb"
+        "projectId": "9dc3daee-c151-492e-a1a2-e26e0e482d91"
       }
-    },
-    "owner": "javier9015"
+    }
   }
 }
