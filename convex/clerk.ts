@@ -3,16 +3,34 @@ import { Webhook } from "svix";
 import { internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
 
-// Función auxiliar para generar un nombre de usuario único
-async function generateUniqueUsername(ctx: any): Promise<string> {
-  let username: string;
+// Función auxiliar para generar un nombre de usuario único a partir del nombre y apellido
+async function generateUniqueUsername(ctx: any, firstName?: string, lastName?: string): Promise<string> {
+  let baseUsername = "User";
+  if (firstName && lastName) {
+    baseUsername = `${firstName.replace(/\s/g, '')}${lastName.replace(/\s/g, '')}`.toLowerCase();
+  } else if (firstName) {
+    baseUsername = firstName.replace(/\s/g, '').toLowerCase();
+  } else if (lastName) {
+    baseUsername = lastName.replace(/\s/g, '').toLowerCase();
+  }
+
+  let username: string = baseUsername;
   let isUnique = false;
+  let suffix = 0;
+  let currentUsername = baseUsername; // Inicializar aquí
+
   do {
-    const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase(); // 6 caracteres alfanuméricos en mayúsculas
-    username = `User-${randomSuffix}`;
-    isUnique = !(await ctx.runQuery(internal.users.checkUserNameExists, { userName: username }));
+    // Ya inicializado, solo se actualiza si hay sufijo
+    if (suffix > 0) {
+      currentUsername = `${baseUsername}${suffix}`;
+    }
+    isUnique = !(await ctx.runQuery(internal.users.checkUserNameExists, { userName: currentUsername }));
+    if (!isUnique) {
+      suffix++;
+    }
   } while (!isUnique);
-  return username;
+
+  return currentUsername; // Devuelve el nombre de usuario único, incluyendo el sufijo si fue necesario
 }
 
 export const handleClerkWebhook = httpAction(async (ctx, request) => {
@@ -26,7 +44,7 @@ export const handleClerkWebhook = httpAction(async (ctx, request) => {
       // Se extrae el userType de los metadatos públicos de Clerk.
       // Si no está definido o no es "admin", se asigna "member" por defecto.
       const userType = (event.data.public_metadata.userType as string) === "admin" ? "admin" : "free";
-      const newUserName = await generateUniqueUsername(ctx);
+      const newUserName = await generateUniqueUsername(ctx, event.data.first_name ?? undefined, event.data.last_name ?? undefined);
       await ctx.runMutation(internal.users.createUser, {
         clerkId: event.data.id,
         email: event.data.email_addresses[0]?.email_address,

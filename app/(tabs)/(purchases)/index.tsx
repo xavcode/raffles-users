@@ -7,12 +7,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePaginatedQuery, useQuery } from 'convex/react';
 import { Link, useRouter } from 'expo-router';
 import React from 'react';
-import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { TabBar, TabView } from 'react-native-tab-view';
 import GlobalHeader from '../../components/GlobalHeader';
 
 
-type PurchaseWithDetails = Doc<'purchases'> & { raffleTitle: string, creatorUserName: string, rejectionReason?: string };
+type PurchaseWithDetails = Doc<'purchases'> & {
+  raffleTitle: string;
+  creatorUserName: string;
+  rejectionReason?: string;
+  raffleStatus: Doc<'raffles'>['status'] | undefined;
+};
 
 const PurchaseListItem = ({ purchase }: { purchase: PurchaseWithDetails }) => {
   const statusStyle = PURCHASE_STATUS_STYLES[purchase.status as keyof typeof PURCHASE_STATUS_STYLES] || PURCHASE_STATUS_STYLES.expired;
@@ -126,30 +132,95 @@ const MyPurchases = () => {
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
       <GlobalHeader />
-      <FlatList
-        data={userPurchases}
-        keyExtractor={(item) => item._id.toString()}
-        renderItem={({ item }) => <PurchaseListItem purchase={item} />} contentContainerClassName="pt-4 pb-8"
-        onEndReached={() => {
-          // Cuando el usuario llega al final, si podemos cargar más, lo hacemos.
-          if (status === 'CanLoadMore') {
-            loadMore(5); // Cargamos los siguientes 5 items
-          }
-        }}
-        onEndReachedThreshold={0.8} // Llama a onEndReached cuando el final está a media pantalla de distancia
-        ListEmptyComponent={
-          <View className="mt-24 items-center justify-center px-8">
-            <Ionicons name="receipt-outline" size={64} color="#cbd5e1" />
-            <Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">No tienes compras</Text>
-            <Text className="text-sm font-quicksand-medium text-slate-400 text-center">Cuando reserves o compres boletos, tus compras aparecerán aquí.</Text>
-          </View>}
-        ListFooterComponent={() => {
-          // Muestra un indicador de carga en el pie de la lista mientras se cargan más items
-          if (status === 'LoadingMore') { return <ActivityIndicator className="my-8" color="#4f46e5" />; }
-          return null;
-        }} />
+      <TabSelector purchases={userPurchases} status={status} loadMore={loadMore} router={router} />
     </SafeAreaView>
   );
 };
 
 export default MyPurchases;
+
+type TabSelectorProps = {
+  purchases: PurchaseWithDetails[];
+  status: ReturnType<typeof usePaginatedQuery>['status'];
+  loadMore: ReturnType<typeof usePaginatedQuery>['loadMore'];
+  router: ReturnType<typeof useRouter>;
+};
+
+const TabSelector = ({ purchases, status, loadMore, router }: TabSelectorProps) => {
+  const layout = useWindowDimensions();
+  const [index, setIndex] = React.useState(0);
+  const [routes] = React.useState([
+    { key: 'pending', title: 'Pendientes' },
+    { key: 'purchased', title: 'Compradas' },
+    { key: 'finished', title: 'Finalizadas' },
+  ]);
+
+  const renderScene = ({ route }: any) => {
+    // Filtrar las compras según el estado de la pestaña
+    let filteredPurchases: PurchaseWithDetails[] = [];
+    if (route.key === 'pending') {
+      filteredPurchases = purchases.filter(p => p.status === 'pending_payment' || p.status === 'pending_confirmation');
+    } else if (route.key === 'purchased') {
+      filteredPurchases = purchases.filter(p => p.status === 'completed' && (p.raffleStatus === undefined || p.raffleStatus === null || (p.raffleStatus !== 'finished' && p.raffleStatus !== 'cancelled')));
+    } else if (route.key === 'finished') {
+      filteredPurchases = purchases.filter(p =>
+        ((p.raffleStatus !== undefined && p.raffleStatus !== null && p.raffleStatus === 'finished') && p.status === 'completed') ||
+        (p.raffleStatus !== undefined && p.raffleStatus !== null && p.raffleStatus === 'cancelled') ||
+        p.status === 'rejected' ||
+        p.status === 'expired'
+      );
+    }
+
+    return (
+      <FlatList
+        data={filteredPurchases}
+        keyExtractor={(item) => item._id.toString()}
+        renderItem={({ item }) => <PurchaseListItem purchase={item} />} contentContainerClassName="pt-4 pb-8"
+        onEndReached={() => {
+          if (status === 'CanLoadMore') {
+            loadMore(5);
+          }
+        }}
+        onEndReachedThreshold={0.8}
+        ListEmptyComponent={
+          <View className="mt-24 items-center justify-center px-8">
+            <Ionicons name="receipt-outline" size={64} color="#cbd5e1" />
+            <Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">No tienes compras en esta categoría</Text>
+            <Text className="text-sm font-quicksand-medium text-slate-400 text-center">Tus compras aparecerán aquí una vez que estén en este estado.</Text>
+          </View>}
+        ListFooterComponent={() => {
+          if (status === 'LoadingMore') { return <ActivityIndicator className="my-8" color="#4f46e5" />; }
+          return null;
+        }} />
+    );
+  };
+
+  const renderTabBar = (props: any) => (
+    <>
+      {/* Aquí puedes usar un componente de barra de pestañas que crees o adaptes. */}
+      {/* Por ahora, para evitar el error de importación, dejaré un marcador de posición. */}
+      {/* Necesitarás instalar 'react-native-tab-view' y 'react-native-pager-view' para que esto funcione. */}
+      <TabBar
+        {...props}
+        indicatorStyle={{ backgroundColor: '#6366f1' }}
+        style={{ backgroundColor: '#f8fafc', shadowOpacity: 0, elevation: 0, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' }}
+        labelStyle={{ fontSize: 13, fontFamily: 'Quicksand-Bold', textTransform: 'none' }}
+        activeColor={'#6366f1'}
+        inactiveColor={'#64748b'}
+      />
+    </>
+  );
+
+  return (
+    <>
+      {/* Aquí iría el TabView una vez que las dependencias estén instaladas. */}
+      <TabView
+        navigationState={{ index, routes }}
+        renderScene={renderScene}
+        onIndexChange={setIndex}
+        initialLayout={{ width: layout.width }}
+        renderTabBar={renderTabBar}
+      />
+    </>
+  );
+};

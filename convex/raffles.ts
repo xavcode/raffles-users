@@ -98,7 +98,9 @@ export const getRaffles = query({
           q.eq(q.field("status"), args.status)
         );
       }
-      return await searchResult.paginate(args.paginationOpts);
+      const paginatedRaffles = await searchResult.paginate(args.paginationOpts);
+      const enrichedRaffles = await processRafflesWithWinnerDetails(ctx, paginatedRaffles.page);
+      return { ...paginatedRaffles, page: enrichedRaffles };
     } else {
       // Si no hay búsqueda en absoluto, se mantiene la lógica original
       queryBuilder = ctx.db
@@ -107,10 +109,37 @@ export const getRaffles = query({
         .order("desc");
     }
 
-    return await queryBuilder.paginate(args.paginationOpts);
+    const paginatedRaffles = await queryBuilder.paginate(args.paginationOpts);
+    const enrichedRaffles = await processRafflesWithWinnerDetails(ctx, paginatedRaffles.page);
+    return { ...paginatedRaffles, page: enrichedRaffles };
   },
 });
 
+async function processRafflesWithWinnerDetails(ctx: any, raffles: Doc<"raffles">[]) {
+  if (raffles.length === 0) return [];
+
+  const winnerIds = raffles
+    .filter(r => r.status === "finished" && r.winnerId)
+    .map(r => r.winnerId as Id<"users">);
+
+  const uniqueWinnerIds = [...new Set(winnerIds)];
+  const winners = await Promise.all(uniqueWinnerIds.map(id => ctx.db.get(id)));
+  const winnersById = new Map(winners.filter(Boolean).map(u => [u!._id, u]));
+
+  return raffles.map(raffle => {
+    const winner = raffle.winnerId ? winnersById.get(raffle.winnerId) : undefined;
+    return {
+      ...raffle,
+      winnerName: winner
+        ? (winner.firstName && winner.lastName
+          ? `${winner.firstName} ${winner.lastName}`
+          : winner.userName ?? "Usuario Desconocido")
+        : (raffle.status === "finished" && raffle.winningTicketNumber && !raffle.winnerId)
+          ? "Boleto ganador no vendido"
+          : undefined,
+    };
+  });
+}
 
 export const getMyRaffles = query({
   args: {
@@ -155,7 +184,9 @@ export const getMyRaffles = query({
         .order("desc");
     }
 
-    return await queryBuilder.paginate(args.paginationOpts);
+    const paginatedRaffles = await queryBuilder.paginate(args.paginationOpts);
+    const enrichedRaffles = await processRafflesWithWinnerDetails(ctx, paginatedRaffles.page);
+    return { ...paginatedRaffles, page: enrichedRaffles };
   },
 });
 
@@ -459,14 +490,10 @@ export const finishRaffle = mutation({
 
     const { id, winningTicketNumber } = args;
 
-    // Actualizamos el sorteo a 'finished'
-    await ctx.db.patch(id, {
-      status: 'finished',
-      winningTicketNumber: winningTicketNumber,
-    });
+    let winnerUserId: Id<"users"> | undefined = undefined;
 
     // --- Lógica de Notificación al Ganador ---
-    console.log(`finishRaffle: Finalizando sorteo. Boleto ganador: ${winningTicketNumber}`);
+    console.log(`finishRaffle: Intentando finalizar sorteo ${id}. Boleto ganador: ${winningTicketNumber}`);
     try {
       const winningTicket = await ctx.db
         .query("tickets")
@@ -489,16 +516,23 @@ export const finishRaffle = mutation({
               title: "🏆 ¡Felicidades, eres el ganador!",
               message: `¡Ganaste el sorteo "${raffle?.title}" con el boleto #${winningTicketNumber}!`,
             });
+            winnerUserId = winner._id; // Asignar el ID del ganador
           } else {
-            console.log("finishRaffle: El usuario ganador no tiene un pushToken registrado.");
+            console.log(`finishRaffle: Boleto #${winningTicketNumber} fue vendido, pero el usuario ganador no tiene un pushToken registrado.`);
           }
         }
       } else {
-        console.log("finishRaffle: No se encontró un boleto vendido con ese número o no tiene purchaseId.");
+        console.log(`finishRaffle: Boleto #${winningTicketNumber} no fue vendido o no tiene purchaseId.`);
       }
     } catch (error) {
       console.error("finishRaffle: ERROR al buscar el boleto ganador o enviar la notificación.", error);
     }
+    // Actualizamos el sorteo a 'finished' y con el winnerId (si se encontró)
+    await ctx.db.patch(id, {
+      status: 'finished',
+      winningTicketNumber: winningTicketNumber,
+      winnerId: winnerUserId, // Asignar winnerId (será undefined si no hay un ganador real)
+    });
     return true;
   },
 });

@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import GlobalHeader from '../../components/GlobalHeader';
 import SearchBar from '../../components/SearchBar';
 
-type RaffleWithDetails = Doc<'raffles'> & { creatorName?: string }; // 'creatorName' ahora es opcional
+type RaffleWithDetails = Doc<'raffles'> & { creatorName?: string; winnerName?: string; }; // Añadido winnerName
 const ACTIVE = 'active';
 
 const FilterButton = ({ title, isActive, onPress }: { title: string, isActive: boolean, onPress: () => void }) => (
@@ -38,7 +38,7 @@ const RaffleCardSkeleton = () => (
   </View>
 );
 
-const RaffleCard = ({ item, currentUserId }: { item: Doc<'raffles'>, currentUserId?: Id<'users'> }) => {
+const RaffleCard = ({ item, currentUserId }: { item: RaffleWithDetails, currentUserId?: Id<'users'> }) => {
   const formattedPrice = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(item.ticketPrice);
   const progress = item.totalTickets > 0 ? (item.ticketsSold / item.totalTickets) * 100 : 0;
   const isActive = item.status === 'active';
@@ -65,6 +65,26 @@ const RaffleCard = ({ item, currentUserId }: { item: Doc<'raffles'>, currentUser
           </Text>
         </View>
 
+        {!isActive && (
+          <View className="mt-2 p-2 rounded-lg bg-slate-50 border border-slate-200">
+            {item.winningTicketNumber && (
+              <Text className="text-sm font-quicksand-bold text-slate-800 text-center">
+                Boleto Ganador: #{item.winningTicketNumber.toString().padStart(3, '0')}
+              </Text>
+            )}
+            {item.winnerName && (
+              <Text className="font-quicksand-medium text-xs text-slate-600 text-center mt-0.5">
+                {item.winnerName}
+              </Text>
+            )}
+            {item.winCondition && (
+              <Text className="font-quicksand-medium text-xs text-slate-600 text-center mt-0.5">
+                Condición: {item.winCondition}
+              </Text>
+            )}
+          </View>
+        )}
+
         <View className="mt-3">
           <View className="w-full bg-slate-200 rounded-full h-2">
             <View className="bg-primary h-2 rounded-full" style={{ width: `${progress}%` }} />
@@ -78,9 +98,8 @@ const RaffleCard = ({ item, currentUserId }: { item: Doc<'raffles'>, currentUser
                 <Ionicons name="trophy" size={16} color="#475569" />
                 <Text className="font-quicksand-bold text-sm text-slate-600 ml-2">
                   {item.winningTicketNumber
-                    ? `Ganador: #${item.winningTicketNumber.toString().padStart(3, '0')}`
-                    : 'Sorteo Finalizado'
-                  }
+                    ? `Boleto Ganador: #${item.winningTicketNumber.toString().padStart(3, '0')}`
+                    : 'Sorteo Finalizado'}
                 </Text>
               </View>
             )}
@@ -117,10 +136,10 @@ const HomeScreen = () => {
   const router = useRouter();
   const convexUser = useQuery(api.users.getCurrent);
 
-  const [selectedTab, setSelectedTab] = useState<'active' | 'finished' | 'myRaffles'>('active');
+  const [selectedTab, setSelectedTab] = useState<'active' | 'myRaffles' | 'finished'>('active');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const isGeneralTab = selectedTab === 'active' || selectedTab === 'finished';
+  const isGeneralTab = selectedTab === 'active';
 
   const {
     results: generalRaffles,
@@ -129,8 +148,8 @@ const HomeScreen = () => {
   } = usePaginatedQuery(
     api.raffles.getRaffles,
     {
-      status: isGeneralTab ? (selectedTab as 'active' | 'finished') : undefined,
-      search: isGeneralTab ? debouncedSearch : undefined, // Pasamos el término de búsqueda solo si la pestaña es general
+      status: selectedTab === 'active' ? 'active' : selectedTab === 'finished' ? 'finished' : undefined,
+      search: debouncedSearch,
     },
     { initialNumItems: 5 }
   );
@@ -142,7 +161,7 @@ const HomeScreen = () => {
   } = usePaginatedQuery(
     api.raffles.getMyRaffles,
     {
-      search: selectedTab === 'myRaffles' ? debouncedSearch : undefined, // Pasamos el término de búsqueda solo si la pestaña es "Mis Sorteos"
+      search: debouncedSearch,
     },
     { initialNumItems: 5 }
   );
@@ -202,14 +221,12 @@ const HomeScreen = () => {
       <GlobalHeader />
 
       {/* Barra de Búsqueda */}
-      {selectedTab === ACTIVE ? (
-        <SearchBar onSearch={setDebouncedSearch} initialQuery={debouncedSearch} />
-      ) : null}
+      <SearchBar onSearch={setDebouncedSearch} initialQuery={debouncedSearch} />
 
       {/* Barra de Pestañas */}
       <View className="flex-row justify-center space-x-3 px-4 pb-4 bg-gray-50 border-b border-gray-200">
         <FilterButton title="Activos" isActive={selectedTab === 'active'} onPress={() => setSelectedTab('active')} />
-        {/* <FilterButton title="Finalizadas" isActive={selectedTab === 'finished'} onPress={() => setSelectedTab('finished')} /> */}
+        <FilterButton title="Finalizados" isActive={selectedTab === 'finished'} onPress={() => setSelectedTab('finished')} />
         {convexUser && (
           <FilterButton title="Mis Sorteos" isActive={selectedTab === 'myRaffles'} onPress={() => setSelectedTab('myRaffles')} />
         )}
