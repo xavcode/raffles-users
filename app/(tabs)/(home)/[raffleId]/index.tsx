@@ -89,6 +89,7 @@ export default function RaffleDetailsScreen() {
   const [showFinishRaffleModal, setShowFinishRaffleModal] = useState(false); // Nuevo estado para el modal de finalizar
   const [winningTicketNumberInput, setWinningTicketNumberInput] = useState(''); // Estado para el número ganador
   const [isFinalizingRaffle, setIsFinalizingRaffle] = useState(false); // Estado para la carga de finalización
+  const [showAdminActionsModal, setShowAdminActionsModal] = useState(false); // Nuevo estado para el modal de administración
 
 
   // Hooks de Convex
@@ -164,8 +165,8 @@ export default function RaffleDetailsScreen() {
       await finishRaffleMutation({ id: raffle._id, winningTicketNumber: winningNumber });
       Toast.show({
         type: 'success',
-        text1: 'Sorteo Finalizado',
-        text2: `¡El sorteo ha terminado! Ganador: #${winningTicketNumberInput}`,
+        text1: 'Sorteo finalizado!',
+        text2: `Ganador: # ${winningTicketNumberInput}`,
       });
       // No redirigimos, solo se actualiza el estado local de la rifa si es necesario
     } catch (error: any) {
@@ -198,17 +199,9 @@ export default function RaffleDetailsScreen() {
     if (!raffle) return '';
     const webUrl = generateShareUrl();
 
-    return `🎉 ¡Participa en este sorteo increíble!
-
-📝 ${raffle.title}
-🎁 Premio: ${typeof raffle.prize === 'number'
-        ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(raffle.prize)
-        : raffle.prize}
-📅 Fecha del sorteo: ${raffle.endTime ? formatUtcToLocal(raffle.endTime, "d 'de' MMMM, yyyy") : 'Próximamente'}
-
-🔗 Abre el sorteo: ${webUrl}
-
-¡No te lo pierdas! 🍀✨`;
+    return `🎉 ¡Participa en este sorteo increíble!\n\n📝 ${raffle.title}\n🎁 Premio: ${typeof raffle.prize === 'number'
+      ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(raffle.prize)
+      : raffle.prize}\n📅 Fecha del sorteo: ${raffle.endTime ? formatUtcToLocal(raffle.endTime, "d 'de' MMMM, yyyy") : 'Próximamente'}\n\n🔗 Abre el sorteo: ${webUrl}\n\n¡No te lo pierdas! 🍀✨`;
   }, [raffle, generateShareUrl]);
 
   const handleCopyToClipboard = useCallback(async () => {
@@ -391,7 +384,7 @@ export default function RaffleDetailsScreen() {
     return (
       <View className="flex-1 justify-center items-center bg-gray-50">
         <ActivityIndicator size="large" color="#FE8C00" />
-        <Text className="mt-2 text-gray-600">Cargando rifa...</Text>
+        <Text className="mt-2 text-gray-600">Cargando sorteo...</Text>
       </View>
     );
   }
@@ -416,7 +409,7 @@ export default function RaffleDetailsScreen() {
       });
       Toast.show({
         type: 'success',
-        text1: `Tus boletos han sido reservados por ${raffle?.releaseTime} minutos.`,
+        text1: '¡Boletos reservados!',
         text2: 'Toca para ir al pago.',
         onPress: () => router.push(`/(purchases)/${result.purchaseId}`),
         position: 'bottom',
@@ -434,7 +427,7 @@ export default function RaffleDetailsScreen() {
     } catch (error: any) {
       // 3. En el catch, manejamos el error del backend como un respaldo.
       // Esto se activará si la sesión expira entre que la app carga y el usuario presiona el botón.
-      const errorMessage = error.data?.message || error.message || "No se pudieron reservar los boletos. Intenta de nuevo.";
+      const errorMessage = error.data?.message || error.message || "No se pudieron reservar los boletos. Por favor, intenta de nuevo.";
       Toast.show({
         type: "error",
         text1: "Ocurrió un error",
@@ -504,108 +497,39 @@ export default function RaffleDetailsScreen() {
             )}
           </View>
         </View>
+        {/* Botón para abrir el modal de administración (solo para el creador) */}
+        {isCreator && (
+          <Pressable
+            onPress={() => setShowAdminActionsModal(true)}
+            className="flex-row items-center justify-center bg-orange-500 px-4 py-3 rounded-xl shadow-md shadow-orange-500/30 active:opacity-80 mt-4"
+          >
+            <Ionicons name="settings-outline" size={20} color="white" />
+            <Text className="text-white font-quicksand-bold text-base ml-2">Administrar Sorteo</Text>
+          </Pressable>
+        )}
       </View>
-
-      {/* Tarjeta de Administración de Sorteo (Solo para el creador) */}
-      {isCreator && (
-        <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mx-4 mt-4">
-          <Text className="text-sm font-quicksand-medium text-slate-500 mb-3">Administrar Sorteo</Text>
-          <View className="flex-row justify-around mb-4 border-b border-slate-200/60 pb-4">
-            {/* Botón de editar */}
-            <Pressable
-              onPress={() => router.push(`/(tabs)/(raffles)/edit/${raffle!._id}`)}
-              className="flex-1 mx-1 p-3 rounded-xl bg-gray-100 active:bg-gray-200 flex-row items-center justify-center"
-            >
-              <Ionicons name="pencil-outline" size={20} color="#64748b" />
-              <Text className="text-slate-700 font-quicksand-semibold ml-2">Editar</Text>
-            </Pressable>
-
-            {/* Botón de eliminar */}
-            <Pressable
-              onPress={openDeleteModal}
-              className="flex-1 mx-1 p-3 rounded-xl bg-red-500 active:bg-red-600 flex-row items-center justify-center"
-            >
-              <Ionicons name="trash-outline" size={20} color="white" />
-              <Text className="text-white font-quicksand-semibold ml-2">Eliminar</Text>
-            </Pressable>
-          </View>
-
-          {/* Habilitar compras */}
-          <View className="flex-row items-center justify-between pb-3 border-b border-slate-200/60 mt-4">
-            <View className="flex-row items-center">
-              <Ionicons name="cart-outline" size={18} color="#64748b" />
-              <Text className="ml-2 text-base font-quicksand-bold text-slate-800">Habilitar compras</Text>
-            </View>
-            <Switch
-              value={raffle?.enabledPurchases}
-              onValueChange={async (next) => {
-                try {
-                  if (raffle && isCreator) {
-                    await setRafflePurchasesEnabled({ raffleId: raffle._id, enabled: next });
-                    Toast.show({ type: 'success', text1: 'Actualizado', text2: next ? 'Compras habilitadas' : 'Compras deshabilitadas' });
-                  }
-                } catch (e) {
-                  Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo actualizar el estado.' });
-                }
-              }}
-              thumbColor={raffle?.enabledPurchases ? '#4f46e5' : undefined}
-            />
-          </View>
-          <Text className="text-xs text-slate-500 mt-2 mb-4">Si las deshabilitas, los usuarios no podrán reservar/comprar boletos temporalmente.</Text>
-
-          {/* Ver Ventas */}
-          <Link href={`/(tabs)/(home)/${raffle!._id}/sales`} asChild>
-            <Pressable className="flex-row items-center bg-indigo-500 px-4 py-2 rounded-xl shadow-md shadow-indigo-500/30 active:opacity-80 justify-center w-full mt-3">
-              <Ionicons name="stats-chart-outline" size={18} color="white" />
-              <Text className="text-white font-quicksand-bold text-sm ml-2">Ver Ventas</Text>
-            </Pressable>
-          </Link>
-
-          {/* Ver Pagos */}
-          <Link href={`/(tabs)/(home)/${raffle!._id}/payment-methods`} asChild>
-            <Pressable className="flex-row items-center bg-blue-500 px-4 py-2 rounded-xl shadow-md shadow-blue-500/30 active:opacity-80 justify-center w-full mt-3">
-              <Ionicons name="card-outline" size={18} color="white" />
-              <Text className="text-white font-quicksand-bold text-sm ml-2">Ver Pagos</Text>
-            </Pressable>
-          </Link>
-
-          {/* Finalizar Sorteo */}
-          {isCreator && isRaffleActive && (
-            <Pressable
-              onPress={openFinishRaffleModal}
-              className="flex-row items-center bg-green-500 px-4 py-2 rounded-xl shadow-md shadow-green-500/30 active:opacity-80 justify-center w-full mt-3"
-            >
-              <Ionicons name="trophy-outline" size={18} color="white" />
-              <Text className="text-white font-quicksand-bold text-sm ml-2">Finalizar Sorteo</Text>
-            </Pressable>
-          )}
-          {isCreator && isRaffleFinished && raffle.winningTicketNumber !== undefined && (
-            <View className="bg-green-100 border border-green-200/80 p-3 rounded-xl mt-3">
-              <Text className="text-green-800 font-quicksand-bold text-sm">Sorteo Finalizado</Text>
-              <Text className="text-green-700 font-quicksand-medium text-xs mt-1">Ganador: Boleto #{raffle.winningTicketNumber?.toString().padStart(3, '0')}</Text>
-            </View>
-          )}
-        </View>
-      )}
 
       {/* Tarjeta de información principal (Fecha, Condición, Descripción) */}
       <View className="bg-white mx-4 p-4 rounded-2xl shadow-sm shadow-slate-300/50 mt-4">
-        <View className="flex-row justify-between items-start mb-3">
-          <View className="flex-1 pr-4">
+        <View className="flex-row flex-wrap justify-between items-start mb-3">
+          {/* Fecha del sorteo */}
+          <View className="flex-1 pr-2 min-w-[48%]">
             <Text className="text-sm font-quicksand-medium text-slate-500">Fecha del sorteo</Text>
             <Text className="text-base font-quicksand-bold text-slate-800">{raffle?.endTime ? formatUtcToLocal(raffle.endTime, "d 'de' MMMM, yyyy") : 'N/A'}</Text>
           </View>
+          {/* Condición de ganar */}
+          {raffle?.winCondition && (
+            <View className="flex-1 pl-2 min-w-[48%]">
+              <Text className="text-sm font-quicksand-medium text-slate-500">Condición de ganar</Text>
+              <Text className="text-base text-slate-700 mt-1">{raffle.winCondition}</Text>
+            </View>
+          )}
         </View>
-        {raffle?.winCondition && (
-          <View className="mb-3">
-            <Text className="text-sm font-quicksand-medium text-slate-500">Condición de ganar</Text>
-            <Text className="text-base text-slate-700 mt-1">{raffle.winCondition}</Text>
-          </View>
-        )}
+        {/* Descripción */}
         {raffle?.description && (
           <View className="border-t border-slate-200/60 pt-3 mt-3">
-            <Text className="text-sm font-quicksand-medium text-slate-500">Descripción</Text>
-            <Text className="text-base text-slate-700 mt-1" numberOfLines={4}>{raffle.description}</Text>
+            <Text className="text-sm font-quicksand-medium text-slate-500 mb-1">Descripción</Text>
+            <Text className="text-base text-slate-700">{raffle.description}</Text>
           </View>
         )}
       </View>
@@ -645,12 +569,12 @@ export default function RaffleDetailsScreen() {
           </View>
         </Modal>
       )}
-      {/* boton para reservar boletos */}
+      {/* Botón para reservar boletos */}
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
         <View className="mx-4 bg-white rounded-2xl border border-slate-200 shadow-lg p-3">
           {!currentUser?._id ? (
             <Pressable onPress={() => router.push('/(auth)/sign-in')} className="bg-primary rounded-xl py-3 items-center active:opacity-80">
-              <Text className="text-white font-quicksand-bold">Iniciar sesión</Text>
+              <Text className="text-white font-quicksand-bold">Inicia sesión para reservar</Text>
             </Pressable>
           ) : (
             <Pressable
@@ -671,7 +595,7 @@ export default function RaffleDetailsScreen() {
           )}
         </View>
       </View>
-      {/* Custom Delete Confirmation Modal */}
+      {/* Modal de confirmación de Eliminación */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -680,8 +604,8 @@ export default function RaffleDetailsScreen() {
       >
         <View className="flex-1 justify-center items-center bg-black/50 p-4">
           <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-lg">
-            <Text className="text-xl font-quicksand-bold text-slate-800 mb-4">Eliminar Sorteo</Text>
-            <Text className="text-base font-quicksand-medium text-slate-600 mb-6">¿Estás seguro de que quieres eliminar este sorteo? Esta acción no se puede deshacer.</Text>
+            <Text className="text-xl font-quicksand-bold text-slate-800 mb-4">Confirmar Eliminación</Text>
+            <Text className="text-base font-quicksand-medium text-slate-600 mb-6">¿Estás seguro de que deseas eliminar este sorteo? Esta acción es irreversible.</Text>
             <View className="flex-row justify-end space-x-3">
               <Pressable
                 onPress={closeDeleteModal}
@@ -702,7 +626,7 @@ export default function RaffleDetailsScreen() {
         </View>
       </Modal>
 
-      {/* Custom Finish Raffle Confirmation Modal */}
+      {/* Modal de confirmación para Finalizar Sorteo */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -712,7 +636,7 @@ export default function RaffleDetailsScreen() {
         <View className="flex-1 justify-center items-center bg-black/50 p-4">
           <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-lg">
             <Text className="text-xl font-quicksand-bold text-slate-800 mb-4">Finalizar Sorteo</Text>
-            <Text className="text-base font-quicksand-medium text-slate-600 mb-4">Ingresa el número del boleto ganador para finalizar este sorteo.</Text>
+            <Text className="text-base font-quicksand-medium text-slate-600 mb-4">Ingresa el número del boleto ganador para finalizar el sorteo.</Text>
             <TextInput
               className="border border-slate-300 rounded-xl p-3 text-base text-slate-700 mb-6"
               placeholder="Ej: 123 (número del boleto ganador)"
@@ -737,6 +661,112 @@ export default function RaffleDetailsScreen() {
                 {isFinalizingRaffle ? <ActivityIndicator color="white" /> : <Text className="text-white font-quicksand-bold">Finalizar</Text>}
               </Pressable>
             </View>
+          </View>
+        </View>
+      </Modal>
+      {/* Modal de Acciones de Administración */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showAdminActionsModal}
+        onRequestClose={() => setShowAdminActionsModal(false)}
+      >
+        <View className="flex-1 justify-center items-center bg-black/50 p-4">
+          <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-lg">
+            <Text className="text-xl font-quicksand-bold text-slate-800 mb-4">Administrar Sorteo</Text>
+            {/* Habilitar compras (Movido al inicio) */}
+            <View className="flex-row items-center justify-between py-3 border-y border-slate-200/60 mb-3">
+              <View className="flex-row items-center">
+                <Ionicons name="cart-outline" size={18} color="#64748b" />
+                <Text className="ml-2 text-base font-quicksand-bold text-slate-800">Habilitar Compras</Text>
+              </View>
+              <Switch
+                value={raffle?.enabledPurchases}
+                onValueChange={async (next) => {
+                  try {
+                    if (raffle && isCreator) {
+                      await setRafflePurchasesEnabled({ raffleId: raffle._id, enabled: next });
+                      Toast.show({ type: 'success', text1: 'Actualizado', text2: next ? 'Compras habilitadas' : 'Compras deshabilitadas' });
+                    }
+                  } catch (e) {
+                    Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo actualizar el estado.' });
+                  }
+                }}
+                thumbColor={raffle?.enabledPurchases ? '#4f46e5' : undefined}
+              />
+            </View>
+            <Text className="text-xs text-slate-500 mt-2 mb-4">Deshabilita esta opción para impedir que los usuarios reserven o compren boletos temporalmente.</Text>
+
+            {/* Botón Editar Sorteo (Movido y estilizado) */}
+            <Pressable
+              onPress={() => {
+                router.push(`/(tabs)/(raffles)/edit/${raffle!._id}`);
+                setShowAdminActionsModal(false);
+              }}
+              className="flex-row items-center p-3 rounded-xl bg-indigo-500 active:bg-indigo-600 mb-3 justify-center mt-3"
+            >
+              <Ionicons name="pencil-outline" size={20} color="white" />
+              <Text className="text-white font-quicksand-semibold ml-3">Editar Sorteo</Text>
+            </Pressable>
+
+            <Link href={`/(tabs)/(home)/${raffle!._id}/sales`} asChild>
+              <Pressable
+                onPress={() => setShowAdminActionsModal(false)}
+                className="flex-row items-center p-3 rounded-xl bg-indigo-500 active:bg-indigo-600 mb-3 justify-center"
+              >
+                <Ionicons name="stats-chart-outline" size={20} color="white" />
+                <Text className="text-white font-quicksand-semibold ml-3">Ver Ventas</Text>
+              </Pressable>
+            </Link>
+
+            <Link href={`/(tabs)/(home)/${raffle!._id}/payment-methods`} asChild>
+              <Pressable
+                onPress={() => setShowAdminActionsModal(false)}
+                className="flex-row items-center p-3 rounded-xl bg-blue-500 active:bg-blue-600 mb-3 justify-center"
+              >
+                <Ionicons name="card-outline" size={20} color="white" />
+                <Text className="text-white font-quicksand-semibold ml-3">Medios de Pago</Text>
+              </Pressable>
+            </Link>
+
+            {isCreator && isRaffleActive && (
+              <Pressable
+                onPress={() => {
+                  openFinishRaffleModal();
+                  setShowAdminActionsModal(false);
+                }}
+                className="flex-row items-center p-3 rounded-xl bg-green-500 active:bg-green-600 mb-3 justify-center"
+              >
+                <Ionicons name="trophy-outline" size={20} color="white" />
+                <Text className="text-white font-quicksand-semibold ml-3">Finalizar Sorteo</Text>
+              </Pressable>
+            )}
+
+            {isCreator && isRaffleFinished && raffle.winningTicketNumber !== undefined && (
+              <View className="bg-green-100 border border-green-200/80 p-3 rounded-xl mb-3">
+                <Text className="text-green-800 font-quicksand-bold text-sm">Sorteo Finalizado</Text>
+                <Text className="text-green-700 font-quicksand-medium text-xs mt-1">Ganador: Boleto #{raffle.winningTicketNumber?.toString().padStart(3, '0')}</Text>
+              </View>
+            )}
+
+            {/* Botón de eliminar */}
+            <Pressable
+              onPress={() => {
+                openDeleteModal();
+                setShowAdminActionsModal(false);
+              }}
+              className="flex-row items-center p-3 rounded-xl bg-red-500 active:bg-red-600 justify-center"
+            >
+              <Ionicons name="trash-outline" size={20} color="white" />
+              <Text className="text-white font-quicksand-semibold ml-3">Eliminar Sorteo</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => setShowAdminActionsModal(false)}
+              className="mt-4 px-5 py-3 rounded-xl active:opacity-80 border border-slate-300 bg-slate-50"
+            >
+              <Text className="text-slate-600 font-quicksand-semibold text-center">Cerrar</Text>
+            </Pressable>
           </View>
         </View>
       </Modal>
