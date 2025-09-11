@@ -59,23 +59,7 @@ const RootLayout = () => {
   return <RootLayoutNav />;
 };
 
-// const InitialLayout = () => {
-//   const { isLoaded, isSignedIn } = useAuth();
-//   const segments = useSegments();
-//   const router = useRouter();
-
-//   useEffect(() => {
-//     if (!isLoaded) return;
-//     const inAuthGroup = segments[0] === '(auth)';
-//     if (isSignedIn && inAuthGroup) {
-//       router.replace('/(tabs)');
-//     } else if (!isSignedIn && !inAuthGroup) {
-//       router.replace('/(auth)/sign-in');
-//     }
-//   }, [isLoaded, isSignedIn, segments]);
-
-//   return <Slot />;
-// };
+// Componente para manejar deep links
 
 const RootLayoutNav = () => {
   const convex = new ConvexReactClient(convexUrl);
@@ -89,10 +73,10 @@ const RootLayoutNav = () => {
               <SafeAreaProvider>
                 <NetworkProvider>
                   <ClerkLoaded>
+                    {/* <DeepLinkHandler /> */}
                     <Slot />
                     <OfflineBanner />
                     <Toast config={toastConfig} />
-                    {/* <InitialLayout /> */}
                   </ClerkLoaded>
                 </NetworkProvider>
               </SafeAreaProvider>

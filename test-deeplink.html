@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Deep Link - MilSorteos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            margin-bottom: 30px;
+        }
+
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        button {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            font-weight: bold;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        .deep-link {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .web-link {
+            background: #2196F3;
+            color: white;
+        }
+
+        .test-id {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎯 Test Deep Links</h1>
+        <p>Prueba los enlaces de MilSorteos</p>
+
+        <div class="test-id">
+            ID válido: 20250911-1WMPGX
+        </div>
+
+        <div class="buttons">
+            <button class="deep-link" onclick="openDeepLink()">
+                📱 Abrir en App (Deep Link)
+            </button>
+
+            <button class="web-link" onclick="testShare()">
+                📤 Probar Share Text
+            </button>
+
+            <button class="web-link" onclick="copyLink()">
+                📋 Copiar Deep Link
+            </button>
+        </div>
+
+        <p style="margin-top: 30px; font-size: 14px; opacity: 0.8;">
+            Asegúrate de tener MilSorteos instalado
+        </p>
+    </div>
+
+    <script>
+        function openDeepLink() {
+            const deepLink = 'milsorteos://sorteo/20250911-1WMPGX';
+            console.log('Intentando abrir:', deepLink);
+
+            // Método más directo para Android
+            window.location.href = deepLink;
+        }
+
+        function testShare() {
+            const message = `🎉 ¡Participa en este sorteo increíble!
+
+📝 Sorteo de Prueba
+🎁 Premio: $500,000
+📅 Fecha del sorteo: 15 de Septiembre, 2024
+
+🔗 Ver sorteo: https://milsorteos.app/sorteo/20250911-1WMPGX
+
+💬 O abre directamente en la app: milsorteos://sorteo/20250911-1WMPGX
+
+¡No te lo pierdas! 🍀✨`;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Sorteo MilSorteos',
+                    text: message
+                });
+            } else {
+                navigator.clipboard.writeText(message);
+                alert('Texto copiado al portapapeles');
+            }
+        }
+
+        function copyLink() {
+            const deepLink = 'milsorteos://sorteo/20250911-1WMPGX';
+            navigator.clipboard.writeText(deepLink);
+            alert('Deep link copiado: ' + deepLink);
+        }
+    </script>
+</body>
+
+</html>

@@ -6,9 +6,10 @@ import { formatUtcToLocal } from '@/utils/date';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native'; // Importar useNavigation
 import { useMutation, useQuery } from 'convex/react';
+import * as Linking from 'expo-linking';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Dimensions, FlatList, Image, Modal, Pressable, Switch, Text, TextInput, View } from 'react-native'; // Importar FlatList
+import { ActivityIndicator, Clipboard, Dimensions, FlatList, Image, Modal, Pressable, Share, Switch, Text, TextInput, View } from 'react-native'; // Importar FlatList
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
@@ -180,6 +181,100 @@ export default function RaffleDetailsScreen() {
     }
   };
   // -- Fin lógica del modal de finalización ---
+
+  // --- Funciones para compartir y copiar ---
+  const generateShareUrl = useCallback(() => {
+    if (!raffle?.customRaffleId) return '';
+    // Creamos una URL que incluye tanto web como deep link
+    return `https://milsorteos.app/sorteo/${raffle.customRaffleId}`;
+  }, [raffle?.customRaffleId]);
+
+  const generateDeepLink = useCallback(() => {
+    if (!raffle?.customRaffleId) return '';
+    return `milsorteos://sorteo/${raffle.customRaffleId}`;
+  }, [raffle?.customRaffleId]);
+
+  const generateShareMessage = useCallback(() => {
+    if (!raffle) return '';
+    const webUrl = generateShareUrl();
+
+    return `🎉 ¡Participa en este sorteo increíble!
+
+📝 ${raffle.title}
+🎁 Premio: ${typeof raffle.prize === 'number'
+        ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(raffle.prize)
+        : raffle.prize}
+📅 Fecha del sorteo: ${raffle.endTime ? formatUtcToLocal(raffle.endTime, "d 'de' MMMM, yyyy") : 'Próximamente'}
+
+🔗 Abre el sorteo: ${webUrl}
+
+¡No te lo pierdas! 🍀✨`;
+  }, [raffle, generateShareUrl]);
+
+  const handleCopyToClipboard = useCallback(async () => {
+    try {
+      if (!raffle?.customRaffleId) {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'ID de sorteo no disponible para copiar.',
+        });
+        return;
+      }
+      Clipboard.setString(raffle.customRaffleId);
+      Toast.show({
+        type: 'success',
+        text1: 'ID Copiado',
+        text2: `${raffle.customRaffleId} copiado al portapapeles`,
+      });
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'No se pudo copiar el ID al portapapeles',
+      });
+    }
+  }, [raffle?.customRaffleId]);
+
+  const handleShare = useCallback(async () => {
+    try {
+      const message = generateShareMessage();
+
+      const result = await Share.share({
+        message: message,
+        title: `Sorteo: ${raffle?.title}`,
+      });
+
+      if (result.action === Share.sharedAction) {
+        // Usuario compartió exitosamente
+        Toast.show({
+          type: 'success',
+          text1: 'Compartido',
+          text2: 'Sorteo compartido exitosamente',
+        });
+      }
+
+    } catch (error: any) {
+      console.error('Error sharing:', error);
+      // Fallback: copiar al portapapeles
+      try {
+        Clipboard.setString(generateShareMessage());
+        Toast.show({
+          type: 'info',
+          text1: 'Copiado al portapapeles',
+          text2: 'Se copió el texto como alternativa',
+        });
+      } catch (clipboardError) {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'No se pudo compartir el sorteo',
+        });
+      }
+    }
+  }, [raffle?.title, generateShareMessage]);
+  // -- Fin funciones de compartir y copiar ---
 
   useEffect(() => {
     // Cuando el ID de la rifa cambia (al navegar entre diferentes rifas),
@@ -378,14 +473,7 @@ export default function RaffleDetailsScreen() {
           <View className="flex-row items-center space-x-2">
             {/* Botón para copiar ID */}
             <Pressable
-              onPress={() => {
-                // TODO: Implementar funcionalidad de copiar
-                Toast.show({
-                  type: 'success',
-                  text1: 'ID copiado',
-                  text2: `${raffle.customRaffleId} copiado al portapapeles`,
-                });
-              }}
+              onPress={handleCopyToClipboard}
               className="p-3 rounded-xl bg-blue-50 border border-blue-100 active:bg-blue-100"
             >
               <Ionicons name="copy-outline" size={20} color="#3b82f6" />
@@ -393,21 +481,56 @@ export default function RaffleDetailsScreen() {
 
             {/* Botón para compartir */}
             <Pressable
-              onPress={() => {
-                // TODO: Implementar funcionalidad de compartir
-                Toast.show({
-                  type: 'info',
-                  text1: 'Compartir',
-                  text2: 'Función de compartir próximamente',
-                });
-              }}
+              onPress={handleShare}
               className="p-3 rounded-xl bg-green-50 border border-green-100 active:bg-green-100"
             >
               <Ionicons name="share-outline" size={20} color="#22c55e" />
             </Pressable>
+
+            {/* Botón de prueba de deep link (solo para debugging) */}
+            {__DEV__ && (
+              <Pressable
+                onPress={() => {
+                  const deepLink = generateDeepLink();
+                  console.log('🧪 Probando deep link:', deepLink);
+                  Linking.openURL(deepLink).catch(err => {
+                    console.error('❌ Error abriendo deep link:', err);
+                  });
+                }}
+                className="p-3 rounded-xl bg-purple-50 border border-purple-100 active:bg-purple-100"
+              >
+                <Ionicons name="bug-outline" size={20} color="#9333ea" />
+              </Pressable>
+            )}
           </View>
         </View>
       </View>
+
+      {/* Tarjeta de Administración de Sorteo (Solo para el creador) */}
+      {isCreator && (
+        <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mx-4 mt-4">
+          <Text className="text-sm font-quicksand-medium text-slate-500 mb-3">Administrar Sorteo</Text>
+          <View className="flex-row justify-around">
+            {/* Botón de editar */}
+            <Pressable
+              onPress={() => router.push(`/(tabs)/(raffles)/edit/${raffle!._id}`)}
+              className="flex-1 mx-1 p-3 rounded-xl bg-gray-100 active:bg-gray-200 flex-row items-center justify-center"
+            >
+              <Ionicons name="pencil-outline" size={20} color="#64748b" />
+              <Text className="text-slate-700 font-quicksand-semibold ml-2">Editar</Text>
+            </Pressable>
+
+            {/* Botón de eliminar */}
+            <Pressable
+              onPress={openDeleteModal}
+              className="flex-1 mx-1 p-3 rounded-xl bg-red-500 active:bg-red-600 flex-row items-center justify-center"
+            >
+              <Ionicons name="trash-outline" size={20} color="white" />
+              <Text className="text-white font-quicksand-semibold ml-2">Eliminar</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
 
       {/* Nueva tarjeta para Habilitar compras y Ver Ventas (solo para el creador) */}
       {isCreator && (

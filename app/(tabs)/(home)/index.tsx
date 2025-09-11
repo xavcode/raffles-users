@@ -221,9 +221,6 @@ const HomeScreen = () => {
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={['left', 'right', 'bottom']}>
 
-      {/* Barra de Búsqueda */}
-      <SearchBar onSearch={setDebouncedSearch} initialQuery={debouncedSearch} />
-
       {/* Barra de Pestañas */}
       <View className="flex-row bg-slate-50 border-b border-gray-200">
         <FilterButton title="Activos" isActive={selectedTab === 'active'} onPress={() => setSelectedTab('active')} />
@@ -232,6 +229,9 @@ const HomeScreen = () => {
           <FilterButton title="Mis Sorteos" isActive={selectedTab === 'myRaffles'} onPress={() => setSelectedTab('myRaffles')} />
         )}
       </View>
+
+      {/* Barra de Búsqueda (nueva ubicación) */}
+      <SearchBar onSearch={setDebouncedSearch} initialQuery={debouncedSearch} />
 
       {status === LOADING_FIRST_PAGE_STATUS ? (
         <View style={{ paddingTop: 8 }}>

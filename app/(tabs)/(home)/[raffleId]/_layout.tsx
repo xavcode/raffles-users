@@ -28,7 +28,7 @@ export default function RaffleDetailsLayout() {
       <Stack.Screen
         name="index"
         options={{
-          headerShown: true,
+          headerShown: false, // Deshabilitar header para la pantalla de detalles de la rifa
         }}
       />
       <Stack.Screen

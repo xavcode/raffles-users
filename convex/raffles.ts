@@ -241,6 +241,17 @@ export const getById = query({
   },
 });
 
+export const getByCustomRaffleId = query({
+  args: { customRaffleId: v.string() },
+  handler: async (ctx, args) => {
+    const raffle = await ctx.db
+      .query("raffles")
+      .withIndex("by_customRaffleId", (q) => q.eq("customRaffleId", args.customRaffleId))
+      .unique();
+    return raffle;
+  },
+});
+
 export const createRaffle = mutation({
 
   args: v.object({

@@ -18,7 +18,27 @@
       "permissions": [
         "android.permission.POST_NOTIFICATIONS"
       ],
-      "package": "com.milsorteos.app"
+      "package": "com.milsorteos.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "milsorteos.app",
+              "pathPrefix": "/sorteo"
+            },
+            {
+              "scheme": "milsorteos"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",
