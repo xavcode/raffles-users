@@ -11,11 +11,14 @@ import GlobalHeader from '../../components/GlobalHeader';
 import SearchBar from '../../components/SearchBar';
 
 type RaffleWithDetails = Doc<'raffles'> & { creatorName?: string; winnerName?: string; }; // Añadido winnerName
-const ACTIVE = 'active';
+// const ACTIVE = 'active';
 
 const FilterButton = ({ title, isActive, onPress }: { title: string, isActive: boolean, onPress: () => void }) => (
-  <Pressable onPress={onPress} className={`px-4 py-2 rounded-full transition-colors ${isActive ? 'bg-primary' : 'bg-gray-200'}`}>
-    <Text className={`font-quicksand-bold ${isActive ? 'text-white' : 'text-gray-700'}`}>{title}</Text>
+  <Pressable
+    onPress={onPress}
+    className={`flex-1 items-center py-3 ${isActive ? 'bg-white border-b-2 border-primary' : 'bg-slate-50'}`}
+  >
+    <Text className={`font-quicksand-bold text-sm ${isActive ? 'text-primary' : 'text-slate-500'}`}>{title}</Text>
   </Pressable>
 );
 
@@ -139,7 +142,7 @@ const HomeScreen = () => {
   const [selectedTab, setSelectedTab] = useState<'active' | 'myRaffles' | 'finished'>('active');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const isGeneralTab = selectedTab === 'active';
+  // const isGeneralTab = selectedTab === 'active';
 
   const {
     results: generalRaffles,
@@ -191,7 +194,7 @@ const HomeScreen = () => {
   if (convexUser === undefined || (selectedTab === 'myRaffles' ? myStatus === LOADING_FIRST_PAGE_STATUS : generalStatus === LOADING_FIRST_PAGE_STATUS)) {
     return (
       <SafeAreaView className="flex-1 bg-slate-50">
-        <GlobalHeader />
+        {/* <GlobalHeader /> */}
         <View className="pt-4">
           {[...Array(3)].map((_, index) => <RaffleCardSkeleton key={index} />)}
         </View>
@@ -216,15 +219,13 @@ const HomeScreen = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      {/* Header */}
-      <GlobalHeader />
+    <SafeAreaView className="flex-1 bg-slate-50" edges={['left', 'right', 'bottom']}>
 
       {/* Barra de Búsqueda */}
       <SearchBar onSearch={setDebouncedSearch} initialQuery={debouncedSearch} />
 
       {/* Barra de Pestañas */}
-      <View className="flex-row justify-center space-x-3 px-4 pb-4 bg-gray-50 border-b border-gray-200">
+      <View className="flex-row bg-slate-50 border-b border-gray-200">
         <FilterButton title="Activos" isActive={selectedTab === 'active'} onPress={() => setSelectedTab('active')} />
         <FilterButton title="Finalizados" isActive={selectedTab === 'finished'} onPress={() => setSelectedTab('finished')} />
         {convexUser && (

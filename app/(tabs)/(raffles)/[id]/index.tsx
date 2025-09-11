@@ -239,7 +239,7 @@ const EditRafflePage = () => {
   return (
 
     <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
-      <Stack.Screen name="[id]/index" options={{ title: 'Editar', headerRight: () => <Text>Editar</Text> }}
+      <Stack.Screen name="[id]/index" options={{ title: 'Detalles del Sorteqqqo', headerRight: () => <Text>Editar</Text> }}
 
       />
       <KeyboardAwareScrollView contentContainerClassName="p-4 pb-8" extraScrollHeight={20} enableOnAndroid={true}>

@@ -157,9 +157,7 @@ const Settings = () => {
   // Preferencias locales adicionales
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-
-      {/* <Stack.Screen options={{ title: 'Configuración', headerLargeTitle: true }} /> */}
+    <SafeAreaView className="flex-1 bg-slate-50" edges={['left', 'right', 'bottom']}>
       <KeyboardAwareScrollView
         contentContainerClassName='flex-1'
         enableOnAndroid={true}

@@ -10,6 +10,7 @@ import React from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TabBar, TabView } from 'react-native-tab-view';
+import AuthFallback from '../../components/AuthFallback';
 import GlobalHeader from '../../components/GlobalHeader';
 
 
@@ -114,24 +115,15 @@ const MyPurchases = () => {
   // Estado cuando el usuario no está autenticado
   if (convexUser === null) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-50">
-        <GlobalHeader />
-        {/* Contenido de fallback para usuarios no autenticados, sin el prop 'fallback' */}
-        <View className="flex-1 justify-center items-center px-8">
-          <Ionicons name="lock-closed-outline" size={64} color="#cbd5e1" />
-          <Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">Inicia sesión para ver tus compras</Text>
-          <Text className="text-sm font-quicksand-medium text-slate-400 text-center mt-1 mb-6">Aquí encontrarás el historial de todos los boletos que has reservado y comprado.</Text>
-          <Pressable onPress={() => router.push('/(auth)/sign-in')} className="bg-primary px-8 py-3 rounded-lg active:opacity-80">
-            <Text className="text-white font-quicksand-bold text-base">Iniciar Sesión</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
+      <AuthFallback
+        title="Inicia sesión para ver tus compras"
+        message="Aquí encontrarás el historial de todos los boletos que has reservado y comprado."
+      />
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      <GlobalHeader />
+    <SafeAreaView className="flex-1 bg-slate-50" edges={['left', 'right', 'bottom']}>
       <TabSelector purchases={userPurchases} status={status} loadMore={loadMore} router={router} />
     </SafeAreaView>
   );

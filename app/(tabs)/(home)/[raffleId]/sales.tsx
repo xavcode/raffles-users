@@ -3,11 +3,12 @@ import { api } from '@/convex/_generated/api';
 import { Doc, Id } from '@/convex/_generated/dataModel';
 import { formatCOP } from '@/utils/format';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { useQuery } from 'convex/react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -18,24 +19,24 @@ type PurchaseWithUser = Doc<'purchases'> & {
   rejectionReason?: string; // Incluir la razón de rechazo
 };
 
-const PurchaseItemSkeleton = () => (
-  <View className="bg-white p-4 rounded-xl mb-3 shadow-sm shadow-slate-300/50 space-y-3">
-    <View className="flex-row justify-between items-center">
-      <View className="flex-1 space-y-1.5">
-        <View className="h-5 w-3/4 bg-slate-200 rounded" />
-        <View className="h-4 w-1/2 bg-slate-200 rounded" />
-      </View>
-      <View className="h-6 w-1/4 bg-slate-200 rounded" />
-    </View>
-    <View className="space-y-2">
-      <View className="h-3 w-1/4 bg-slate-200 rounded" />
-      <View className="h-8 w-full bg-slate-200 rounded-lg" />
-    </View>
-    <View className="border-t border-slate-100 pt-3">
-      <View className="h-3 w-1/3 bg-slate-200 rounded" />
-    </View>
-  </View>
-);
+// const PurchaseItemSkeleton = () => (
+//   <View className="bg-white p-4 rounded-xl mb-3 shadow-sm shadow-slate-300/50 space-y-3">
+//     <View className="flex-row justify-between items-center">
+//       <View className="flex-1 space-y-1.5">
+//         <View className="h-5 w-3/4 bg-slate-200 rounded" />
+//         <View className="h-4 w-1/2 bg-slate-200 rounded" />
+//       </View>
+//       <View className="h-6 w-1/4 bg-slate-200 rounded" />
+//     </View>
+//     <View className="space-y-2">
+//       <View className="h-3 w-1/4 bg-slate-200 rounded" />
+//       <View className="h-8 w-full bg-slate-200 rounded-lg" />
+//     </View>
+//     <View className="border-t border-slate-100 pt-3">
+//       <View className="h-3 w-1/3 bg-slate-200 rounded" />
+//     </View>
+//   </View>
+// );
 
 const PurchaseItem = ({ item }: { item: PurchaseWithUser }) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -135,6 +136,7 @@ const PurchaseItem = ({ item }: { item: PurchaseWithUser }) => {
 
 const RaffleSalesPage = () => {
   const { raffleId } = useLocalSearchParams<{ raffleId: string }>(); // Cambiar 'id' a 'raffleId'
+  const navigation = useNavigation();
 
   const purchases = useQuery(
     api.raffles.getPurchasesForRaffle,
@@ -143,6 +145,17 @@ const RaffleSalesPage = () => {
 
   // Importar y usar PURCHASE_STATUS_STYLES
   const raffle = useQuery(api.raffles.getById, raffleId ? { id: raffleId as Id<'raffles'> } : 'skip');
+
+  // Configurar el título dinámicamente cuando tengamos los datos de la rifa
+  useLayoutEffect(() => {
+    if (raffle) {
+      navigation.setOptions({
+        title: 'Historial de Ventas',
+        headerStyle: { backgroundColor: '#f8fafc' },
+        headerTitleStyle: { fontFamily: 'Quicksand-Bold' },
+      });
+    }
+  }, [raffle, navigation]);
 
   if (purchases === undefined || purchases === null || raffle === undefined) {
     return (

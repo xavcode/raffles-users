@@ -1,20 +1,33 @@
 import Paymentmethods from '@/app/components/Paymentmethods';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
+import { useNavigation } from '@react-navigation/native';
 import { useQuery } from 'convex/react';
-import { Stack, useLocalSearchParams } from 'expo-router';
-import React from 'react';
+import { useLocalSearchParams } from 'expo-router';
+import React, { useLayoutEffect } from 'react';
 import { ActivityIndicator, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const paymentMethodPage = () => {
   const { raffleId } = useLocalSearchParams<{ raffleId: Id<'raffles'> }>();
+  const navigation = useNavigation();
 
   // Obtener los detalles de la rifa
   const raffle = useQuery(api.raffles.getById, { id: raffleId as Id<'raffles'> });
 
   // Modificar la query para obtener métodos de pago del creador de la rifa
   const paymentMethods = useQuery(api.admin.getPaymentMethods, raffle?.creatorId ? { ownerId: raffle.creatorId } : 'skip');
+
+  // Configurar el título dinámicamente cuando tengamos los datos de la rifa
+  useLayoutEffect(() => {
+    if (raffle) {
+      navigation.setOptions({
+        title: 'Métodos de Pago',
+        headerStyle: { backgroundColor: '#f8fafc' },
+        headerTitleStyle: { fontFamily: 'Quicksand-Bold' },
+      });
+    }
+  }, [raffle, navigation]);
 
   // Mostrar un indicador de carga mientras se obtienen los datos
   if (!raffle || paymentMethods === undefined) {
@@ -37,21 +50,9 @@ const paymentMethodPage = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
-      <Stack.Screen
-        options={{
-          title: 'Métodos de Pago del Creador',
-          headerLargeTitle: true,
-          headerShown: true,
-          headerShadowVisible: false,
-          headerStyle: { backgroundColor: '#f8fafc' }, // Fondo de header consistente
-          headerTitleStyle: { fontFamily: 'Quicksand-Bold' },
-        }}
-      />
-
       <Paymentmethods
         paymentMethods={paymentMethods}
       />
-
     </SafeAreaView>
     // <SafeAreaView className='flex-1 bg-slate-50'> {/* Contenedor principal con fondo uniforme */}
     //   <View className='flex-1'>

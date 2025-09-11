@@ -428,14 +428,7 @@ export default function RaffleDetailsScreen() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      {/* <Stack.Screen */}
-      {/*   options={{ */}
-      {/*     title: 'Detalles del Sorteo', */}
-      {/*     headerRight: () => (isCreator && raffle ? <HeaderLeft raffle={raffle} onDeleteRequest={openDeleteModal} /> : null), */}
-      {/*   }} */}
-      {/* /> */}
-
+    <SafeAreaView className="flex-1" edges={['left', 'right', 'bottom']}>
       <FlatList
         ListHeaderComponent={RaffleDetailsHeader}
         data={allTicketsNumbers}

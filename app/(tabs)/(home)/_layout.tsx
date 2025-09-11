@@ -5,8 +5,9 @@ export default function HomeStackLayout() {
   return (
     <Stack
       screenOptions={{
+
         headerStyle: {
-          backgroundColor: '#f8fafc', // slate-50
+          backgroundColor: '#f8fafc',
         },
         headerTintColor: '#1e293b', // text-slate-800
         headerTitleStyle: {
@@ -14,6 +15,7 @@ export default function HomeStackLayout() {
         },
       }}>
       <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="[raffleId]" options={{ headerShown: false }} />
     </Stack>
   );
 }

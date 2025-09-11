@@ -8,33 +8,41 @@ import { useMemo } from 'react';
 
 export default function RaffleDetailsLayout() {
     const { raffleId } = useLocalSearchParams();
-    // const { isSignedIn } = useUser();
     const raffle = useQuery(api.raffles.getById, { id: raffleId as Id<'raffles'> });
     const currentUser = useQuery(api.users.getCurrent);
     const isCreator = useMemo(() => currentUser && raffle && currentUser._id === raffle.creatorId, [currentUser, raffle]);
 
+    // Headers consistentes para todas las pantallas
+
     return (
         <Stack
             screenOptions={{
-                headerStyle: {
-                    backgroundColor: '#f8fafc', // slate-50
-                },
-                headerTintColor: '#1e293b', // text-slate-800
-                headerTitleStyle: {
-                    fontFamily: 'Quicksand-Bold',
+                headerShown: false,
+                // headerStyle: { backgroundColor: 'red' },
+                contentStyle: {
+                    backgroundColor: '#f8fafc',
+                    paddingTop: 0
                 },
             }}
         >
-            {/* La pantalla index ahora gestiona su propio header */}
             <Stack.Screen
                 name="index"
                 options={{
-                    // title: 'Detalles del Sorteo',
-                    headerShown: false, // ¡Permitimos que index.tsx gestione su propio header!
-                    // headerRight: () => (isCreator && raffle ? <HeaderLeft raffle={raffle} onDeleteRequest={openDeleteModal} /> : null),
+                    headerShown: true,
                 }}
             />
-            <Stack.Screen name="sales" options={{ title: 'Historial de Ventas' }} />
+            <Stack.Screen
+                name="sales"
+                options={{
+                    headerShown: false,
+                }}
+            />
+            <Stack.Screen
+                name="payment-methods"
+                options={{
+                    headerShown: false,
+                }}
+            />
         </Stack>
     );
 }

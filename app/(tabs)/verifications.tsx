@@ -231,8 +231,16 @@ const VerificationsPage = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
-      <Stack.Screen options={{ title: 'Verificaciones', }} />
+    <SafeAreaView className="flex-1 bg-slate-50" edges={['left', 'right', 'bottom']}>
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          title: "Verificar",
+          headerStyle: { backgroundColor: '#f8fafc' },
+          headerTitleStyle: { fontFamily: 'Quicksand-Bold' },
+          headerShadowVisible: false
+        }}
+      />
       {currentUser?._id && (
         <FlatList
           data={pendingPurchases}

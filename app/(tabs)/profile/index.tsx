@@ -3,7 +3,7 @@ import { api } from '@/convex/_generated/api';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { Authenticated, AuthLoading, Unauthenticated, useQuery } from 'convex/react';
-import { Link, Stack } from 'expo-router';
+import { Link } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,22 +15,13 @@ const profile = () => {
   const convexUser = useQuery(api.users.getCurrent);
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
+    <SafeAreaView className="flex-1 bg-slate-50" edges={['left', 'right', 'bottom']}>
       <AuthLoading>
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#6366F1" />
         </View>
       </AuthLoading>
       <Authenticated>
-        <Stack.Screen
-          options={{
-            headerTitle: 'Mi Perfil',
-            headerLargeTitle: false,
-            headerShadowVisible: false,
-            headerStyle: { backgroundColor: '#f8fafc' },
-            headerTitleStyle: { fontFamily: 'Quicksand-Bold', fontSize: 22 },
-          }}
-        />
         {convexUser === undefined ? (
           <View className="flex-1 justify-center items-center">
             <ActivityIndicator size="large" color="#6366F1" />
@@ -99,15 +90,6 @@ const profile = () => {
         )}
       </Authenticated>
       <Unauthenticated>
-        <Stack.Screen
-          options={{
-            headerTitle: 'Perfil',
-            headerLargeTitle: false,
-            headerShadowVisible: false,
-            headerStyle: { backgroundColor: '#f8fafc' },
-            headerTitleStyle: { fontFamily: 'Quicksand-Bold' },
-          }}
-        />
         <View className="flex-1 justify-center items-center px-8 -mt-10">
           <Ionicons name="person-circle-outline" size={64} color="#cbd5e1" />
           <Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">Tu perfil te espera</Text>

@@ -3,11 +3,10 @@ import { api } from '@/convex/_generated/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useConvexAuth, usePaginatedQuery, useQuery } from 'convex/react';
 import * as Notifications from 'expo-notifications';
-import { Tabs, useRouter } from 'expo-router';
+import { Link, Tabs, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { ActivityIndicator, Platform, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import GlobalHeader from '../components/GlobalHeader'; // Usar ruta relativa
 
 const TabsLayout = () => {
 
@@ -89,47 +88,165 @@ const TabsLayout = () => {
               }),
             },
           }),
-          headerShown: false, // Ahora mostramos el encabezado nativo por defecto
         }}
       >
         <Tabs.Screen
           name="(home)"
           options={{
-            title: 'Sorteos',
-            header: () => <GlobalHeader />,
-            // 4. Usamos Ionicons para consistencia y un tamaño adecuado.
+            title: "Sorteos",
+            headerTitle: () => (
+              <View className="flex-1 items-center justify-center">
+                <Text className="text-xl font-quicksand-bold text-gray-800">Sorteos</Text>
+              </View>
+            ),
+            headerLeft: () => (
+              convexUser ? (
+                <View className="ml-4">
+                  <Text className="text-lg font-quicksand-semibold text-primary">@{convexUser.userName}</Text>
+                </View>
+              ) : null
+            ),
+            headerShown: true,
+            headerStyle: { backgroundColor: '#f8fafc' },
+            headerShadowVisible: false,
+            headerRight: () => (
+              convexUser?.userType === 'admin' ? (
+                <Link href="/(admin)" asChild>
+                  <Pressable className="flex-row items-center bg-white p-3 rounded-full shadow-lg shadow-gray-300/50 active:bg-gray-100 mr-4">
+                    <Ionicons name="shield-checkmark-outline" size={24} color="#4f46e5" />
+                    <Text className="text-primary font-quicksand-bold ml-2">Admin</Text>
+                  </Pressable>
+                </Link>
+              ) : null
+            ),
             tabBarIcon: ({ color }) => <Ionicons name="list-outline" color={color} size={26} />,
           }}
         />
         <Tabs.Screen
           name="(purchases)"
           options={{
-            title: 'Mis Compras',
-            header: () => <GlobalHeader />,
+            title: "Mis Compras",
+            headerTitle: () => (
+              <View className="flex-1 items-center justify-center">
+                <Text className="text-xl font-quicksand-bold text-gray-800">Mis Compras</Text>
+              </View>
+            ),
+            headerLeft: () => (
+              convexUser ? (
+                <View className="ml-4">
+                  <Text className="text-lg font-quicksand-semibold text-primary">@{convexUser.userName}</Text>
+                </View>
+              ) : null
+            ),
+            headerShown: true,
+            headerStyle: { backgroundColor: '#f8fafc' },
+            headerShadowVisible: false,
+            headerRight: () => (
+              convexUser?.userType === 'admin' ? (
+                <Link href="/(admin)" asChild>
+                  <Pressable className="flex-row items-center bg-white p-3 rounded-full shadow-lg shadow-gray-300/50 active:bg-gray-100 mr-4">
+                    <Ionicons name="shield-checkmark-outline" size={24} color="#4f46e5" />
+                    <Text className="text-primary font-quicksand-bold ml-2">Admin</Text>
+                  </Pressable>
+                </Link>
+              ) : null
+            ),
             tabBarIcon: ({ color }) => <Ionicons name="ticket-outline" color={color} size={26} />,
           }}
         />
         <Tabs.Screen
           name="profile/index"
           options={{
-            title: 'Perfil',
-            header: () => <GlobalHeader />,
+            title: "Perfil",
+            headerTitle: () => (
+              <View className="flex-1 items-center justify-center">
+                <Text className="text-xl font-quicksand-bold text-gray-800">Perfil</Text>
+              </View>
+            ),
+            headerLeft: () => (
+              convexUser ? (
+                <View className="ml-4">
+                  <Text className="text-lg font-quicksand-semibold text-primary">@{convexUser.userName}</Text>
+                </View>
+              ) : null
+            ),
+            headerShown: true,
+            headerStyle: { backgroundColor: '#f8fafc' },
+            headerShadowVisible: false,
+            headerRight: () => (
+              convexUser?.userType === 'admin' ? (
+                <Link href="/(admin)" asChild>
+                  <Pressable className="flex-row items-center bg-white p-3 rounded-full shadow-lg shadow-gray-300/50 active:bg-gray-100 mr-4">
+                    <Ionicons name="shield-checkmark-outline" size={24} color="#4f46e5" />
+                    <Text className="text-primary font-quicksand-bold ml-2">Admin</Text>
+                  </Pressable>
+                </Link>
+              ) : null
+            ),
             tabBarIcon: ({ color }) => <Ionicons name="person-outline" color={color} size={26} />,
           }}
         />
         <Tabs.Screen
           name="settings"
           options={{
-            title: 'Configuración',
-            header: () => <GlobalHeader />,
+            title: "Configuración",
+            headerTitle: () => (
+              <View className="flex-1 items-center justify-center">
+                <Text className="text-xl font-quicksand-bold text-gray-800">Configuración</Text>
+              </View>
+            ),
+            headerLeft: () => (
+              convexUser ? (
+                <View className="ml-4">
+                  <Text className="text-lg font-quicksand-semibold text-primary">@{convexUser.userName}</Text>
+                </View>
+              ) : null
+            ),
+            headerShown: true,
+            headerStyle: { backgroundColor: '#f8fafc' },
+            headerShadowVisible: false,
+            headerRight: () => (
+              convexUser?.userType === 'admin' ? (
+                <Link href="/(admin)" asChild>
+                  <Pressable className="flex-row items-center bg-white p-3 rounded-full shadow-lg shadow-gray-300/50 active:bg-gray-100 mr-4">
+                    <Ionicons name="shield-checkmark-outline" size={24} color="#4f46e5" />
+                    <Text className="text-primary font-quicksand-bold ml-2">Admin</Text>
+                  </Pressable>
+                </Link>
+              ) : null
+            ),
             tabBarIcon: ({ color }) => <Ionicons name="settings-outline" color={color} size={26} />,
           }}
         />
         <Tabs.Screen
           name="verifications"
           options={{
-            title: 'Verificaciones',
-            header: () => <GlobalHeader />,
+            title: "Verificar",
+            headerTitle: () => (
+              <View className="flex-1 items-center justify-center">
+                <Text className="text-xl font-quicksand-bold text-gray-800">Verificar</Text>
+              </View>
+            ),
+            headerLeft: () => (
+              convexUser ? (
+                <View className="ml-4">
+                  <Text className="text-lg font-quicksand-semibold text-primary">@{convexUser.userName}</Text>
+                </View>
+              ) : null
+            ),
+            headerShown: true,
+            headerStyle: { backgroundColor: '#f8fafc' },
+            headerShadowVisible: false,
+            headerRight: () => (
+              convexUser?.userType === 'admin' ? (
+                <Link href="/(admin)" asChild>
+                  <Pressable className="flex-row items-center bg-white p-3 rounded-full shadow-lg shadow-gray-300/50 active:bg-gray-100 mr-4">
+                    <Ionicons name="shield-checkmark-outline" size={24} color="#4f46e5" />
+                    <Text className="text-primary font-quicksand-bold ml-2">Admin</Text>
+                  </Pressable>
+                </Link>
+              ) : null
+            ),
             tabBarIcon: ({ color, size }) => <Ionicons name="shield-checkmark-outline" color={color} size={size} />,
             tabBarBadge: pendingCount && pendingCount > 0 ? pendingCount : undefined,
           }}
