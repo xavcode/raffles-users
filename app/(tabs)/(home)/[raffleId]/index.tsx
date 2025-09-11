@@ -11,7 +11,6 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } fro
 import { ActivityIndicator, Dimensions, FlatList, Image, Modal, Pressable, Switch, Text, TextInput, View } from 'react-native'; // Importar FlatList
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import HeaderLeft from '../../../components/HeaderLeft'; // Ruta relativa correcta
 
 // 1. Estilos mejorados para los boletos, con mejor contraste y legibilidad
 const TICKET_STYLES = {
@@ -267,8 +266,28 @@ export default function RaffleDetailsScreen() {
   useLayoutEffect(() => {
     if (raffle) {
       navigation.setOptions({
-        title: 'Detalles del Sorteo',
-        headerRight: () => (isCreator && raffle ? <HeaderLeft raffle={raffle} onDeleteRequest={openDeleteModal} /> : null),
+        title: 'Sorteo',
+        headerRight: () => (
+          isCreator && raffle ? (
+            <View className="flex-row items-center">
+              {/* Botón de editar */}
+              <Pressable
+                onPress={() => router.push(`/(tabs)/(raffles)/edit/${raffle._id}`)}
+                className="mr-2 p-3 rounded-xl bg-gray-100 active:bg-gray-200"
+              >
+                <Ionicons name="pencil-outline" size={20} color="#64748b" />
+              </Pressable>
+
+              {/* Botón de eliminar */}
+              <Pressable
+                onPress={openDeleteModal}
+                className="p-3 rounded-xl bg-gray-100 active:bg-gray-200"
+              >
+                <Ionicons name="trash-outline" size={20} color="#ef4444" />
+              </Pressable>
+            </View>
+          ) : null
+        ),
       });
     }
   }, [raffle, isCreator, openDeleteModal]);
@@ -338,7 +357,7 @@ export default function RaffleDetailsScreen() {
     <View className="mb-4">
       {/* Sección de la imagen principal y superposición de título/premio */}
       {raffle?.imageUrl && (
-        <Pressable className='active-opacity-90 rounded-2xl overflow-hidden mx-4 shadow-sm shadow-slate-300/50' onPress={() => setIsImageModalVisible(true)}>
+        <Pressable className='active-opacity-90 rounded-2xl overflow-hidden mx-4 mt-4 shadow-sm shadow-slate-300/50' onPress={() => setIsImageModalVisible(true)}>
           <Image source={{ uri: raffle.imageUrl }} className="w-full h-48 bg-slate-200" resizeMode="cover" />
           <View className="absolute bottom-0 left-0 right-0 p-3 bg-black/40">
             <Text className="text-white font-quicksand-bold text-lg" numberOfLines={1}>{raffle.title}</Text>
@@ -346,6 +365,49 @@ export default function RaffleDetailsScreen() {
           </View>
         </Pressable>
       )}
+
+      {/* Tarjeta destacada para ID del sorteo con botones de copiar y compartir */}
+      <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mx-4 mt-4">
+        <View className="flex-row items-center justify-between">
+          <View className="flex-1 mr-3">
+            <Text className="text-sm font-quicksand-medium text-slate-500 mb-1">ID del Sorteo</Text>
+            <Text className="text-xl font-quicksand-bold text-slate-800" numberOfLines={1}>
+              {raffle.customRaffleId}
+            </Text>
+          </View>
+          <View className="flex-row items-center space-x-2">
+            {/* Botón para copiar ID */}
+            <Pressable
+              onPress={() => {
+                // TODO: Implementar funcionalidad de copiar
+                Toast.show({
+                  type: 'success',
+                  text1: 'ID copiado',
+                  text2: `${raffle.customRaffleId} copiado al portapapeles`,
+                });
+              }}
+              className="p-3 rounded-xl bg-blue-50 border border-blue-100 active:bg-blue-100"
+            >
+              <Ionicons name="copy-outline" size={20} color="#3b82f6" />
+            </Pressable>
+
+            {/* Botón para compartir */}
+            <Pressable
+              onPress={() => {
+                // TODO: Implementar funcionalidad de compartir
+                Toast.show({
+                  type: 'info',
+                  text1: 'Compartir',
+                  text2: 'Función de compartir próximamente',
+                });
+              }}
+              className="p-3 rounded-xl bg-green-50 border border-green-100 active:bg-green-100"
+            >
+              <Ionicons name="share-outline" size={20} color="#22c55e" />
+            </Pressable>
+          </View>
+        </View>
+      </View>
 
       {/* Nueva tarjeta para Habilitar compras y Ver Ventas (solo para el creador) */}
       {isCreator && (
