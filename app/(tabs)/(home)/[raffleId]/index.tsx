@@ -510,7 +510,7 @@ export default function RaffleDetailsScreen() {
       {isCreator && (
         <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mx-4 mt-4">
           <Text className="text-sm font-quicksand-medium text-slate-500 mb-3">Administrar Sorteo</Text>
-          <View className="flex-row justify-around">
+          <View className="flex-row justify-around mb-4 border-b border-slate-200/60 pb-4">
             {/* Botón de editar */}
             <Pressable
               onPress={() => router.push(`/(tabs)/(raffles)/edit/${raffle!._id}`)}
@@ -529,22 +529,17 @@ export default function RaffleDetailsScreen() {
               <Text className="text-white font-quicksand-semibold ml-2">Eliminar</Text>
             </Pressable>
           </View>
-        </View>
-      )}
 
-      {/* Nueva tarjeta para Habilitar compras y Ver Ventas (solo para el creador) */}
-      {isCreator && (
-        <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mx-4 mt-4">
-          <View className="flex-row items-center justify-between pb-3 border-b border-slate-200/60">
+          {/* Habilitar compras */}
+          <View className="flex-row items-center justify-between pb-3 border-b border-slate-200/60 mt-4">
             <View className="flex-row items-center">
               <Ionicons name="cart-outline" size={18} color="#64748b" />
               <Text className="ml-2 text-base font-quicksand-bold text-slate-800">Habilitar compras</Text>
             </View>
             <Switch
-              value={raffle?.enabledPurchases} // Usamos optional chaining aquí por si raffle es null/undefined
+              value={raffle?.enabledPurchases}
               onValueChange={async (next) => {
                 try {
-                  // Aseguramos que raffle e isCreator sean true antes de llamar a la mutación
                   if (raffle && isCreator) {
                     await setRafflePurchasesEnabled({ raffleId: raffle._id, enabled: next });
                     Toast.show({ type: 'success', text1: 'Actualizado', text2: next ? 'Compras habilitadas' : 'Compras deshabilitadas' });
@@ -557,12 +552,24 @@ export default function RaffleDetailsScreen() {
             />
           </View>
           <Text className="text-xs text-slate-500 mt-2 mb-4">Si las deshabilitas, los usuarios no podrán reservar/comprar boletos temporalmente.</Text>
+
+          {/* Ver Ventas */}
           <Link href={`/(tabs)/(home)/${raffle!._id}/sales`} asChild>
-            <Pressable className="flex-row items-center bg-indigo-500 px-4 py-2 rounded-xl shadow-md shadow-indigo-500/30 active:opacity-80 justify-center w-full">
+            <Pressable className="flex-row items-center bg-indigo-500 px-4 py-2 rounded-xl shadow-md shadow-indigo-500/30 active:opacity-80 justify-center w-full mt-3">
               <Ionicons name="stats-chart-outline" size={18} color="white" />
               <Text className="text-white font-quicksand-bold text-sm ml-2">Ver Ventas</Text>
             </Pressable>
           </Link>
+
+          {/* Ver Pagos */}
+          <Link href={`/(tabs)/(home)/${raffle!._id}/payment-methods`} asChild>
+            <Pressable className="flex-row items-center bg-blue-500 px-4 py-2 rounded-xl shadow-md shadow-blue-500/30 active:opacity-80 justify-center w-full mt-3">
+              <Ionicons name="card-outline" size={18} color="white" />
+              <Text className="text-white font-quicksand-bold text-sm ml-2">Ver Pagos</Text>
+            </Pressable>
+          </Link>
+
+          {/* Finalizar Sorteo */}
           {isCreator && isRaffleActive && (
             <Pressable
               onPress={openFinishRaffleModal}
@@ -581,19 +588,13 @@ export default function RaffleDetailsScreen() {
         </View>
       )}
 
-      {/* Tarjeta de información principal (Fecha, Condición, Descripción, Ver Pagos) */}
+      {/* Tarjeta de información principal (Fecha, Condición, Descripción) */}
       <View className="bg-white mx-4 p-4 rounded-2xl shadow-sm shadow-slate-300/50 mt-4">
         <View className="flex-row justify-between items-start mb-3">
           <View className="flex-1 pr-4">
             <Text className="text-sm font-quicksand-medium text-slate-500">Fecha del sorteo</Text>
             <Text className="text-base font-quicksand-bold text-slate-800">{raffle?.endTime ? formatUtcToLocal(raffle.endTime, "d 'de' MMMM, yyyy") : 'N/A'}</Text>
           </View>
-          <Link href={`/(tabs)/(home)/${raffle!._id}/payment-methods`} asChild>
-            <Pressable className="flex-row items-center bg-blue-500 px-3 py-1.5 rounded-xl shadow-md shadow-blue-500/30 active:opacity-80">
-              <Ionicons name="card-outline" size={16} color="white" />
-              <Text className="text-white font-quicksand-bold text-xs ml-1.5">Ver Pagos</Text>
-            </Pressable>
-          </Link>
         </View>
         {raffle?.winCondition && (
           <View className="mb-3">
