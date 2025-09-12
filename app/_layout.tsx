@@ -1,4 +1,5 @@
 import { NetworkProvider } from '@/contexts/NetworkContext';
+import { useDeepLinkRaffle } from '@/hooks/useDeepLinkRaffle'; // Importar el custom hook
 import { ClerkLoaded, ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import { tokenCache } from '@clerk/clerk-expo/token-cache';
 import { ConvexReactClient } from 'convex/react';
@@ -63,6 +64,7 @@ const RootLayout = () => {
 
 const RootLayoutNav = () => {
   const convex = new ConvexReactClient(convexUrl);
+  // Eliminamos la llamada directa a useDeepLinkRaffle() de aquí
 
   return (
     <View className="flex-1 items-center justify-center ">
@@ -73,7 +75,7 @@ const RootLayoutNav = () => {
               <SafeAreaProvider>
                 <NetworkProvider>
                   <ClerkLoaded>
-                    {/* <DeepLinkHandler /> */}
+                    <DeepLinkInitializer /> {/* <-- Renderizamos el nuevo componente aquí */}
                     <Slot />
                     <OfflineBanner />
                     <Toast config={toastConfig} />
@@ -86,6 +88,11 @@ const RootLayoutNav = () => {
       </View>
     </View>
   );
+};
+
+const DeepLinkInitializer = () => {
+  useDeepLinkRaffle();
+  return null; // Este componente no renderiza nada visible, solo ejecuta el hook
 };
 
 export default RootLayout;
