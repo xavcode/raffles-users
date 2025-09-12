@@ -78,7 +78,7 @@ const Ticket = React.memo(({ number, status, isSelected, onPress }: {
 
 // 4. Componente principal de la pantalla
 export default function RaffleDetailsScreen() {
-  const { raffleId } = useLocalSearchParams();
+  const { raffleId: paramRaffleId } = useLocalSearchParams(); // Renombrado para evitar conflicto
   const router = useRouter();
   const navigation = useNavigation(); // Obtener el objeto de navegación
   const [selectedTickets, setSelectedTickets] = useState(new Set<number>());
@@ -91,9 +91,21 @@ export default function RaffleDetailsScreen() {
   const [isFinalizingRaffle, setIsFinalizingRaffle] = useState(false); // Estado para la carga de finalización
   const [showAdminActionsModal, setShowAdminActionsModal] = useState(false); // Nuevo estado para el modal de administración
 
+  // --- Deep Linking States and Logic ---
+  const [deepLinkCustomRaffleId, setDeepLinkCustomRaffleId] = useState<string | null>(null);
+  const [hasNavigatedViaDeepLink, setHasNavigatedViaDeepLink] = useState(false);
+
+  // Determinar si el ID actual es un customRaffleId (ej: 20250911-1WMPGX) o un _id de Convex
+  // Los customRaffleId tienen un guion, los _id de Convex no.
+  const isCustomId = typeof paramRaffleId === 'string' && /^[0-9]{8}-[0-9A-Za-z]+$/.test(paramRaffleId);
 
   // Hooks de Convex
-  const raffle = useQuery(api.raffles.getById, { id: raffleId as Id<'raffles'> });
+  const raffleById = useQuery(api.raffles.getById, isCustomId ? 'skip' : { id: paramRaffleId as Id<'raffles'> });
+  const raffleByCustomId = useQuery(api.raffles.getByCustomRaffleId, isCustomId ? { customRaffleId: paramRaffleId as string } : 'skip');
+
+  // La rifa que finalmente se renderizará
+  const raffle = isCustomId ? raffleByCustomId : raffleById;
+
   const enabledPurchases = raffle?.enabledPurchases
   const setRafflePurchasesEnabled = useMutation(api.admin.setRafflePurchasesEnabled);
   const deleteRaffleMutation = useMutation(api.raffles.deleteRaffle); // Mutación de borrado
@@ -107,7 +119,7 @@ export default function RaffleDetailsScreen() {
   const isRaffleActive = raffle?.status === 'active';
   const isRaffleFinished = raffle?.status === 'finished';
 
-  const nonAvailableTickets = useQuery(api.tickets.getNonAvailableTickets, { raffleId: raffleId as Id<'raffles'> });
+  const nonAvailableTickets = useQuery(api.tickets.getNonAvailableTickets, { raffleId: raffle?._id as Id<'raffles'> });
   const reserveTicketsMutation = useMutation(api.tickets.reserveTickets);
 
   const paymentMethods = useQuery(api.admin.getPaymentMethods, raffle?.creatorId ? { ownerId: raffle.creatorId } : 'skip');
@@ -274,7 +286,7 @@ export default function RaffleDetailsScreen() {
     // limpiamos los boletos seleccionados. Esto asegura que la selección
     // de una rifa no se "filtre" a la siguiente que se visite.
     setSelectedTickets(new Set());
-  }, [raffleId]);
+  }, [paramRaffleId]);
 
   // Sincroniza la selección local con el estado del servidor.
   // Si un boleto seleccionado deja de estar disponible, se elimina de la selección.
@@ -380,6 +392,106 @@ export default function RaffleDetailsScreen() {
     }
   }, [raffle, isCreator, openDeleteModal]);
 
+  // --- Lógica de Deep Linking (movida a esta pantalla) ---
+  useEffect(() => {
+    const handleDeepLink = async (url: string) => {
+      try {
+        console.log('🔗 Deep link recibido en RaffleDetailsScreen:', url);
+
+        let cleanUrl = url.replace(':///', '://');
+
+        if (cleanUrl.startsWith('exp://') || cleanUrl.includes('expo-development-client') || cleanUrl.includes('localhost') || cleanUrl.includes('192.168')) {
+          const parsedExpoUrl = Linking.parse(cleanUrl);
+          if (parsedExpoUrl.path?.includes('/--/')) {
+            const appPath = parsedExpoUrl.path.split('/--/')[1];
+            if (appPath) {
+              cleanUrl = `milsorteos://${appPath}`;
+            }
+          }
+        }
+
+        const { path } = Linking.parse(cleanUrl);
+
+        let customRaffleIdFromLink = null;
+        if (path?.includes('/sorteo/')) {
+          customRaffleIdFromLink = path.replace('/sorteo/', '');
+        } else if (cleanUrl.includes('sorteo/')) {
+          const match = cleanUrl.match(/sorteo\/([^/\?#]+)/);
+          if (match && match[1]) {
+            customRaffleIdFromLink = match[1];
+          }
+        }
+
+        if (customRaffleIdFromLink) {
+          setDeepLinkCustomRaffleId(customRaffleIdFromLink);
+          setHasNavigatedViaDeepLink(false); // Reiniciar el estado de navegación
+        } else {
+          setHasNavigatedViaDeepLink(false);
+        }
+      } catch (error) {
+        console.error('❌ Error procesando deep link en RaffleDetailsScreen:', error);
+        setHasNavigatedViaDeepLink(false);
+      }
+    };
+
+    Linking.getInitialURL().then((url) => {
+      if (url && (url.startsWith('milsorteos://') || url.includes('/sorteo/'))) {
+        handleDeepLink(url);
+      }
+    });
+
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      if (url && (url.startsWith('milsorteos://') || url.includes('/sorteo/'))) {
+        handleDeepLink(url);
+      }
+    });
+
+    return () => subscription?.remove();
+  }, []);
+
+  // Efecto para navegar una vez que la rifa es encontrada por Convex (desde deep link)
+  useEffect(() => {
+    if (raffle && deepLinkCustomRaffleId && !hasNavigatedViaDeepLink && raffle.customRaffleId === deepLinkCustomRaffleId) {
+      console.log('✅ Raffle encontrado por customRaffleId. Navegando a _id:', raffle._id);
+      router.replace(`/(tabs)/(home)/${raffle._id}`);
+      setHasNavigatedViaDeepLink(true); // Marcar como navegado para este deep link
+      setDeepLinkCustomRaffleId(null); // Limpiar después de navegar
+    } else if (raffle === null && deepLinkCustomRaffleId && !hasNavigatedViaDeepLink) {
+      Toast.show({
+        type: 'error',
+        text1: 'Sorteo no encontrado',
+        text2: `No se encontró el sorteo con ID: ${deepLinkCustomRaffleId}`,
+      });
+      router.replace('/(tabs)/(home)'); // Volver al home
+      setHasNavigatedViaDeepLink(true); // Marcar para evitar múltiples redirecciones a home
+      setDeepLinkCustomRaffleId(null); // Limpiar
+    }
+  }, [raffle, deepLinkCustomRaffleId, hasNavigatedViaDeepLink, router]);
+  // --- Fin Lógica de Deep Linking ---
+
+
+  // Pantalla de carga inicial mientras se resuelve el ID y se busca la rifa
+  if ((isCustomId && raffle === undefined) || (paramRaffleId && !isCustomId && raffle === undefined)) {
+    return (
+      <View className="flex-1 justify-center items-center bg-gray-50">
+        <ActivityIndicator size="large" color="#FE8C00" />
+        <Text className="mt-2 text-gray-600">Cargando sorteo...</Text>
+      </View>
+    );
+  }
+
+  // Si no se encuentra la rifa (después de la carga), mostramos un mensaje de error y redirigimos
+  if (raffle === null) {
+    Toast.show({
+      type: 'error',
+      text1: 'Sorteo no encontrado',
+      text2: 'El sorteo que buscas no existe o fue eliminado.',
+    });
+    router.replace('/(tabs)/(home)'); // Redirigir al home
+    return null; // No renderizar nada mientras se redirige
+  }
+
+  // Si la rifa existe pero nonAvailableTickets aún no se ha cargado, muestra el indicador de carga existente.
   if (!raffle || nonAvailableTickets === undefined) {
     return (
       <View className="flex-1 justify-center items-center bg-gray-50">
@@ -404,7 +516,7 @@ export default function RaffleDetailsScreen() {
     setIsProcessing(true);
     try {
       const result = await reserveTicketsMutation({
-        raffleId: raffleId as Id<'raffles'>,
+        raffleId: raffle._id as Id<'raffles'>,
         ticketNumbers: Array.from(selectedTickets),
       });
       Toast.show({
