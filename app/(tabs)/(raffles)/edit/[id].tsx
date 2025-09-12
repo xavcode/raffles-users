@@ -9,14 +9,12 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { api } from '../../../../convex/_generated/api';
-import { Id } from '../../../../convex/_generated/dataModel';
 
 const EditRaffleScreen = () => {
     const router = useRouter();
-    const { id } = useLocalSearchParams<{ id: string }>();
+    const { id: customRaffleId } = useLocalSearchParams<{ id: string }>();
 
-    const raffleId = id as Id<"raffles">;
-    const raffleData = useQuery(api.raffles.getById, { id: raffleId });
+    const raffleData = useQuery(api.raffles.getByCustomRaffleId, customRaffleId ? { customRaffleId: customRaffleId as string } : 'skip');
 
     const updateRaffle = useMutation(api.raffles.updateRaffle);
 

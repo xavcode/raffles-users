@@ -129,7 +129,7 @@ const RaffleCard = ({ item, currentUserId }: { item: RaffleWithDetails, currentU
   );
 
   return (
-    <Link href={`/(tabs)/(home)/${item._id}`} asChild>
+    <Link href={`/(tabs)/(home)/${item.customRaffleId}`} asChild>
       {CardContent}
     </Link>
   );

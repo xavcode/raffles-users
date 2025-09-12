@@ -7,6 +7,7 @@ import { Link, Tabs, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 
 const TabsLayout = () => {
 
@@ -27,7 +28,8 @@ const TabsLayout = () => {
 
         // Extraemos los posibles IDs del payload de la notificación
         const purchaseId = data.purchaseId as string | undefined;
-        const raffleId = data.raffleId as string | undefined;
+        const raffleId = data.raffleId as string | undefined; // _id de Convex
+        const customRaffleId = data.customRaffleId as string | undefined; // customRaffleId
 
         // Lógica para notificaciones de PAGO POR VERIFICAR (para admins)
         if (purchaseId) {
@@ -36,9 +38,21 @@ const TabsLayout = () => {
           return; // Salimos para no procesar otras lógicas
         }
 
-        // Lógica existente para notificaciones de SORTEOS (para usuarios)
-        if (raffleId) {
-          router.push(`/(tabs)/${raffleId}`);
+        // Lógica para notificaciones de SORTEOS (para usuarios)
+        if (customRaffleId) {
+          router.push(`/(tabs)/(home)/${customRaffleId}`); // Navegar directamente con customRaffleId
+          return; // Salimos
+        } else if (raffleId) {
+          // Fallback si solo se recibe el _id de Convex (menos ideal)
+          // En un escenario ideal, la notificación siempre debería incluir customRaffleId.
+          // Para evitar el error de validación, vamos a redirigir al home y mostrar un toast.
+          // Esto es una medida de seguridad temporal si el backend no envía customRaffleId.
+          Toast.show({
+            type: 'error',
+            text1: 'Error de navegación',
+            text2: 'No se pudo navegar directamente al sorteo. ID de sorteo incorrecto.',
+          });
+          router.push('/(tabs)/(home)');
         }
       });
       return () => subscription.remove();

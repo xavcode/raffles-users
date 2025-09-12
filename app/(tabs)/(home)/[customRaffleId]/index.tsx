@@ -1,5 +1,6 @@
 // app/raffles/[id].tsx o similar
 
+import Paymentmethods from '@/app/components/Paymentmethods'; // Importar el componente Paymentmethods
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { formatUtcToLocal } from '@/utils/date';
@@ -9,7 +10,7 @@ import { useMutation, useQuery } from 'convex/react';
 import * as Linking from 'expo-linking';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Clipboard, Dimensions, FlatList, Image, Modal, Pressable, Share, Switch, Text, TextInput, View } from 'react-native'; // Importar FlatList
+import { ActivityIndicator, Clipboard, Dimensions, FlatList, Image, Modal, Pressable, ScrollView, Share, Switch, Text, TextInput, View } from 'react-native'; // Importar FlatList
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
@@ -77,8 +78,8 @@ const Ticket = React.memo(({ number, status, isSelected, onPress }: {
 });
 
 // 4. Componente principal de la pantalla
-export default function RaffleDetailsScreen() {
-  const { raffleId: paramRaffleId } = useLocalSearchParams(); // Renombrado para evitar conflicto
+const RaffleDetailsScreen = () => {
+  const { customRaffleId: paramCustomRaffleId } = useLocalSearchParams(); // Ahora esperamos customRaffleId
   const router = useRouter();
   const navigation = useNavigation(); // Obtener el objeto de navegación
   const [selectedTickets, setSelectedTickets] = useState(new Set<number>());
@@ -90,21 +91,13 @@ export default function RaffleDetailsScreen() {
   const [winningTicketNumberInput, setWinningTicketNumberInput] = useState(''); // Estado para el número ganador
   const [isFinalizingRaffle, setIsFinalizingRaffle] = useState(false); // Estado para la carga de finalización
   const [showAdminActionsModal, setShowAdminActionsModal] = useState(false); // Nuevo estado para el modal de administración
+  const [showPaymentMethodsModal, setShowPaymentMethodsModal] = useState(false); // Nuevo estado para el modal de métodos de pago
 
-  // --- Deep Linking States and Logic ---
-  const [deepLinkCustomRaffleId, setDeepLinkCustomRaffleId] = useState<string | null>(null);
-  const [hasNavigatedViaDeepLink, setHasNavigatedViaDeepLink] = useState(false);
+  // Consultar la rifa directamente por customRaffleId
+  const raffle = useQuery(api.raffles.getByCustomRaffleId, paramCustomRaffleId ? { customRaffleId: paramCustomRaffleId as string } : 'skip');
 
-  // Determinar si el ID actual es un customRaffleId (ej: 20250911-1WMPGX) o un _id de Convex
-  // Los customRaffleId tienen un guion, los _id de Convex no.
-  const isCustomId = typeof paramRaffleId === 'string' && /^[0-9]{8}-[0-9A-Za-z]+$/.test(paramRaffleId);
-
-  // Hooks de Convex
-  const raffleById = useQuery(api.raffles.getById, isCustomId ? 'skip' : { id: paramRaffleId as Id<'raffles'> });
-  const raffleByCustomId = useQuery(api.raffles.getByCustomRaffleId, isCustomId ? { customRaffleId: paramRaffleId as string } : 'skip');
-
-  // La rifa que finalmente se renderizará
-  const raffle = isCustomId ? raffleByCustomId : raffleById;
+  console.log('DEBUG DeepLink - paramCustomRaffleId de useLocalSearchParams:', paramCustomRaffleId);
+  console.log('DEBUG DeepLink - Estado del objeto raffle (undefined/null/object):', raffle);
 
   const enabledPurchases = raffle?.enabledPurchases
   const setRafflePurchasesEnabled = useMutation(api.admin.setRafflePurchasesEnabled);
@@ -119,10 +112,8 @@ export default function RaffleDetailsScreen() {
   const isRaffleActive = raffle?.status === 'active';
   const isRaffleFinished = raffle?.status === 'finished';
 
-  const nonAvailableTickets = useQuery(api.tickets.getNonAvailableTickets, { raffleId: raffle?._id as Id<'raffles'> });
+  const nonAvailableTickets = useQuery(api.tickets.getNonAvailableTickets, raffle?._id ? { raffleId: raffle._id as Id<'raffles'> } : 'skip');
   const reserveTicketsMutation = useMutation(api.tickets.reserveTickets);
-
-  const paymentMethods = useQuery(api.admin.getPaymentMethods, raffle?.creatorId ? { ownerId: raffle.creatorId } : 'skip');
 
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -286,7 +277,7 @@ export default function RaffleDetailsScreen() {
     // limpiamos los boletos seleccionados. Esto asegura que la selección
     // de una rifa no se "filtre" a la siguiente que se visite.
     setSelectedTickets(new Set());
-  }, [paramRaffleId]);
+  }, [paramCustomRaffleId]); // Usar paramCustomRaffleId aquí
 
   // Sincroniza la selección local con el estado del servidor.
   // Si un boleto seleccionado deja de estar disponible, se elimina de la selección.
@@ -392,86 +383,10 @@ export default function RaffleDetailsScreen() {
     }
   }, [raffle, isCreator, openDeleteModal]);
 
-  // --- Lógica de Deep Linking (movida a esta pantalla) ---
-  useEffect(() => {
-    const handleDeepLink = async (url: string) => {
-      try {
-        console.log('🔗 Deep link recibido en RaffleDetailsScreen:', url);
-
-        let cleanUrl = url.replace(':///', '://');
-
-        if (cleanUrl.startsWith('exp://') || cleanUrl.includes('expo-development-client') || cleanUrl.includes('localhost') || cleanUrl.includes('192.168')) {
-          const parsedExpoUrl = Linking.parse(cleanUrl);
-          if (parsedExpoUrl.path?.includes('/--/')) {
-            const appPath = parsedExpoUrl.path.split('/--/')[1];
-            if (appPath) {
-              cleanUrl = `milsorteos://${appPath}`;
-            }
-          }
-        }
-
-        const { path } = Linking.parse(cleanUrl);
-
-        let customRaffleIdFromLink = null;
-        if (path?.includes('/sorteo/')) {
-          customRaffleIdFromLink = path.replace('/sorteo/', '');
-        } else if (cleanUrl.includes('sorteo/')) {
-          const match = cleanUrl.match(/sorteo\/([^/\?#]+)/);
-          if (match && match[1]) {
-            customRaffleIdFromLink = match[1];
-          }
-        }
-
-        if (customRaffleIdFromLink) {
-          setDeepLinkCustomRaffleId(customRaffleIdFromLink);
-          setHasNavigatedViaDeepLink(false); // Reiniciar el estado de navegación
-        } else {
-          setHasNavigatedViaDeepLink(false);
-        }
-      } catch (error) {
-        console.error('❌ Error procesando deep link en RaffleDetailsScreen:', error);
-        setHasNavigatedViaDeepLink(false);
-      }
-    };
-
-    Linking.getInitialURL().then((url) => {
-      if (url && (url.startsWith('milsorteos://') || url.includes('/sorteo/'))) {
-        handleDeepLink(url);
-      }
-    });
-
-    const subscription = Linking.addEventListener('url', ({ url }) => {
-      if (url && (url.startsWith('milsorteos://') || url.includes('/sorteo/'))) {
-        handleDeepLink(url);
-      }
-    });
-
-    return () => subscription?.remove();
-  }, []);
-
-  // Efecto para navegar una vez que la rifa es encontrada por Convex (desde deep link)
-  useEffect(() => {
-    if (raffle && deepLinkCustomRaffleId && !hasNavigatedViaDeepLink && raffle.customRaffleId === deepLinkCustomRaffleId) {
-      console.log('✅ Raffle encontrado por customRaffleId. Navegando a _id:', raffle._id);
-      router.replace(`/(tabs)/(home)/${raffle._id}`);
-      setHasNavigatedViaDeepLink(true); // Marcar como navegado para este deep link
-      setDeepLinkCustomRaffleId(null); // Limpiar después de navegar
-    } else if (raffle === null && deepLinkCustomRaffleId && !hasNavigatedViaDeepLink) {
-      Toast.show({
-        type: 'error',
-        text1: 'Sorteo no encontrado',
-        text2: `No se encontró el sorteo con ID: ${deepLinkCustomRaffleId}`,
-      });
-      router.replace('/(tabs)/(home)'); // Volver al home
-      setHasNavigatedViaDeepLink(true); // Marcar para evitar múltiples redirecciones a home
-      setDeepLinkCustomRaffleId(null); // Limpiar
-    }
-  }, [raffle, deepLinkCustomRaffleId, hasNavigatedViaDeepLink, router]);
-  // --- Fin Lógica de Deep Linking ---
-
+  // --- Lógica de Deep Linking (eliminada de esta pantalla) ---
 
   // Pantalla de carga inicial mientras se resuelve el ID y se busca la rifa
-  if ((isCustomId && raffle === undefined) || (paramRaffleId && !isCustomId && raffle === undefined)) {
+  if (!raffle && paramCustomRaffleId) {
     return (
       <View className="flex-1 justify-center items-center bg-gray-50">
         <ActivityIndicator size="large" color="#FE8C00" />
@@ -491,16 +406,6 @@ export default function RaffleDetailsScreen() {
     return null; // No renderizar nada mientras se redirige
   }
 
-  // Si la rifa existe pero nonAvailableTickets aún no se ha cargado, muestra el indicador de carga existente.
-  if (!raffle || nonAvailableTickets === undefined) {
-    return (
-      <View className="flex-1 justify-center items-center bg-gray-50">
-        <ActivityIndicator size="large" color="#FE8C00" />
-        <Text className="mt-2 text-gray-600">Cargando sorteo...</Text>
-      </View>
-    );
-  }
-
   // Manejador para la reserva de boletos
   const handleReserve = async () => {
 
@@ -516,7 +421,7 @@ export default function RaffleDetailsScreen() {
     setIsProcessing(true);
     try {
       const result = await reserveTicketsMutation({
-        raffleId: raffle._id as Id<'raffles'>,
+        raffleId: raffle?._id as Id<'raffles'>,
         ticketNumbers: Array.from(selectedTickets),
       });
       Toast.show({
@@ -572,7 +477,7 @@ export default function RaffleDetailsScreen() {
           <View className="flex-1 mr-3">
             <Text className="text-sm font-quicksand-medium text-slate-500 mb-1">ID del Sorteo</Text>
             <Text className="text-xl font-quicksand-bold text-slate-800" numberOfLines={1}>
-              {raffle.customRaffleId}
+              {raffle?.customRaffleId}
             </Text>
           </View>
           <View className="flex-row items-center space-x-2">
@@ -621,6 +526,15 @@ export default function RaffleDetailsScreen() {
         )}
       </View>
 
+      {/* Nuevo botón para "Ver Medios de Pago" (visible para todos) */}
+      <Pressable
+        onPress={() => setShowPaymentMethodsModal(true)}
+        className="flex-row items-center justify-center bg-blue-500 px-4 py-3 rounded-xl shadow-md shadow-blue-500/30 active:opacity-80 mx-4 mt-4"
+      >
+        <Ionicons name="card-outline" size={20} color="white" />
+        <Text className="text-white font-quicksand-bold text-base ml-2">Ver Medios de Pago</Text>
+      </Pressable>
+
       {/* Tarjeta de información principal (Fecha, Condición, Descripción) */}
       <View className="bg-white mx-4 p-4 rounded-2xl shadow-sm shadow-slate-300/50 mt-4">
         <View className="flex-row flex-wrap justify-between items-start mb-3">
@@ -648,6 +562,60 @@ export default function RaffleDetailsScreen() {
       <ColorLegend />
     </View>
   );
+
+  // Componente Modal para Medios de Pago (Nuevo, definido aquí para evitar múltiples exports)
+  interface PaymentMethodsModalProps {
+    isVisible: boolean;
+    onClose: () => void;
+    creatorId: Id<'users'> | undefined; // Necesitamos el ID del creador para buscar sus métodos de pago
+    raffleTitle: string | undefined;
+  }
+
+  const PaymentMethodsModal = ({ isVisible, onClose, creatorId, raffleTitle }: PaymentMethodsModalProps) => {
+    // Consulta los métodos de pago del creador de la rifa
+    const paymentMethods = useQuery(api.admin.getPaymentMethods, creatorId ? { ownerId: creatorId } : 'skip');
+
+    return (
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={isVisible}
+        onRequestClose={onClose}
+      >
+        <View className="flex-1 justify-center items-center bg-black/50 p-4">
+          <View className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-lg">
+            <Text className="text-xl font-quicksand-bold text-slate-800 mb-4">Métodos de Pago de {raffleTitle || 'el Creador'}</Text>
+            {paymentMethods === undefined ? (
+              // Estado de carga
+              <View className="flex-1 justify-center items-center py-10">
+                <ActivityIndicator size="large" color="#FE8C00" />
+                <Text className="mt-2 text-gray-600">Cargando métodos de pago...</Text>
+              </View>
+            ) : paymentMethods === null || paymentMethods.length === 0 ? (
+              // No hay métodos de pago
+              <View className="flex-1 justify-center items-center py-10">
+                <Text className="text-center text-slate-600">El creador no tiene métodos de pago configurados.</Text>
+                <Text className="text-center text-slate-400 text-sm mt-2">Por favor, contacta al creador del sorteo.</Text>
+              </View>
+            ) : (
+              // Mostrar métodos de pago
+              <ScrollView className="max-h-80">
+                <Paymentmethods
+                  paymentMethods={paymentMethods}
+                />
+              </ScrollView>
+            )}
+            <Pressable
+              onPress={onClose}
+              className="mt-4 px-5 py-3 rounded-xl active:opacity-80 border border-slate-300 bg-slate-50"
+            >
+              <Text className="text-slate-600 font-quicksand-semibold text-center">Cerrar</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
 
   return (
     <SafeAreaView className="flex-1" edges={['left', 'right', 'bottom']}>
@@ -681,6 +649,14 @@ export default function RaffleDetailsScreen() {
           </View>
         </Modal>
       )}
+      {/* Modal de Medios de Pago (para todos los usuarios) */}
+      <PaymentMethodsModal
+        isVisible={showPaymentMethodsModal}
+        onClose={() => setShowPaymentMethodsModal(false)}
+        creatorId={raffle?.creatorId}
+        raffleTitle={raffle?.title}
+      />
+
       {/* Botón para reservar boletos */}
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
         <View className="mx-4 bg-white rounded-2xl border border-slate-200 shadow-lg p-3">
@@ -831,16 +807,6 @@ export default function RaffleDetailsScreen() {
               </Pressable>
             </Link>
 
-            <Link href={`/(tabs)/(home)/${raffle!._id}/payment-methods`} asChild>
-              <Pressable
-                onPress={() => setShowAdminActionsModal(false)}
-                className="flex-row items-center p-3 rounded-xl bg-blue-500 active:bg-blue-600 mb-3 justify-center"
-              >
-                <Ionicons name="card-outline" size={20} color="white" />
-                <Text className="text-white font-quicksand-semibold ml-3">Medios de Pago</Text>
-              </Pressable>
-            </Link>
-
             {isCreator && isRaffleActive && (
               <Pressable
                 onPress={() => {
@@ -884,4 +850,6 @@ export default function RaffleDetailsScreen() {
       </Modal>
     </SafeAreaView>
   );
-}
+};
+
+export default RaffleDetailsScreen;

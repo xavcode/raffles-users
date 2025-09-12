@@ -64,7 +64,6 @@ const RootLayout = () => {
 
 const RootLayoutNav = () => {
   const convex = new ConvexReactClient(convexUrl);
-  // Eliminamos la llamada directa a useDeepLinkRaffle() de aquí
 
   return (
     <View className="flex-1 items-center justify-center ">

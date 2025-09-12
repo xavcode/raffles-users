@@ -135,32 +135,45 @@ const PurchaseItem = ({ item }: { item: PurchaseWithUser }) => {
 }
 
 const RaffleSalesPage = () => {
-  const { raffleId } = useLocalSearchParams<{ raffleId: string }>(); // Cambiar 'id' a 'raffleId'
+  const { customRaffleId } = useLocalSearchParams<{ customRaffleId: string }>();
   const navigation = useNavigation();
 
+  // Obtener los detalles de la rifa por customRaffleId
+  const raffle = useQuery(api.raffles.getByCustomRaffleId, customRaffleId ? { customRaffleId: customRaffleId } : 'skip');
+
+  // Obtener las compras para la rifa, usando el _id de la rifa cargada
   const purchases = useQuery(
     api.raffles.getPurchasesForRaffle,
-    raffleId ? { raffleId: raffleId as Id<'raffles'> } : 'skip'
+    raffle?._id ? { raffleId: raffle._id as Id<'raffles'> } : 'skip'
   );
-
-  // Importar y usar PURCHASE_STATUS_STYLES
-  const raffle = useQuery(api.raffles.getById, raffleId ? { id: raffleId as Id<'raffles'> } : 'skip');
 
   // Configurar el título dinámicamente cuando tengamos los datos de la rifa
   useLayoutEffect(() => {
     if (raffle) {
       navigation.setOptions({
-        title: 'Historial de Ventas',
+        title: `Ventas: ${raffle.title}`,
         headerStyle: { backgroundColor: '#f8fafc' },
         headerTitleStyle: { fontFamily: 'Quicksand-Bold' },
       });
     }
   }, [raffle, navigation]);
 
-  if (purchases === undefined || purchases === null || raffle === undefined) {
+  // Mostrar un indicador de carga mientras se obtienen los datos
+  if (!customRaffleId || !raffle || purchases === undefined) {
     return (
       <View className="flex-1 justify-center items-center bg-slate-50">
         <ActivityIndicator size="large" color="#4f46e5" />
+        <Text className="mt-2 text-gray-600">Cargando ventas...</Text>
+      </View>
+    );
+  }
+
+  // Si la rifa no se encuentra (raffle es null después de la carga)
+  if (raffle === null) {
+    // Podrías redirigir al home o mostrar un mensaje de error más específico.
+    return (
+      <View className="flex-1 justify-center items-center p-4 bg-slate-50">
+        <Text className="text-center text-red-500">El sorteo no existe o no se pudo cargar.</Text>
       </View>
     );
   }
