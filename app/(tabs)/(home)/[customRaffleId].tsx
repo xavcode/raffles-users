@@ -7,12 +7,12 @@ import { formatUtcToLocal } from '@/utils/date';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native'; // Importar useNavigation
 import { useMutation, useQuery } from 'convex/react';
-import * as Linking from 'expo-linking';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Clipboard, Dimensions, FlatList, Image, Modal, Pressable, ScrollView, Share, Switch, Text, TextInput, View } from 'react-native'; // Importar FlatList
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
+
 
 // 1. Estilos mejorados para los boletos, con mejor contraste y legibilidad
 const TICKET_STYLES = {
@@ -96,8 +96,6 @@ const RaffleDetailsScreen = () => {
   // Consultar la rifa directamente por customRaffleId
   const raffle = useQuery(api.raffles.getByCustomRaffleId, paramCustomRaffleId ? { customRaffleId: paramCustomRaffleId as string } : 'skip');
 
-  console.log('DEBUG DeepLink - paramCustomRaffleId de useLocalSearchParams:', paramCustomRaffleId);
-  console.log('DEBUG DeepLink - Estado del objeto raffle (undefined/null/object):', raffle);
 
   const enabledPurchases = raffle?.enabledPurchases
   const setRafflePurchasesEnabled = useMutation(api.admin.setRafflePurchasesEnabled);
@@ -190,12 +188,7 @@ const RaffleDetailsScreen = () => {
   const generateShareUrl = useCallback(() => {
     if (!raffle?.customRaffleId) return '';
     // Creamos una URL que incluye tanto web como deep link
-    return `https://milsorteos.app/sorteo/${raffle.customRaffleId}`;
-  }, [raffle?.customRaffleId]);
-
-  const generateDeepLink = useCallback(() => {
-    if (!raffle?.customRaffleId) return '';
-    return `milsorteos://sorteo/${raffle.customRaffleId}`;
+    return `https://milsorteos.app/${raffle.customRaffleId}`;
   }, [raffle?.customRaffleId]);
 
   const generateShareMessage = useCallback(() => {
@@ -357,7 +350,7 @@ const RaffleDetailsScreen = () => {
   useLayoutEffect(() => {
     if (raffle) {
       navigation.setOptions({
-        title: 'Sorteo',
+        title: raffle.title, // Dinámico: Título del sorteo
         headerRight: () => (
           isCreator && raffle ? (
             <View className="flex-row items-center">
@@ -383,8 +376,6 @@ const RaffleDetailsScreen = () => {
     }
   }, [raffle, isCreator, openDeleteModal]);
 
-  // --- Lógica de Deep Linking (eliminada de esta pantalla) ---
-
   // Pantalla de carga inicial mientras se resuelve el ID y se busca la rifa
   if (!raffle && paramCustomRaffleId) {
     return (
@@ -397,13 +388,19 @@ const RaffleDetailsScreen = () => {
 
   // Si no se encuentra la rifa (después de la carga), mostramos un mensaje de error y redirigimos
   if (raffle === null) {
-    Toast.show({
-      type: 'error',
-      text1: 'Sorteo no encontrado',
-      text2: 'El sorteo que buscas no existe o fue eliminado.',
-    });
-    router.replace('/(tabs)/(home)'); // Redirigir al home
-    return null; // No renderizar nada mientras se redirige
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center p-4 bg-red-50">
+        <Ionicons name="alert-circle-outline" size={50} color="#ef4444" />
+        <Text className="text-center text-red-700 text-xl font-quicksand-bold mt-4">Sorteo no encontrado</Text>
+        <Text className="text-center text-red-600 text-base mt-2">El sorteo que buscas no existe o fue eliminado.</Text>
+        <Pressable
+          onPress={() => router.replace('/(tabs)/(home)')}
+          className="mt-6 bg-red-500 px-5 py-3 rounded-xl active:bg-red-600"
+        >
+          <Text className="text-white font-quicksand-bold">Ir al Inicio</Text>
+        </Pressable>
+      </SafeAreaView>
+    );
   }
 
   // Manejador para la reserva de boletos
@@ -497,21 +494,6 @@ const RaffleDetailsScreen = () => {
               <Ionicons name="share-outline" size={20} color="#22c55e" />
             </Pressable>
 
-            {/* Botón de prueba de deep link (solo para debugging) */}
-            {__DEV__ && (
-              <Pressable
-                onPress={() => {
-                  const deepLink = generateDeepLink();
-                  console.log('🧪 Probando deep link:', deepLink);
-                  Linking.openURL(deepLink).catch(err => {
-                    console.error('❌ Error abriendo deep link:', err);
-                  });
-                }}
-                className="p-3 rounded-xl bg-purple-50 border border-purple-100 active:bg-purple-100"
-              >
-                <Ionicons name="bug-outline" size={20} color="#9333ea" />
-              </Pressable>
-            )}
           </View>
         </View>
         {/* Botón para abrir el modal de administración (solo para el creador) */}

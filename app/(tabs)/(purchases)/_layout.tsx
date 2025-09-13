@@ -5,10 +5,11 @@ export default function PurchasesStackLayout() {
     return (
         <Stack>
             <Stack.Screen
+
                 name="index"
                 options={{
                     headerTitle: 'Mis Compras',
-                    headerLargeTitle: true,
+                    headerLargeTitle: false,
                     headerShown: false,
                     headerShadowVisible: false,
                     headerStyle: { backgroundColor: '#f8fafc' },

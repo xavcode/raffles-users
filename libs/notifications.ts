@@ -75,8 +75,9 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
     } catch (e: unknown) {
       handleRegistrationError(`${e}`);
     }
-  } else {
-    // No es un error crítico si es un emulador.
-    console.log('Must use physical device for Push Notifications');
   }
+  // else {
+  //   // No es un error crítico si es un emulador.
+  //   console.log('Must use physical device for Push Notifications');
+  // }
 }

@@ -1,5 +1,4 @@
 import { NetworkProvider } from '@/contexts/NetworkContext';
-import { useDeepLinkRaffle } from '@/hooks/useDeepLinkRaffle'; // Importar el custom hook
 import { ClerkLoaded, ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import { tokenCache } from '@clerk/clerk-expo/token-cache';
 import { ConvexReactClient } from 'convex/react';
@@ -15,6 +14,8 @@ import Toast from 'react-native-toast-message';
 import OfflineBanner from './components/OfflineBanner';
 import toastConfig from './components/ToastConfig';
 import './global.css';
+
+
 
 SplashScreen.preventAutoHideAsync();
 
@@ -74,7 +75,6 @@ const RootLayoutNav = () => {
               <SafeAreaProvider>
                 <NetworkProvider>
                   <ClerkLoaded>
-                    <DeepLinkInitializer /> {/* <-- Renderizamos el nuevo componente aquí */}
                     <Slot />
                     <OfflineBanner />
                     <Toast config={toastConfig} />
@@ -89,9 +89,6 @@ const RootLayoutNav = () => {
   );
 };
 
-const DeepLinkInitializer = () => {
-  useDeepLinkRaffle();
-  return null; // Este componente no renderiza nada visible, solo ejecuta el hook
-};
+
 
 export default RootLayout;

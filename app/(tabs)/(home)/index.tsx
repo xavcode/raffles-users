@@ -194,7 +194,6 @@ const HomeScreen = () => {
   if (convexUser === undefined || (selectedTab === 'myRaffles' ? myStatus === LOADING_FIRST_PAGE_STATUS : generalStatus === LOADING_FIRST_PAGE_STATUS)) {
     return (
       <SafeAreaView className="flex-1 bg-slate-50">
-        {/* <GlobalHeader /> */}
         <View className="pt-4">
           {[...Array(3)].map((_, index) => <RaffleCardSkeleton key={index} />)}
         </View>
