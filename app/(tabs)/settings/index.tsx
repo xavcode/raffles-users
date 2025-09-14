@@ -6,7 +6,6 @@ import { useMutation, useQuery } from 'convex/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 type UserPreview = {
@@ -157,7 +156,7 @@ const Settings = () => {
   // Preferencias locales adicionales
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50" edges={['left', 'right', 'bottom']}>
+    <View className="flex-1 bg-slate-50">
       <KeyboardAwareScrollView
         contentContainerClassName='flex-1'
         enableOnAndroid={true}
@@ -167,40 +166,14 @@ const Settings = () => {
         extraScrollHeight={20}
       >
         <ScrollView
-          className="p-4 pb-10"
+          className="p-4 pb-10 bg-blue-800"
           keyboardShouldPersistTaps="always"
         >
 
 
-          {/* Sección: Reservas */}
-          <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mb-5">
-            <View className="flex-row items-center mb-3">
-              <Ionicons name="time-outline" size={18} color="#64748b" />
-              <Text className="ml-2 text-base font-quicksand-bold text-slate-800">Tiempo de reserva</Text>
-            </View>
-            <Text className="text-sm text-slate-600 mb-3">Define por cuántos minutos se reservarán los boletos antes de liberarse automáticamente.</Text>
-            <View className="flex-row items-center gap-x-3">
-              <TextInput
-                className="flex-1 bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium"
-                placeholder="Ej: 30"
-                keyboardType="number-pad"
-                value={reservationMinutes}
-                onChangeText={setReservationMinutes}
-                maxLength={3}
-              />
-              <Pressable
-                onPress={handleSaveReservation}
-                disabled={!isReservationDirty || isSavingReservation}
-                className={`h-12 px-4 rounded-lg items-center justify-center ${isReservationDirty ? 'bg-primary' : 'bg-primary/50'}`}
-              >
-                <Text className="text-white font-quicksand-bold">Guardar</Text>
-              </Pressable>
-            </View>
-            <Text className="text-xs text-slate-500 mt-2">Actual: {savedReservationMinutes} min</Text>
-          </View>
 
           {/* Sección: Permisos de usuario */}
-          <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mb-5">
+          {/* <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mb-5">
             <View className="flex-row items-center mb-3">
               <Ionicons name="shield-checkmark-outline" size={18} color="#64748b" />
               <Text className="ml-2 text-base font-quicksand-bold text-slate-800">Permisos de usuario</Text>
@@ -254,7 +227,7 @@ const Settings = () => {
                 </View>
               </View>
             )}
-          </View>
+          </View> */}
 
           {/* Sección: metodos de pago */}
           <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mb-5">
@@ -299,7 +272,7 @@ const Settings = () => {
           </View>
         </ScrollView>
       </KeyboardAwareScrollView>
-    </SafeAreaView>
+    </View>
   )
 }
 

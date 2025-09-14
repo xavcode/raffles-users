@@ -7,7 +7,6 @@ import { useMutation, usePaginatedQuery, useQuery } from 'convex/react';
 import { Stack } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Modal, Pressable, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 // Define el tipo para la compra con detalles adicionales
@@ -223,15 +222,15 @@ const VerificationsPage = () => {
   // Redirigir si no está logueado
   if (currentUser === undefined || status === LOADING_FIRST_PAGE) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-50 justify-center items-center">
+      <View className="flex-1 bg-slate-50 justify-center items-center">
         <ActivityIndicator size="large" color="#4f46e5" />
         <Text className="mt-2 text-slate-600">Cargando verificaciones...</Text>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50" edges={['left', 'right', 'bottom']}>
+    <View className="flex-1 bg-slate-50" >
       <Stack.Screen
         options={{
           headerShown: true,
@@ -253,7 +252,8 @@ const VerificationsPage = () => {
             />
           )}
           keyExtractor={(item) => item._id}
-          contentContainerClassName="p-4"
+          style={{ flex: 1 }} // Asegurar que FlatList ocupe todo el espacio vertical
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }} // Centrado vertical
           onEndReached={() => {
             if (status === 'CanLoadMore') {
               loadMore(10);
@@ -261,7 +261,7 @@ const VerificationsPage = () => {
           }}
           onEndReachedThreshold={0.5}
           ListEmptyComponent={
-            <View className="mt-24 items-center justify-center p-4"><Ionicons name="shield-checkmark-outline" size={64} color="#cbd5e1" /><Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">Todo en orden</Text><Text className="text-sm font-quicksand-medium text-slate-400 text-center">No hay pagos pendientes de verificación en este momento.</Text></View>
+            <View className="flex-1 items-center justify-center px-8"><Ionicons name="shield-checkmark-outline" size={64} color="#cbd5e1" /><Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">Todo en orden</Text><Text className="text-sm font-quicksand-medium text-slate-400 text-center">No hay pagos pendientes de verificación en este momento.</Text></View>
           }
           ListFooterComponent={() => {
             if (status === 'LoadingMore') { return <ActivityIndicator className="my-8" color="#4f46e5" />; }
@@ -315,7 +315,7 @@ const VerificationsPage = () => {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 

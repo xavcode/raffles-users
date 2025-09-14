@@ -6,7 +6,6 @@ import { Authenticated, AuthLoading, Unauthenticated, useQuery } from 'convex/re
 import { Link } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 const profile = () => {
 
@@ -15,7 +14,7 @@ const profile = () => {
   const convexUser = useQuery(api.users.getCurrent);
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50" edges={['left', 'right', 'bottom']}>
+    <View className="flex-1 bg-slate-50">
       <AuthLoading>
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#6366F1" />
@@ -27,7 +26,7 @@ const profile = () => {
             <ActivityIndicator size="large" color="#6366F1" />
           </View>
         ) : (
-          <View className="p-6">
+          <View className="">
             <View className="items-center mb-8 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <Image source={{ uri: user?.imageUrl }} className="w-32 h-32 rounded-full mb-4 border-4 border-primary shadow-lg" />
               {convexUser?.userName && (
@@ -103,7 +102,7 @@ const profile = () => {
           </Link>
         </View>
       </Unauthenticated>
-    </SafeAreaView>
+    </View>
   )
 }
 

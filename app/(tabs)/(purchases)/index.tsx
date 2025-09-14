@@ -123,14 +123,13 @@ const MyPurchases = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50" edges={['left', 'right', 'bottom']}>
+    <View className="flex-1 bg-slate-50" >
       <TabSelector purchases={userPurchases} status={status} loadMore={loadMore} router={router} />
-    </SafeAreaView>
+    </View>
   );
 };
 
 export default MyPurchases;
-
 type TabSelectorProps = {
   purchases: PurchaseWithDetails[];
   status: ReturnType<typeof usePaginatedQuery>['status'];
@@ -167,7 +166,9 @@ const TabSelector = ({ purchases, status, loadMore, router }: TabSelectorProps) 
       <FlatList
         data={filteredPurchases}
         keyExtractor={(item) => item._id.toString()}
-        renderItem={({ item }) => <PurchaseListItem purchase={item} />} contentContainerClassName="pt-4 pb-8"
+        renderItem={({ item }) => <PurchaseListItem purchase={item} />}
+        style={{ flex: 1 }} // Asegurar que FlatList ocupe todo el espacio vertical
+        contentContainerStyle={{ flexGrow: 1 }} // Centrado vertical solo para el componente vacío
         onEndReached={() => {
           if (status === 'CanLoadMore') {
             loadMore(5);
@@ -175,7 +176,7 @@ const TabSelector = ({ purchases, status, loadMore, router }: TabSelectorProps) 
         }}
         onEndReachedThreshold={0.8}
         ListEmptyComponent={
-          <View className="mt-24 items-center justify-center px-8">
+          <View className="flex-1 items-center justify-center px-8">
             <Ionicons name="receipt-outline" size={64} color="#cbd5e1" />
             <Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">No tienes compras en esta categoría</Text>
             <Text className="text-sm font-quicksand-medium text-slate-400 text-center">Tus compras aparecerán aquí una vez que estén en este estado.</Text>
@@ -196,7 +197,7 @@ const TabSelector = ({ purchases, status, loadMore, router }: TabSelectorProps) 
         {...props}
         indicatorStyle={{ backgroundColor: '#6366f1' }}
         style={{ backgroundColor: '#f8fafc', shadowOpacity: 0, elevation: 0, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' }}
-        labelStyle={{ fontSize: 13, fontFamily: 'Quicksand-Bold', textTransform: 'none' }}
+        labelStyle={{ fontSize: 14, fontFamily: 'Quicksand-Bold', textTransform: 'none' }} // Ajustado a 14
         activeColor={'#6366f1'}
         inactiveColor={'#64748b'}
       />
@@ -207,6 +208,7 @@ const TabSelector = ({ purchases, status, loadMore, router }: TabSelectorProps) 
     <>
       {/* Aquí iría el TabView una vez que las dependencias estén instaladas. */}
       <TabView
+        style={{ flex: 1 }} // Asegurar que TabView ocupe todo el espacio
         navigationState={{ index, routes }}
         renderScene={renderScene}
         onIndexChange={setIndex}
