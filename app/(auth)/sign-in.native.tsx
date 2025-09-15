@@ -4,7 +4,7 @@ import React from "react";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { icons } from "../../constants";
-import SocialButton from "../components/SocialButton";
+import SocialButton from '../components/SocialButton';
 
 const AnimatedContainer = ({ children, delay }: { children: React.ReactNode, delay: number }) => (
   <MotiView
@@ -34,7 +34,6 @@ const SignIn = () => {
 
         <AnimatedContainer delay={200}>
           <SocialButton strategy="oauth_google" icon={icons.google} text="Continuar con Google" />
-          <SocialButton strategy="oauth_facebook" icon={icons.facebook} text="Continuar con Facebook" />
         </AnimatedContainer>
 
         {/* <Text className="text-center text-xs text-gray-400 font-quicksand-medium">
