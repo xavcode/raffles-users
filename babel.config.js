@@ -6,6 +6,17 @@ module.exports = function (api) {
             "nativewind/babel",
         ],
         plugins: [
+            [
+                'module-resolver',
+                {
+                    root: ['./'], // Explicitly set root for module resolution
+                    alias: {
+                        // This maps @/ to the root of your project
+                        // e.g., @/app/components/SocialButton resolves to ./app/components/SocialButton
+                        '@': './',
+                    },
+                },
+            ],
             "react-native-reanimated/plugin",
         ],
     };
