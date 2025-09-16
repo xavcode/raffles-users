@@ -1,0 +1,42 @@
+{
+  "cli": {
+    "version": ">= 16.15.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "${EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY}",
+        "EXPO_PUBLIC_CLERK_ISSUER_URL": "${EXPO_PUBLIC_CLERK_ISSUER_URL}",
+        "EXPO_PUBLIC_CONVEX_URL": "${EXPO_PUBLIC_CONVEX_URL}",
+        "EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME": "${EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME}",
+        "EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET": "${EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET}"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "apk"
+      },
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "${EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY}",
+        "EXPO_PUBLIC_CLERK_ISSUER_URL": "${EXPO_PUBLIC_CLERK_ISSUER_URL}",
+        "EXPO_PUBLIC_CONVEX_URL": "${EXPO_PUBLIC_CONVEX_URL}",
+        "EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME": "${EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME}",
+        "EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET": "${EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET}"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
