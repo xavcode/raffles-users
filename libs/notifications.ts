@@ -3,15 +3,25 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
+// Check if running in Expo Go - if so, skip all notification setup
+const isExpoGo = Constants.executionEnvironment === 'storeClient';
+console.log('🔍 DEBUG: Is Expo Go:', isExpoGo);
+
+if (isExpoGo) {
+  console.warn('⚠️ WARNING: Running in Expo Go - push notifications not supported. Skipping notification setup.');
+}
+
 // Configuración global para cómo se manejan las notificaciones cuando la app está en primer plano.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+if (!isExpoGo) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+}
 
 // Función para configurar categorías de notificaciones con acciones.
 export async function setupNotificationCategories() {
@@ -37,6 +47,17 @@ function handleRegistrationError(errorMessage: string) {
 }
 
 export async function registerForPushNotificationsAsync(): Promise<string | undefined> {
+  console.log('🔍 DEBUG: Starting push notification registration');
+
+  if (isExpoGo) {
+    console.warn('⚠️ WARNING: Push notifications not supported in Expo Go. Skipping registration.');
+    return;
+  }
+
+  console.log('🔍 DEBUG: Platform:', Platform.OS);
+  console.log('🔍 DEBUG: Is device:', Device.isDevice);
+  console.log('🔍 DEBUG: Execution environment:', Constants.executionEnvironment);
+
   if (Platform.OS === 'android') {
     // Importante: Si ya existía un canal con la misma ID en el dispositivo, sus propiedades
     // no se actualizan. Si probaste antes sin sonido/vibración, reinstala la app o usa un canal nuevo.
