@@ -11,7 +11,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale'; // Asegúrate de que este import sea correcto
 import * as ImagePicker from 'expo-image-picker';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Dimensions, Image, Modal, Platform, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -180,8 +180,7 @@ const PurchaseDetailsPage = () => {
   const isRejectedPurchase = purchase.status === 'rejected'; // Nueva variable para la condición
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      <Stack.Screen options={{ title: 'Detalle de la Compra' }} />
+    <View className="flex-1 bg-slate-50">
       <ScrollView contentContainerClassName="p-4 space-y-4">
         {/* --- Card de Información Principal --- */}
         <View className="bg-white p-4 rounded-2xl shadow-sm shadow-slate-300/50">
@@ -360,7 +359,7 @@ const PurchaseDetailsPage = () => {
           <Toast config={toastConfig} />
         </Modal>
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 

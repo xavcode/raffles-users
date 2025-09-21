@@ -56,7 +56,7 @@ async function generateUniqueCustomRaffleId(ctx: any): Promise<string> {
 export const getRaffles = query({
   args: {
     paginationOpts: paginationOptsValidator,
-    status: v.optional(v.union(v.literal("active"), v.literal("finished"))),
+    status: v.optional(v.union(v.literal("active"), v.literal("finished"), v.null())),
     search: v.optional(v.string()), // Argumento de búsqueda
   },
   handler: async (ctx, args) => {
@@ -86,6 +86,10 @@ export const getRaffles = query({
     }
 
     // Si no es una búsqueda por customRaffleId o no hubo coincidencia exacta, usar el searchIndex general
+    if (!args.status) {
+      return { page: [], isDone: true, continueCursor: "" };
+    }
+
     if (args.search) {
       let searchResult = ctx.db
         .query("raffles")
@@ -105,7 +109,7 @@ export const getRaffles = query({
       // Si no hay búsqueda en absoluto, se mantiene la lógica original
       queryBuilder = ctx.db
         .query("raffles")
-        .withIndex("by_status", (q) => q.eq("status", args.status ?? "active"))
+        .withIndex("by_status", (q) => q.eq("status", args.status!))
         .order("desc");
     }
 

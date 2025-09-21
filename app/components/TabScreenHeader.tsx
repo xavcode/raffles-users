@@ -14,10 +14,11 @@ const TabScreenHeader = ({ userName, isAdmin }: TabScreenHeaderProps) => {
 
   return (
     <View style={{ backgroundColor: '#f8fafc', paddingTop: insets.top }}>
+      {/* <View style={{ backgroundColor: 'red', paddingTop: insets.top }}> */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 50, paddingHorizontal: 16 }}>
         <View style={{ marginRight: 'auto' }}>
           {userName ? (
-            <Text className="text-lg font-quicksand-semibold text-primary">@{userName}</Text>
+            <Text className="text-2xl font-quicksand-semibold text-primary">@{userName}</Text>
           ) : null}
         </View>
 

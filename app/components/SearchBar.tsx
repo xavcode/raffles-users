@@ -15,7 +15,7 @@ const SearchBar = ({ onSearch, initialQuery = '' }: SearchBarProps) => {
   const debouncedOnSearch = useCallback(
     debounce((query: string) => {
       onSearch(query);
-    }, 600), // Adjusted debounce to 600ms as requested
+    }, 900), // Adjusted debounce to 900ms as requested
     [onSearch]
   );
 
@@ -33,11 +33,11 @@ const SearchBar = ({ onSearch, initialQuery = '' }: SearchBarProps) => {
   }, [initialQuery]);
 
   return (
-    <View className="px-4 mb-5 bg-gray-50">
+    <View className="px-4 my-2 bg-gray-50">
       <View className="flex-row items-center bg-white rounded-xl p-1 border border-gray-200/80 shadow-sm">
         <Ionicons name="search" size={20} color="#9ca3af" />
         <TextInput
-          placeholder="Buscar por nombre de rifa o creador..."
+          placeholder="Buscar por titulo/id de rifa o Usuario..."
           className="flex-1 ml-3 text-base font-quicksand-medium text-slate-800"
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -48,7 +48,7 @@ const SearchBar = ({ onSearch, initialQuery = '' }: SearchBarProps) => {
             setSearchQuery('');
             onSearch(''); // Also trigger immediate search clear
           }} className="p-1">
-            <Ionicons name="close-circle" size={20} color="#cbd5e1" />
+            <Ionicons name="close-circle" size={28} color="#cbd5e1" />
           </Pressable>
         )}
       </View>

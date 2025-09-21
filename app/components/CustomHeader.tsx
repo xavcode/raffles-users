@@ -17,10 +17,10 @@ const CustomHeader = ({ title, showBackButton = false }: CustomHeaderProps) => {
 
   return (
     <View
-      className='flex-row p-0 items-center justify-center h-16 px-4 bg-slate-50'
+      className='flex-row p-0 items-center justify-center h-12 px-4 bg-slate-50'
     >
       {showBackButton && (
-        <Pressable onPress={handleBackPress} className='mr-2 active:opacity-20' >
+        <Pressable onPress={handleBackPress} className='mr-3 active:opacity-30' >
           <Ionicons name="arrow-back" size={28} color="#1e293b" />
         </Pressable>
       )}
