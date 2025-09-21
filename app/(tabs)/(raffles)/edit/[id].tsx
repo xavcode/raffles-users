@@ -9,12 +9,13 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { api } from '../../../../convex/_generated/api';
+import { Id } from '../../../../convex/_generated/dataModel';
 
 const EditRaffleScreen = () => {
     const router = useRouter();
     const { id: customRaffleId } = useLocalSearchParams<{ id: string }>();
 
-    const raffleData = useQuery(api.raffles.getByCustomRaffleId, customRaffleId ? { customRaffleId: customRaffleId as string } : 'skip');
+    const raffleData = useQuery(api.raffles.getById, customRaffleId ? { id: customRaffleId as Id<'raffles'> } : 'skip');
 
     const updateRaffle = useMutation(api.raffles.updateRaffle);
 
@@ -290,7 +291,24 @@ const EditRaffleScreen = () => {
                         <View className="flex-row gap-x-4 mb-5">
                             <View className="flex-1">
                                 <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Total Boletos</Text>
-                                <TextInput onFocus={handleFocusLastInputs} className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: 100" value={formData.totalTickets} onChangeText={(val) => handleInputChange('totalTickets', val)} keyboardType="numeric" />
+                                <TextInput
+                                    className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium"
+                                    onFocus={handleFocusLastInputs}
+                                    placeholder="Ej: 100"
+                                    value={formData.totalTickets}
+                                    onChangeText={text => {
+                                        // Solo permitir números
+                                        const numeric = text.replace(/[^0-9]/g, '');
+                                        // Convertir a número y limitar el rango
+                                        let value = parseInt(numeric, 10);
+                                        if (isNaN(value)) value = 0;
+                                        if (value > 200) value = 200;
+                                        if (value < 0) value = 0;
+                                        (text) => handleInputChange('totalTickets', text)
+
+                                    }}
+                                    
+                                    keyboardType="numeric" />
                             </View>
                             <View className="flex-1">
                                 <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Precio Boleto</Text>

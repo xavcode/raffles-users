@@ -290,8 +290,21 @@ const CreateRaffle = () => {
             <View className="flex-row gap-x-4 mb-5">
               <View className="flex-1">
                 <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Total Boletos</Text>
-                <TextInput onFocus={handleFocusLastInputs} className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: 100" value={totalTickets} onChangeText={setTotalTickets} keyboardType="numeric" />
+                <TextInput onFocus={handleFocusLastInputs}
+                  className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: 100" value={totalTickets}
+                  onChangeText={text => {
+                    // Solo permitir números
+                    const numeric = text.replace(/[^0-9]/g, '');
+                    // Convertir a número y limitar el rango
+                    let value = parseInt(numeric, 10);
+                    if (isNaN(value)) value = 0;
+                    if (value > 200) value = 200;
+                    if (value < 0) value = 0;
+                    setTotalTickets(value.toString());
+                  }}
+                  keyboardType="numeric" />
               </View>
+
               <View className="flex-1">
                 <Text className="text-base font-quicksand-semibold mb-2 text-slate-700">Precio Boleto</Text>
                 <TextInput onFocus={handleFocusLastInputs} className="bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium" placeholder="Ej: 5000" value={ticketPrice} onChangeText={setTicketPrice} keyboardType="decimal-pad" />
