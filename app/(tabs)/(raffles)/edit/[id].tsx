@@ -296,7 +296,7 @@ const EditRaffleScreen = () => {
                                     onFocus={handleFocusLastInputs}
                                     placeholder="Ej: 100"
                                     value={formData.totalTickets}
-                                    onChangeText={text => {
+                                    onChangeText={(text: string) => {
                                         // Solo permitir números
                                         const numeric = text.replace(/[^0-9]/g, '');
                                         // Convertir a número y limitar el rango
@@ -304,10 +304,8 @@ const EditRaffleScreen = () => {
                                         if (isNaN(value)) value = 0;
                                         if (value > 200) value = 200;
                                         if (value < 0) value = 0;
-                                        (text) => handleInputChange('totalTickets', text)
-
+                                        handleInputChange('totalTickets', value.toString());
                                     }}
-                                    
                                     keyboardType="numeric" />
                             </View>
                             <View className="flex-1">
