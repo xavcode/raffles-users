@@ -3,6 +3,7 @@ import { api } from '@/convex/_generated/api';
 import { Doc, Id } from '@/convex/_generated/dataModel';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -18,8 +19,7 @@ type UserPreview = {
 type PaymentMethod = Doc<'paymentMethods'>
 
 const Settings = () => {
-
-
+  const router = useRouter();
 
   const [reservationMinutes, setReservationMinutes] = useState<string>('30')
   const [savedReservationMinutes, setSavedReservationMinutes] = useState<string>('30')
@@ -269,6 +269,18 @@ const Settings = () => {
               {/* Reemplazamos la lista manual por el componente Paymentmethods */}
               <Paymentmethods paymentMethods={paymentMethods} />
             </View>
+          </View>
+
+          {/* Sección: Términos y Condiciones */}
+          <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mb-5">
+            <View className="flex-row items-center mb-3">
+              <Ionicons name="document-text-outline" size={18} color="#64748b" />
+              <Text className="ml-2 text-base font-quicksand-bold text-slate-800">Términos y Condiciones</Text>
+            </View>
+            <Text className="text-sm text-slate-600 mb-4">Revisa los términos y condiciones de uso de la aplicación.</Text>
+            <Pressable onPress={() => router.push('/terms')} className="h-12 rounded-lg items-center justify-center bg-slate-600 active:bg-slate-700">
+              <Text className="text-white font-quicksand-bold">Ver Términos</Text>
+            </Pressable>
           </View>
         </ScrollView>
       </KeyboardAwareScrollView>
