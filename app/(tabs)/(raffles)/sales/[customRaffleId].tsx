@@ -140,6 +140,7 @@ const navigation = useNavigation();
 
 const [selectedPurchase, setSelectedPurchase] = useState<PurchaseWithUser | null>(null);
 const [modalVisible, setModalVisible] = useState(false);
+const [imageModalVisible, setImageModalVisible] = useState(false);
 
 // Obtener el usuario actual
   const currentUser = useQuery(api.users.getCurrent);
@@ -198,20 +199,22 @@ const [modalVisible, setModalVisible] = useState(false);
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
       <Stack.Screen options={{headerShown:true,   title: raffle?.title ? `Ventas: ${raffle.title}` : 'Historial de Ventas' }} />
-      <Text className="text-lg font-quicksand-bold text-slate-800 mb-4 px-4 pt-4">Ventas Completadas ({purchases?.length || 0})</Text>
-      <FlatList
-        data={purchases}
-        renderItem={({ item }) => <PurchaseSummaryItem item={item} onPress={() => { setSelectedPurchase(item); setModalVisible(true); }} />}
-        keyExtractor={(item) => item._id}
-        contentContainerClassName="p-4"
-        ListEmptyComponent={() => (
-          <View className="mt-24 items-center justify-center p-4 bg-white mx-4 rounded-2xl">
-            <Ionicons name="receipt-outline" size={54} color="#cbd5e1" />
-            <Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">Sin ventas completadas</Text>
-            <Text className="text-sm font-quicksand-medium text-slate-400 text-center">Aún no hay compras aprobadas para este sorteo.</Text>
-          </View>
-        )}
-      />
+      <View className="w-full mx-auto">
+        <Text className="text-lg font-quicksand-bold text-slate-800 mb-4 px-4 pt-4">Ventas Completadas ({purchases?.length || 0})</Text>
+        <FlatList
+          data={purchases}
+          renderItem={({ item }) => <PurchaseSummaryItem item={item} onPress={() => { setSelectedPurchase(item); setModalVisible(true); }} />}
+          keyExtractor={(item) => item._id}
+          contentContainerClassName="p-4"
+          ListEmptyComponent={() => (
+            <View className="mt-24 items-center justify-center p-4 bg-white mx-4 rounded-2xl">
+              <Ionicons name="receipt-outline" size={54} color="#cbd5e1" />
+              <Text className="text-lg font-quicksand-semibold text-slate-500 mt-4">Sin ventas completadas</Text>
+              <Text className="text-sm font-quicksand-medium text-slate-400 text-center">Aún no hay compras aprobadas para este sorteo.</Text>
+            </View>
+          )}
+        />
+      </View>
 
       {selectedPurchase && (
         <Modal
@@ -221,7 +224,7 @@ const [modalVisible, setModalVisible] = useState(false);
           onRequestClose={() => setModalVisible(false)}
         >
           <View className="flex-1 bg-black/80 justify-center items-center p-4">
-            <ScrollView className="bg-white rounded-2xl p-6 w-full max-h-4/5">
+            <ScrollView className="bg-white rounded-2xl p-6 w-full max-w-md max-h-4/5">
               <View className="flex-row justify-between items-center mb-4">
                 <Text className="text-xl font-quicksand-bold text-slate-800">Detalles de la Venta</Text>
                 <Pressable onPress={() => setModalVisible(false)} className="p-2">
@@ -266,7 +269,9 @@ const [modalVisible, setModalVisible] = useState(false);
               {selectedPurchase.imageUrl && (
                 <View className="mb-4">
                   <Text className="text-lg font-quicksand-bold text-slate-800 mb-2">Comprobante de Pago</Text>
-                  <Image source={{ uri: selectedPurchase.imageUrl }} className="w-full h-64 rounded-lg" resizeMode="contain" />
+                  <Pressable onPress={() => setImageModalVisible(true)}>
+                    <Image source={{ uri: selectedPurchase.imageUrl }} className="w-full h-96 rounded-lg" resizeMode="contain" />
+                  </Pressable>
                 </View>
               )}
 
@@ -274,6 +279,25 @@ const [modalVisible, setModalVisible] = useState(false);
                 Fecha: {format(new Date(selectedPurchase._creationTime), "d 'de' MMMM, yyyy 'a las' HH:mm", { locale: es })}
               </Text>
             </ScrollView>
+          </View>
+        </Modal>
+      )}
+
+      {selectedPurchase?.imageUrl && (
+        <Modal
+          visible={imageModalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setImageModalVisible(false)}
+        >
+          <View className="flex-1 bg-black justify-center items-center">
+            <Image source={{ uri: selectedPurchase.imageUrl }} className="w-full h-full max-w-md" resizeMode="contain" />
+            <Pressable
+              className="absolute top-12 right-4 bg-black/60 p-2 rounded-full active:bg-black/80"
+              onPress={() => setImageModalVisible(false)}
+            >
+              <Ionicons name="close" size={28} color="white" />
+            </Pressable>
           </View>
         </Modal>
       )}

@@ -67,7 +67,7 @@ const HomeScreen = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
+    <View className="flex-1 bg-slate-50">
       <TabView
         navigationState={{ index, routes: filteredRoutes }}
         renderScene={renderScene}
@@ -81,7 +81,7 @@ const HomeScreen = () => {
           <Ionicons name="add" size={32} color="white" />
         </Pressable>
       </Link>
-    </SafeAreaView>
+    </View>
   );
 };
 
