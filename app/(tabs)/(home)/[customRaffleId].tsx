@@ -626,16 +626,7 @@ const RaffleDetailsScreen = () => {
 
   return (
     <SafeAreaView className="flex-1" edges={['left', 'right', 'bottom']}>
-      {/* 🚀 OPTIMIZACIONES DE PERFORMANCE IMPLEMENTADAS:
-          ✅ FlatList con virtualización inteligente
-          ✅ Componente Ticket memoizado con comparación personalizada
-          ✅ RenderItem optimizado sin recreación constante
-          ✅ getItemLayout para saltos suaves
-          ✅ removeClippedSubviews para menos memoria
-          ✅ Lotes de render más pequeños y eficientes
 
-          RESULTADO: Performance 3-5x mejor con funcionalidad completa preservada
-      */}
       <FlatList
         ListHeaderComponent={RaffleDetailsHeader}
         data={allTicketsNumbers}
@@ -821,7 +812,7 @@ const RaffleDetailsScreen = () => {
               <Text className="text-white font-quicksand-semibold ml-3">Editar Sorteo</Text>
             </Pressable>
 
-            <Link href={`/(tabs)/(home)/${raffle!._id}/sales`} asChild>
+            <Link href={`/(tabs)/(raffles)/sales/${raffle?.customRaffleId}`} asChild>
               <Pressable
                 onPress={() => setShowAdminActionsModal(false)}
                 className="flex-row items-center p-3 rounded-xl bg-indigo-500 active:bg-indigo-600 mb-3 justify-center"
