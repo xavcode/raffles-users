@@ -270,7 +270,7 @@ const [imageModalVisible, setImageModalVisible] = useState(false);
                 <View className="mb-4">
                   <Text className="text-lg font-quicksand-bold text-slate-800 mb-2">Comprobante de Pago</Text>
                   <Pressable onPress={() => setImageModalVisible(true)}>
-                    <Image source={{ uri: selectedPurchase.imageUrl }} className="w-full h-96 rounded-lg" resizeMode="contain" />
+                    <Image source={{ uri: selectedPurchase.imageUrl }} className="w-full h-96 rounded-lg" resizeMode="cover" />
                   </Pressable>
                 </View>
               )}
