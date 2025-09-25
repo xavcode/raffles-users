@@ -373,11 +373,10 @@ export const getPurchasesForRaffle = query({
     raffleId: v.id("raffles"),
   },
   handler: async (ctx, args) => {
-    // 1. Obtener todas las compras para este sorteo filtradas por estado 'approved' o 'rejected'
+    // 1. Obtener todas las compras para este sorteo
     const purchases = await ctx.db
       .query("purchases")
       .withIndex("by_raffle", (q) => q.eq("raffleId", args.raffleId))
-      .filter((q) => q.or(q.eq(q.field("status"), "approved"), q.eq(q.field("status"), "rejected")))
       .order("desc")
       .collect();
 
