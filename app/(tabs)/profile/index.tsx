@@ -30,7 +30,7 @@ const profile = () => {
     <View className="flex-1 bg-slate-50">
       <View className="">
         <View className="items-center mb-8 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <Image source={{ uri: user?.imageUrl }} className="w-32 h-32 rounded-full mb-4 border-4 border-primary shadow-lg" />
+          <Image source={{ uri: convexUser.profileImageUrl || user?.imageUrl }} className="w-32 h-32 rounded-full mb-4 border-4 border-primary shadow-lg" />
           {convexUser?.userName && (
             <Text className="text-3xl font-quicksand-bold text-gray-800">@{convexUser.userName}</Text>
           )}
@@ -56,7 +56,7 @@ const profile = () => {
             <View className="ml-3 flex-1">
               <Text className="text-base font-quicksand-bold text-yellow-800">¡Información importante!</Text>
               <Text className="text-sm text-yellow-700 mt-1">
-                Agrega tu número de teléfono para poder recibir los pagos de los premios que ganes.
+                Agrega tu número de teléfono para contactarte y recibir los premios que ganes.
               </Text>
             </View>
             <Link href={'/(tabs)/profile/edit-profile'} asChild>

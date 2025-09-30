@@ -56,8 +56,8 @@ export const createUser = internalMutation({
 });
 export const update = mutation({
   args: {
-    firstName: v.string(),
-    lastName: v.string(),
+    firstName: v.optional(v.string()),
+    lastName: v.optional(v.string()),
     phone: v.optional(v.string()),
     profileImageUrl: v.optional(v.string()), // Permitir actualizar la imagen de perfil
     userName: v.optional(v.string()), // Permitir actualizar el userName
@@ -76,13 +76,16 @@ export const update = mutation({
     if (!user) {
       throw new Error("Usuario no encontrado.");
     }
-    await ctx.db.patch(user._id, {
-      firstName: args.firstName,
-      lastName: args.lastName,
-      phone: args.phone,
-      profileImageUrl: args.profileImageUrl,
-      userName: args.userName, // Actualizar el userName
-    });
+
+    // Solo actualizar los campos que se proporcionan
+    const updates: any = {};
+    if (args.firstName !== undefined) updates.firstName = args.firstName;
+    if (args.lastName !== undefined) updates.lastName = args.lastName;
+    if (args.phone !== undefined) updates.phone = args.phone;
+    if (args.profileImageUrl !== undefined) updates.profileImageUrl = args.profileImageUrl;
+    if (args.userName !== undefined) updates.userName = args.userName;
+
+    await ctx.db.patch(user._id, updates);
   },
 });
 

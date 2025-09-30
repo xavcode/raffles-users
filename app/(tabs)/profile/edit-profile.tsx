@@ -1,10 +1,10 @@
+import ImagePickerWithPreview from '@/app/components/ImagePickerWithPreview';
 import { api } from '@/convex/_generated/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
 import { Stack, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 const EditProfilePage = () => {
@@ -14,12 +14,15 @@ const EditProfilePage = () => {
 
   const [userName, setUserName] = useState('');
   const [phone, setPhone] = useState('');
+  const [profileImageUrl, setProfileImageUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   useEffect(() => {
     if (convexUser) {
       setUserName(convexUser.userName ?? '');
       setPhone(convexUser.phone ?? '');
+      setProfileImageUrl(convexUser.profileImageUrl ?? '');
     }
   }, [convexUser]);
 
@@ -35,10 +38,29 @@ const EditProfilePage = () => {
 
     setIsLoading(true);
     try {
-      await updateUser({
-        userName,
-        phone: phone || undefined, // Envía undefined si el campo está vacío
-      });
+      // Solo enviar los campos que han cambiado
+      const updates: any = {};
+
+      if (userName !== (convexUser?.userName || '')) {
+        updates.userName = userName;
+      }
+
+      if (phone !== (convexUser?.phone || '')) {
+        updates.phone = phone || undefined;
+      }
+
+      if (profileImageUrl !== (convexUser?.profileImageUrl || '')) {
+        updates.profileImageUrl = profileImageUrl || undefined;
+      }
+
+      // Si no hay cambios, no hacer la actualización
+      if (Object.keys(updates).length === 0) {
+        Toast.show({ type: 'info', text1: 'Sin cambios', text2: 'No hay cambios para guardar.' });
+        router.back();
+        return;
+      }
+
+      await updateUser(updates);
       Toast.show({ type: 'success', text1: 'Éxito', text2: 'Tu perfil ha sido actualizado.' });
       router.back();
     } catch (error) {
@@ -58,7 +80,7 @@ const EditProfilePage = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-gray-50">
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -68,61 +90,79 @@ const EditProfilePage = () => {
         {/* <GlobalHeader /> */}
         <Stack.Screen
           options={{
-            headerTitle: 'Editar Perfil',
+            headerTitle: 'Perfil',
             headerLargeTitle: false,
             headerShadowVisible: false,
             headerStyle: { backgroundColor: '#f8fafc' },
-            headerTitleStyle: { fontFamily: 'Quicksand-Bold', fontSize: 22 },
+            headerTitleStyle: { fontFamily: 'Quicksand-Bold', fontSize: 18 },
             headerLeft: () => (
-              <Pressable onPress={() => router.back()} className="p-2 -ml-2">
+              <Pressable
+                onPress={() => router.back()}
+                className="w-10 h-10 items-center justify-center ml-2"
+              >
                 <Ionicons name="arrow-back" size={24} color="#4B5563" />
               </Pressable>
             ),
           }}
         />
-        <ScrollView className="flex-1 p-6" contentContainerStyle={{ paddingBottom: 20 }}>
-          <View className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <View className="mb-4">
-              <Text className="text-base font-quicksand-semibold text-gray-700 mb-2">Nombre de Usuario</Text>
+        <ScrollView className="flex-1 p-4" contentContainerStyle={{ paddingBottom: 30 }}>
+          <View className="bg-white rounded-2xl p-6 shadow-sm shadow-slate-300/50 border border-gray-100">
+            {/* Selector de imagen de perfil */}
+            <ImagePickerWithPreview
+              currentImageUrl={convexUser?.profileImageUrl}
+              onImageSelected={setProfileImageUrl}
+              onUploadStart={() => setIsUploadingImage(true)}
+              onUploadComplete={() => setIsUploadingImage(false)}
+              isUploading={isUploadingImage}
+            />
+
+            <View className="mb-5">
+              <Text className="text-sm font-quicksand-bold text-slate-600 mb-2">Nombre de Usuario</Text>
               <TextInput
                 value={userName}
                 onChangeText={setUserName}
                 placeholder="Tu nombre de usuario"
-                className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-base text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary-focus transition-all duration-150"
-                placeholderTextColor="#9ca3af"
+                className="bg-slate-50 border border-slate-200 h-12 rounded-xl px-4 text-base font-quicksand-medium text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200"
+                placeholderTextColor="#94a3b8"
               />
             </View>
             <View className="mb-6">
-              <Text className="text-base font-quicksand-semibold text-gray-700 mb-2">Número de Teléfono</Text>
+              <Text className="text-sm font-quicksand-bold text-slate-600 mb-2">Número de Teléfono</Text>
               <TextInput
                 value={phone}
                 onChangeText={setPhone}
                 placeholder="Ej: 3001234567"
                 keyboardType="number-pad"
                 maxLength={10}
-                className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-base text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary-focus transition-all duration-150"
-                placeholderTextColor="#9ca3af"
+                className="bg-slate-50 border border-slate-200 h-12 rounded-xl px-4 text-base font-quicksand-medium text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200"
+                placeholderTextColor="#94a3b8"
               />
-              <View className="flex-row bg-blue-50 border border-blue-200 p-4 rounded-xl mt-3 items-start shadow-sm">
-                <Ionicons name="information-circle-outline" size={20} color="#2563EB" className="mt-px" />
-                <Text className="text-sm text-blue-800 ml-2 flex-1">
-                  Este número de teléfono será utilizado para enviarte los pagos de los premios que ganes. Asegúrate de que sea correcto.
+              <View className="flex-row bg-indigo-50 border border-indigo-200 p-4 rounded-xl mt-3 items-start shadow-sm">
+                <Ionicons name="information-circle-outline" size={20} color="#4f46e5" className="mt-px" />
+                <Text className="text-sm text-indigo-700 ml-2 flex-1">
+                  Este número será utilizado para enviarte los pagos de premios que ganes.
                 </Text>
               </View>
             </View>
 
             <Pressable
               onPress={handleSave}
-              disabled={isLoading}
-              className={`bg-primary p-4 rounded-lg items-center transition-opacity duration-150 ${isLoading ? 'opacity-50' : 'active:opacity-80'
+              disabled={isLoading || isUploadingImage}
+              className={`h-12 rounded-xl items-center justify-center transition-all duration-200 ${(isLoading || isUploadingImage)
+                ? 'bg-slate-400'
+                : 'bg-indigo-600 active:bg-indigo-700 shadow-lg active:shadow-xl'
                 }`}
             >
-              {isLoading ? <ActivityIndicator color="#FFFFFF" /> : <Text className="text-white font-quicksand-bold text-base">Guardar Cambios</Text>}
+              {isLoading || isUploadingImage ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text className="text-white font-quicksand-bold text-base">Guardar Cambios</Text>
+              )}
             </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 };
 
