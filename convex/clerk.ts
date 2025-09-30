@@ -4,7 +4,7 @@ import { internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
 
 // Función auxiliar para generar un nombre de usuario único a partir del nombre y apellido
-async function generateUniqueUsername(ctx: any, firstName?: string, lastName?: string): Promise<string> {
+export const generateUniqueUsername= async (ctx:any, firstName?: string, lastName?: string): Promise<string> => {
   let baseUsername = "User";
   if (firstName && lastName) {
     baseUsername = `${firstName.replace(/\s/g, '')}${lastName.replace(/\s/g, '')}`.toLowerCase();
@@ -59,14 +59,6 @@ export const handleClerkWebhook = httpAction(async (ctx, request) => {
         userName: newUserName,
       });
       break;
-
-    // case "user.updated":
-    //     await ctx.runMutation(internal.users.updateUser, {
-    //         clerkId: event.data.id,
-    //         email: event.data.email_addresses[0]?.email_address,
-    //         name: `${event.data.first_name ?? ""} ${event.data.last_name ?? ""}`,
-    //     });
-    //     break;
     case "user.deleted":
       await ctx.runMutation(internal.users.deleteUser, {
         clerkId: event.data.id as string,
@@ -79,7 +71,9 @@ export const handleClerkWebhook = httpAction(async (ctx, request) => {
   return new Response(null, { status: 200 });
 });
 
-async function validateRequest(req: Request): Promise<WebhookEvent | undefined> {
+
+export const validateRequest = async(req: Request): Promise<WebhookEvent | undefined> =>{
+
   const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
   if (!webhookSecret) {
     // Esto no debería ocurrir si el entorno está bien configurado,

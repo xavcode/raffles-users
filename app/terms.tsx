@@ -1,9 +1,13 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const TermsScreen = () => {
+  const router = useRouter();
+
   const termsMarkdown = `# TÉRMINOS Y CONDICIONES DE USO DE LA APLICACIÓN "MILSORTEOS"
 
 **Última actualización:** [●]
@@ -192,12 +196,18 @@ MilSorteos podrá modificar estos Términos en cualquier momento. Las modificaci
 Para consultas, reclamos o ejercicio de derechos de datos personales, puede comunicarse a:
 
 - **Correo electrónico oficial:** xmddevs@gmail.com
-- Dirección: [●], Bogotá D.C., Colombia.
 
 ---`;
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
+      <View className="flex-row items-center justify-between p-4 bg-white border-b border-slate-200">
+        <Pressable onPress={() => router.back()} className="p-2">
+          <Ionicons name="arrow-back" size={24} color="#64748b" />
+        </Pressable>
+        <Text className="text-lg font-quicksand-bold text-slate-800">Términos y Condiciones</Text>
+        <View className="w-10" />
+      </View>
       <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={true}>
         <Markdown
           style={{

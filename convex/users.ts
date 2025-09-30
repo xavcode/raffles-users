@@ -1,49 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 
-/**
- * Obtiene el usuario actual basado en la identidad de Clerk.
- * Si el usuario no existe en la tabla `users`, lo crea.
- * Esta función es útil para asegurar que un usuario exista antes de realizar acciones.
- */
-// export const getOrCreateUser = mutation({
-//   handler: async (ctx) => {
-//     const identity = await ctx.auth.getUserIdentity();
-//     if (!identity) {
-//       throw new Error("No hay un usuario autenticado.");
-//     }
-
-//     const user = await ctx.db
-//       .query("users")
-//       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-//       .unique();
-
-//     if (user) {
-//       return user;
-//     }
-
-//     // Si el usuario no existe, lo creamos
-//     const newUser = {
-//       email: identity.email,
-//       firstName: identity.givenName ?? "",
-//       lastName: identity.familyName ?? "",
-//       clerkId: identity.subject,
-//       balance: 0,
-//       userType: "free" as "free",
-//       freeRafflesResetDate: 0,
-//       raffleCredits: 0,
-//       subscriptionTier: "free" as "free", // 
-//       freeRafflesUsedThisMonth: 0, //  
-//     };
-//     const newUserId = await ctx.db.insert("users", newUser);
-//     return await ctx.db.get(newUserId);
-//   },
-// });
-
-/**
- * Obtiene el documento del usuario actual que ha iniciado sesión.
- * Devuelve `null` si el usuario no está autenticado o no se encuentra en la BD.
- */
 export const getCurrent = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -62,8 +19,6 @@ export const getCurrent = query({
 });
 
 export const createUser = internalMutation({
-
-
 
   args: {
     clerkId: v.string(),
@@ -95,6 +50,7 @@ export const createUser = internalMutation({
       freeRafflesResetDate: args.freeRafflesResetDate,
       profileImageUrl: args.profileImageUrl, // Guardar la URL de la imagen de perfil
       freeRafflesRemaining: 3, // Inicializar con 3 rifas gratuitas
+      termsAccepted: false, // Inicializar como no aceptado
     });
   },
 });
@@ -211,6 +167,27 @@ export const checkUserNameExists = internalQuery({
       .withIndex("by_userName", (q) => q.eq("userName", args.userName))
       .unique();
     return user !== null;
+  },
+});
+
+export const acceptTerms = mutation({
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("No estás autenticado.");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) {
+      throw new Error("Usuario no encontrado.");
+    }
+
+    await ctx.db.patch(user._id, { termsAccepted: true });
+    return true;
   },
 });
 

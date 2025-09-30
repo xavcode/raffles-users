@@ -9,6 +9,7 @@ import React, { useEffect } from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
+import TermsAcceptanceModal from '../components/TermsAcceptanceModal';
 
 // export const unstable_settings = {
 //   initialRouteName: '(home)'
@@ -185,6 +186,11 @@ const TabsLayout = () => {
         <Tabs.Screen name="oauth-native-callback" options={{ href: null }} />
         <Tabs.Screen name="(raffles)" options={{ href: null, headerShown:false }} />
       </Tabs>
+
+      <TermsAcceptanceModal
+        visible={!!(convexUser && !convexUser.termsAccepted)}
+        onClose={() => {}}
+      />
     </>
   );
 };
