@@ -2,7 +2,7 @@ import { api } from '@/convex/_generated/api';
 import { registerForPushNotificationsAsync } from "@/libs/notifications";
 
 import { Ionicons } from '@expo/vector-icons';
-import { Authenticated, Unauthenticated, useMutation, useQuery } from 'convex/react';
+import { Authenticated, useMutation, useQuery } from 'convex/react';
 import { Link } from 'expo-router';
 import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -45,7 +45,7 @@ const GlobalHeader = () => {
           </Link>
         )}
       </Authenticated >
-      <Unauthenticated>
+      {/* <Unauthenticated>
         <View className="flex-row items-center">
           <Link href="/(auth)/sign-in" asChild>
             <Pressable className="flex-row items-center bg-white p-3 rounded-full shadow-lg shadow-gray-300/50 active:bg-gray-100">
@@ -54,7 +54,7 @@ const GlobalHeader = () => {
             </Pressable>
           </Link>
         </View>
-      </Unauthenticated>
+      </Unauthenticated> */}
     </View>
   );
 };

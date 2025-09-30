@@ -58,12 +58,7 @@ const HomeScreen = () => {
   }
 
   if (convexUser === null) {
-    return (
-      <AuthFallback
-        title="Inicia sesión para ver los sorteos"
-        message="Explora y participa en los sorteos disponibles."
-      />
-    );
+    return <AuthFallback />;
   }
 
   return (

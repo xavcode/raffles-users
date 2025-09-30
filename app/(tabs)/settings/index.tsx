@@ -1,3 +1,4 @@
+import AuthFallback from '@/app/components/AuthFallback';
 import Paymentmethods from '@/app/components/Paymentmethods'; // Importar el componente Paymentmethods
 import { api } from '@/convex/_generated/api';
 import { Doc, Id } from '@/convex/_generated/dataModel';
@@ -20,6 +21,7 @@ type PaymentMethod = Doc<'paymentMethods'>
 
 const Settings = () => {
   const router = useRouter();
+  const convexUser = useQuery(api.users.getCurrent);
 
   const [reservationMinutes, setReservationMinutes] = useState<string>('30')
   const [savedReservationMinutes, setSavedReservationMinutes] = useState<string>('30')
@@ -43,7 +45,6 @@ const Settings = () => {
 
 
   const isReservationDirty = useMemo(() => reservationMinutes !== savedReservationMinutes, [reservationMinutes, savedReservationMinutes])
-  const convexUser = useQuery(api.users.getCurrent)
   const paymentMethods = useQuery(api.admin.getPaymentMethods, convexUser?._id ? { ownerId: convexUser._id } : 'skip')
 
   useEffect(() => {
@@ -151,6 +152,21 @@ const Settings = () => {
     } finally {
       setIsSavingRole(false)
     }
+  }
+
+  // Estado de carga mientras se obtiene el usuario
+  if (convexUser === undefined) {
+    return (
+      <View className="flex-1 bg-slate-50 justify-center items-center">
+        <ActivityIndicator size="large" color="#4f46e5" />
+        <Text className="mt-2 text-slate-600">Cargando configuración...</Text>
+      </View>
+    );
+  }
+
+  // Estado cuando el usuario no está autenticado
+  if (convexUser === null) {
+    return <AuthFallback />;
   }
 
   // Preferencias locales adicionales

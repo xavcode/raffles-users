@@ -1,3 +1,4 @@
+import AuthFallback from '@/app/components/AuthFallback';
 import { getStatusBadge } from '@/constants/status';
 import { api } from '@/convex/_generated/api';
 import { Doc, Id } from '@/convex/_generated/dataModel';
@@ -215,12 +216,12 @@ const VerificationsPage = () => {
     loadMore,
   } = usePaginatedQuery(
     api.tickets.getPendingConfirmationPurchases,
-    currentUser?._id ? { creatorId: currentUser._id } : 'skip',
+    currentUser && currentUser._id ? { creatorId: currentUser._id } : 'skip',
     { initialNumItems: 10 }
   );
 
-  // Redirigir si no está logueado
-  if (currentUser === undefined || status === LOADING_FIRST_PAGE) {
+  // Estado de carga mientras se obtiene el usuario
+  if (currentUser === undefined) {
     return (
       <View className="flex-1 bg-slate-50 justify-center items-center">
         <ActivityIndicator size="large" color="#4f46e5" />
@@ -240,7 +241,7 @@ const VerificationsPage = () => {
           headerShadowVisible: false
         }}
       />
-      {currentUser?._id && (
+      {currentUser && currentUser._id && (
         <FlatList
           data={pendingPurchases}
           renderItem={({ item }) => (
@@ -269,12 +270,8 @@ const VerificationsPage = () => {
           }}
         />
       )}
-      {(currentUser === null) && (
-        <View className="flex-1 justify-center items-center p-4">
-          <Ionicons name="alert-circle-outline" size={64} color="#f87171" />
-          <Text className="text-lg font-quicksand-bold text-slate-700 mt-4">Error al cargar usuario</Text>
-          <Text className="text-base font-quicksand-medium text-slate-500 text-center">No pudimos obtener tu información de usuario. Por favor, intenta de nuevo.</Text>
-        </View>
+      {currentUser === null && (
+        <AuthFallback />
       )}
 
       {/* Custom Rejection Reason Modal */}

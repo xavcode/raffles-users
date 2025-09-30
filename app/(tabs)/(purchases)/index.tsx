@@ -114,12 +114,7 @@ const MyPurchases = () => {
 
   // Estado cuando el usuario no está autenticado
   if (convexUser === null) {
-    return (
-      <AuthFallback
-        title="Inicia sesión para ver tus compras"
-        message="Aquí encontrarás el historial de todos los boletos que has reservado y comprado."
-      />
-    );
+    return <AuthFallback />;
   }
 
   return (
