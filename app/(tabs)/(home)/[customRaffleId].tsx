@@ -1,6 +1,7 @@
 // app/raffles/[id].tsx o similar
 
 import Paymentmethods from '@/app/components/Paymentmethods'; // Importar el componente Paymentmethods
+import UserReputation from '@/app/components/UserReputation';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { formatUtcToLocal } from '@/utils/date';
@@ -112,6 +113,8 @@ const RaffleDetailsScreen = () => {
   const [isFinalizingRaffle, setIsFinalizingRaffle] = useState(false); // Estado para la carga de finalización
   const [showAdminActionsModal, setShowAdminActionsModal] = useState(false); // Nuevo estado para el modal de administración
   const [showPaymentMethodsModal, setShowPaymentMethodsModal] = useState(false); // Nuevo estado para el modal de métodos de pago
+  const [showReviewModal, setShowReviewModal] = useState(false); // Nuevo estado para el modal de review
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false); // Estado para la carga de review
 
   // Consultar la rifa directamente por customRaffleId
   const raffle = useQuery(api.raffles.getByCustomRaffleId, paramCustomRaffleId ? { customRaffleId: paramCustomRaffleId as string } : 'skip');
@@ -121,9 +124,16 @@ const RaffleDetailsScreen = () => {
   const setRafflePurchasesEnabled = useMutation(api.admin.setRafflePurchasesEnabled);
   const deleteRaffleMutation = useMutation(api.raffles.deleteRaffle); // Mutación de borrado
   const finishRaffleMutation = useMutation(api.raffles.finishRaffle); // Nueva mutación para finalizar sorteo
+  const createReviewMutation = useMutation(api.raffles.createReviewForSeller); // Nueva mutación para crear reviews
 
   // Obtenemos el documento del usuario actual desde Convex para poder comparar su ID.
   const currentUser = useQuery(api.users.getCurrent);
+
+  // Obtener datos de reputación del vendedor (si existe)
+  const sellerReputation = useQuery(
+    api.raffles.getSellerReputation,
+    raffle?.creatorId ? { userId: raffle.creatorId } : 'skip'
+  );
 
   // Comprobamos si el usuario actual es el creador de la rifa.
   const isCreator = useMemo(() => currentUser && raffle && currentUser._id === raffle.creatorId, [currentUser, raffle]);
@@ -203,6 +213,36 @@ const RaffleDetailsScreen = () => {
     }
   };
   // -- Fin lógica del modal de finalización ---
+
+  // --- Lógica del modal de review ---
+  const handleSubmitReview = async (score: number, comment?: string) => {
+    if (!raffle?._id || !currentUser?._id) return;
+
+    setIsSubmittingReview(true);
+    try {
+      await createReviewMutation({
+        raffleId: raffle._id,
+        score,
+        comment,
+      });
+      Toast.show({
+        type: 'success',
+        text1: '¡Reseña enviada!',
+        text2: 'Gracias por calificar al vendedor.',
+      });
+      setShowReviewModal(false);
+    } catch (error: any) {
+      console.error("Error creating review:", error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.message || 'No se pudo enviar la reseña. Inténtalo de nuevo.',
+      });
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+  // -- Fin lógica del modal de review ---
 
   // --- Funciones para compartir y copiar ---
   const generateShareUrl = useCallback(() => {
@@ -541,6 +581,24 @@ const RaffleDetailsScreen = () => {
         <Ionicons name="card-outline" size={20} color="white" />
         <Text className="text-white font-quicksand-bold text-base ml-2">Ver Medios de Pago</Text>
       </Pressable>
+
+      {/* Información del vendedor con reputación */}
+      <View className="bg-white mx-4 p-4 rounded-2xl shadow-sm shadow-slate-300/50 mt-4">
+        <Text className="text-sm font-quicksand-bold text-slate-600 mb-3">Vendedor</Text>
+        <View className="flex-row items-center justify-between mb-3">
+          <View className="flex-1">
+            <Text className="text-base font-quicksand-bold text-slate-800">@{raffle?.userName}</Text>
+            <Text className="text-sm text-slate-500">Creador del sorteo</Text>
+          </View>
+          <UserReputation
+            reputationScore={sellerReputation?.reputationScore || 0}
+            totalReviews={sellerReputation?.totalReviews || 0}
+            rafflesCreated={sellerReputation?.rafflesCreated || 0}
+            size="medium"
+            showDetails={true}
+          />
+        </View>
+      </View>
 
       {/* Tarjeta de información principal (Fecha, Condición, Descripción) */}
       <View className="bg-white mx-4 p-4 rounded-2xl shadow-sm shadow-slate-300/50 mt-4">

@@ -1,4 +1,4 @@
-import ImagePickerWithPreview from '@/app/components/ImagePickerWithPreview';
+import SimpleImagePicker from '@/app/components/SimpleImagePicker';
 import { api } from '@/convex/_generated/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
@@ -108,7 +108,7 @@ const EditProfilePage = () => {
         <ScrollView className="flex-1 p-4" contentContainerStyle={{ paddingBottom: 30 }}>
           <View className="bg-white rounded-2xl p-6 shadow-sm shadow-slate-300/50 border border-gray-100">
             {/* Selector de imagen de perfil */}
-            <ImagePickerWithPreview
+            <SimpleImagePicker
               currentImageUrl={convexUser?.profileImageUrl}
               onImageSelected={setProfileImageUrl}
               onUploadStart={() => setIsUploadingImage(true)}

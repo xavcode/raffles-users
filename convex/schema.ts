@@ -49,6 +49,11 @@ export const userFields = {
 
   // --- Aceptación de Términos ---
   termsAccepted: v.boolean(), // Si el usuario ha aceptado los términos y condiciones
+
+  // --- Sistema de Reputación ---
+  reputationScore: v.optional(v.float64()), // Promedio de calificaciones (1-5 estrellas)
+  totalReviews: v.optional(v.float64()), // Número total de reseñas recibidas
+  rafflesCreated: v.optional(v.float64()), // Número de sorteos creados por el usuario
 }
 
 export const raffleFields = {
@@ -183,5 +188,18 @@ export default defineSchema({
     releaseTime: v.number(),
     purchasesEnabled: v.boolean(),
     maintenanceMessage: v.optional(v.string()),
+  }),
+
+  reviews: defineTable({
+    reviewerId: v.id("users"), // Usuario que hace la reseña
+    reviewedUserId: v.id("users"), // Usuario que recibe la reseña (vendedor)
+    raffleId: v.id("raffles"), // Sorteo al que se refiere la reseña
+    score: v.float64(), // Puntaje de 1-5 estrellas
+    createdAt: v.float64(), // Timestamp de cuando se creó la reseña
+    comment: v.optional(v.string()), // Comentario opcional (para futuro)
   })
+    .index("by_reviewer", ["reviewerId"])
+    .index("by_reviewed_user", ["reviewedUserId"])
+    .index("by_raffle", ["raffleId"])
+    .index("by_reviewed_user_and_raffle", ["reviewedUserId", "raffleId"])
 });

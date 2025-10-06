@@ -308,6 +308,12 @@ export const createRaffle = mutation({
       freeRafflesRemaining: user.freeRafflesRemaining - 1,
     });
 
+    // Incrementar contador de sorteos creados para el sistema de reputación
+    const currentRaffles = user.rafflesCreated || 0;
+    await ctx.db.patch(user._id, {
+      rafflesCreated: currentRaffles + 1,
+    });
+
     // await ctx.scheduler.runAfter(0, internal.notifications.sendToAllUsers, {
     //   title: "🎉 ¡Nuevo Sorteo Disponible!",
     //   message: `¡No te pierdas la oportunidad de ganar en nuestro nuevo sorteo: "${args.title}"!`,
@@ -548,6 +554,14 @@ export const finishRaffle = mutation({
       winningTicketNumber: winningTicketNumber,
       winnerId: winnerUserId, // Asignar winnerId (será undefined si no hay un ganador real)
     });
+
+    // Obtener información del vendedor para futuras reviews
+    const raffle = await ctx.db.get(id);
+    if (raffle && raffle.creatorId) {
+      // Aquí podríamos notificar a los compradores que pueden calificar al vendedor
+      // Los compradores podrán crear reviews usando la función createReview
+    }
+
     return true;
   },
 });
@@ -651,5 +665,117 @@ export const getRafflesForAdmin = query({
     }
 
     return await queryResult.paginate(args.paginationOpts);
+  },
+});
+
+// ===== FUNCIONES DE REPUTACIÓN =====
+
+// Crear una reseña para el vendedor de un sorteo completado
+export const createReviewForSeller = mutation({
+  args: {
+    raffleId: v.id("raffles"),
+    score: v.float64(), // 1-5 estrellas
+    comment: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("No estás autenticado.");
+    }
+
+    const reviewer = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!reviewer) {
+      throw new Error("Usuario no encontrado.");
+    }
+
+    // Verificar que el sorteo existe y está completado
+    const raffle = await ctx.db.get(args.raffleId);
+    if (!raffle) {
+      throw new Error("Sorteo no encontrado.");
+    }
+
+    if (raffle.status !== "finished") {
+      throw new Error("Solo puedes reseñar sorteos completados.");
+    }
+
+    // Verificar que el usuario haya comprado boletos en este sorteo
+    const userPurchase = await ctx.db
+      .query("purchases")
+      .withIndex("by_user_and_raffle", (q) =>
+        q.eq("userId", reviewer._id).eq("raffleId", args.raffleId)
+      )
+      .filter((q) => q.eq(q.field("status"), "completed"))
+      .first();
+
+    if (!userPurchase) {
+      throw new Error("Solo puedes reseñar sorteos en los que hayas comprado boletos.");
+    }
+
+    // Verificar que no exista ya una reseña para este sorteo por este usuario
+    const existingReview = await ctx.db
+      .query("reviews")
+      .withIndex("by_reviewer", (q) => q.eq("reviewerId", reviewer._id))
+      .filter((q) => q.eq(q.field("raffleId"), args.raffleId))
+      .first();
+
+    if (existingReview) {
+      throw new Error("Ya has reseñado este sorteo.");
+    }
+
+    // Crear la reseña
+    const reviewId = await ctx.db.insert("reviews", {
+      reviewerId: reviewer._id,
+      reviewedUserId: raffle.creatorId,
+      raffleId: args.raffleId,
+      score: args.score,
+      comment: args.comment,
+      createdAt: Date.now(),
+    });
+
+    // Actualizar la reputación del vendedor
+    const reviews = await ctx.db
+      .query("reviews")
+      .withIndex("by_reviewed_user", (q: any) => q.eq("reviewedUserId", raffle.creatorId))
+      .collect();
+
+    if (reviews.length > 0) {
+      const totalScore = reviews.reduce((sum: number, review: any) => sum + review.score, 0);
+      const averageScore = totalScore / reviews.length;
+
+      await ctx.db.patch(raffle.creatorId, {
+        reputationScore: averageScore,
+        totalReviews: reviews.length,
+      });
+    }
+
+    return reviewId;
+  },
+});
+
+// Obtener información de reputación de un vendedor
+export const getSellerReputation = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+    if (!user) {
+      throw new Error("Usuario no encontrado.");
+    }
+
+    const reviews = await ctx.db
+      .query("reviews")
+      .withIndex("by_reviewed_user", (q) => q.eq("reviewedUserId", args.userId))
+      .collect();
+
+    return {
+      reputationScore: user.reputationScore || 0,
+      totalReviews: user.totalReviews || 0,
+      rafflesCreated: user.rafflesCreated || 0,
+      isNewUser: (user.rafflesCreated || 0) < 3,
+      recentReviews: reviews.slice(0, 5), // Últimas 5 reseñas
+    };
   },
 });

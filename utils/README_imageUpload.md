@@ -1,4 +1,4 @@
-# Configuración de Subida de Imágenes
+# Sistema de Reputación y Subida de Imágenes
 
 ## Configuración Actual
 
@@ -26,6 +26,27 @@ EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET=tu_upload_preset
 3. **Configurar variables de entorno:**
    - Agrega las variables en `.env.local`
    - Reinicia el servidor de desarrollo
+
+## Sistema de Reputación
+
+### Campos agregados a la tabla users:
+- `reputationScore`: Promedio de calificaciones (1-5 estrellas)
+- `totalReviews`: Número total de reseñas recibidas
+- `rafflesCreated`: Número de sorteos creados por el usuario
+
+### Nueva tabla reviews:
+- `reviewerId`: Usuario que hace la reseña
+- `reviewedUserId`: Usuario que recibe la reseña (vendedor)
+- `raffleId`: Sorteo al que se refiere la reseña
+- `score`: Puntaje de 1-5 estrellas
+- `comment`: Comentario opcional (para futuro)
+
+### Funcionalidades implementadas:
+- ✅ **Indicador "Nuevo vendedor"** para usuarios con <3 sorteos
+- ✅ **Sistema de estrellas** para mostrar reputación
+- ✅ **Cálculo automático** de reputación promedio
+- ✅ **Modal de calificación** al completar sorteos
+- ✅ **Componente UserReputation** reutilizable
 
 ## Servicios Alternativos
 
