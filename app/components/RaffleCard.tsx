@@ -7,8 +7,8 @@ import { Image, Pressable, Text, View } from 'react-native';
 
 type RaffleWithDetails = Doc<'raffles'> & { creatorName?: string; winnerName?: string; };
 
-export const RaffleCardSkeleton = () => (
-  <View className="bg-white mx-4 mb-5 rounded-2xl flex-row overflow-hidden p-2 animate-pulse">
+export const RaffleCardSkeleton = React.forwardRef<View>((props, ref) => (
+  <View ref={ref} className="bg-white mx-4 mb-5 rounded-2xl flex-row overflow-hidden p-2">
     <View className="flex-1 p-3 justify-between">
       <View>
         <View className="bg-gray-200 h-5 w-3/4 rounded-md" />
@@ -24,9 +24,9 @@ export const RaffleCardSkeleton = () => (
     </View>
     <View className="w-36 bg-slate-200 rounded-2xl" />
   </View>
-);
+));
 
-export const RaffleCard = ({ item, currentUserId }: { item: RaffleWithDetails, currentUserId?: Id<'users'> }) => {
+const RaffleCardComponent = ({ item, currentUserId }: { item: RaffleWithDetails, currentUserId?: Id<'users'> }) => {
   const formattedPrice = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(item.ticketPrice);
   const progress = item.totalTickets > 0 ? (item.ticketsSold / item.totalTickets) * 100 : 0;
   const isActive = item.status === 'active';
@@ -116,3 +116,6 @@ export const RaffleCard = ({ item, currentUserId }: { item: RaffleWithDetails, c
     </Link>
   );
 };
+
+export const RaffleCard = RaffleCardComponent;
+export default RaffleCardComponent;

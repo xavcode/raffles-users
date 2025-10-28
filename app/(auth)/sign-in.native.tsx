@@ -1,19 +1,22 @@
-import SocialButton from '@/app/components/SocialButton';
 import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import React from "react";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { icons } from "../../constants";
+import SocialButton from '../components/SocialButton';
 
-const AnimatedContainer = ({ children, delay }: { children: React.ReactNode, delay: number }) => (
-  <MotiView
-    from={{ opacity: 0, translateY: 50 }}
-    animate={{ opacity: 1, translateY: 0 }}
-    transition={{ type: 'timing', duration: 500, delay }}
-  >
-    {children}
-  </MotiView>
+const AnimatedContainer = React.forwardRef<View, { children: React.ReactNode, delay: number }>(
+  ({ children, delay }, ref) => (
+    <MotiView
+      ref={ref}
+      from={{ opacity: 0, translateY: 50 }}
+      animate={{ opacity: 1, translateY: 0 }}
+      transition={{ type: 'timing', duration: 500, delay }}
+    >
+      {children}
+    </MotiView>
+  )
 );
 
 const SignIn = () => {

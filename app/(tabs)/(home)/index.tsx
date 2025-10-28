@@ -36,8 +36,8 @@ const HomeScreen = () => {
       <TabBar
         {...props}
         indicatorStyle={{ backgroundColor: '#6366f1' }}
-        style={{ backgroundColor: '#f8fafc', shadowOpacity: 0, elevation: 0, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' }}
-        labelStyle={{ fontSize: 14, fontFamily: 'Quicksand-Bold', textTransform: 'none' }}
+        // style={{ backgroundColor: '#f8fafc', shadowOpacity: 0, elevation: 0, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' }}
+        // labelStyle={{ fontSize: 14, fontFamily: 'Quicksand-Bold', textTransform: 'none' }}
         activeColor={'#6366f1'}
         inactiveColor={'#64748b'}
       />

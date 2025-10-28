@@ -5,10 +5,10 @@ import { Platform } from 'react-native';
 
 // Check if running in Expo Go - if so, skip all notification setup
 const isExpoGo = Constants.executionEnvironment === 'storeClient';
-console.log('🔍 DEBUG: Is Expo Go:', isExpoGo);
+// console.log('🔍 DEBUG: Is Expo Go:', isExpoGo);
 
 if (isExpoGo) {
-  console.warn('⚠️ WARNING: Running in Expo Go - push notifications not supported. Skipping notification setup.');
+  // console.warn('⚠️ WARNING: Running in Expo Go - push notifications not supported. Skipping notification setup.');
 }
 
 // Configuración global para cómo se manejan las notificaciones cuando la app está en primer plano.
@@ -47,16 +47,16 @@ function handleRegistrationError(errorMessage: string) {
 }
 
 export async function registerForPushNotificationsAsync(): Promise<string | undefined> {
-  console.log('🔍 DEBUG: Starting push notification registration');
+  // console.log('🔍 DEBUG: Starting push notification registration');
 
   if (isExpoGo) {
-    console.warn('⚠️ WARNING: Push notifications not supported in Expo Go. Skipping registration.');
+    // console.warn('⚠️ WARNING: Push notifications not supported in Expo Go. Skipping registration.');
     return;
   }
 
-  console.log('🔍 DEBUG: Platform:', Platform.OS);
-  console.log('🔍 DEBUG: Is device:', Device.isDevice);
-  console.log('🔍 DEBUG: Execution environment:', Constants.executionEnvironment);
+  // console.log('🔍 DEBUG: Platform:', Platform.OS);
+  // console.log('🔍 DEBUG: Is device:', Device.isDevice);
+  // console.log('🔍 DEBUG: Execution environment:', Constants.executionEnvironment);
 
   if (Platform.OS === 'android') {
     // Importante: Si ya existía un canal con la misma ID en el dispositivo, sus propiedades

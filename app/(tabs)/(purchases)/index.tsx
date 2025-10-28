@@ -184,19 +184,15 @@ const TabSelector = ({ purchases, status, loadMore, router }: TabSelectorProps) 
   };
 
   const renderTabBar = (props: any) => (
-    <>
-      {/* Aquí puedes usar un componente de barra de pestañas que crees o adaptes. */}
-      {/* Por ahora, para evitar el error de importación, dejaré un marcador de posición. */}
-      {/* Necesitarás instalar 'react-native-tab-view' y 'react-native-pager-view' para que esto funcione. */}
-      <TabBar
-        {...props}
-        indicatorStyle={{ backgroundColor: '#6366f1' }}
-        style={{ backgroundColor: '#f8fafc', shadowOpacity: 0, elevation: 0, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' }}
-        labelStyle={{ fontSize: 14, fontFamily: 'Quicksand-Bold', textTransform: 'none' }} // Ajustado a 14
-        activeColor={'#6366f1'}
-        inactiveColor={'#64748b'}
-      />
-    </>
+    <TabBar
+      {...props}
+      indicatorStyle={{ backgroundColor: '#6366f1', height: 3 }}
+      style={{ backgroundColor: '#f8fafc', shadowOpacity: 0, elevation: 0, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' }}
+      labelStyle={{ fontSize: 14, fontFamily: 'Quicksand-Bold', textTransform: 'none' }}
+      activeColor={'#6366f1'}
+      inactiveColor={'#64748b'}
+      tabStyle={{ width: 'auto', minWidth: layout.width / routes.length }}
+    />
   );
 
   return (
