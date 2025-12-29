@@ -38,7 +38,29 @@ import { internalMutation, internalQuery, mutation, query } from "./_generated/s
 //     const newUserId = await ctx.db.insert("users", newUser);
 //     return await ctx.db.get(newUserId);
 //   },
+//   },
 // });
+
+export const acceptTerms = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("No estás autenticado.");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) {
+      throw new Error("Usuario no encontrado.");
+    }
+
+    await ctx.db.patch(user._id, { termsAccepted: true });
+  },
+});
 
 /**
  * Obtiene el documento del usuario actual que ha iniciado sesión.

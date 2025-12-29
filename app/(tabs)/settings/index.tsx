@@ -3,6 +3,7 @@ import { api } from '@/convex/_generated/api';
 import { Doc, Id } from '@/convex/_generated/dataModel';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -33,6 +34,8 @@ const Settings = () => {
   const [isSearching, setIsSearching] = useState(false)
   const [isSavingRole, setIsSavingRole] = useState(false)
   const [isCreatingPaymentMethod, setIsCreatingPaymentMethod] = useState(false)
+
+  const router = useRouter(); // Inicializar router
 
   const settings = useQuery(api.admin.getSettingsRaffle)
   const setRafflePurchasesEnabled = useMutation(api.admin.setRafflePurchasesEnabled)
@@ -268,6 +271,19 @@ const Settings = () => {
               {paymentMethods === undefined && <ActivityIndicator className="mt-2" />}
               {/* Reemplazamos la lista manual por el componente Paymentmethods */}
               <Paymentmethods paymentMethods={paymentMethods} />
+            </View>
+            {/* Sección: Información y Legal */}
+            <View className="mt-2 mb-6">
+              <Pressable
+                onPress={() => router.push('/terms')}
+                className="flex-row items-center justify-between bg-white p-4 rounded-xl shadow-sm shadow-slate-300/50 active:opacity-70"
+              >
+                <View className="flex-row items-center">
+                  <Ionicons name="document-text-outline" size={22} color="#4f46e5" />
+                  <Text className="ml-3 text-base font-quicksand-bold text-slate-700">Ver Términos y Condiciones</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+              </Pressable>
             </View>
           </View>
         </ScrollView>

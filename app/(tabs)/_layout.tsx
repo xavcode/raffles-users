@@ -125,6 +125,13 @@ const TabsLayout = () => {
         />
         <Tabs.Screen
           name="(purchases)"
+          listeners={({ navigation }) => ({
+            tabPress: (e) => {
+              // Resetear el stack navegando explícitamente al índice
+              e.preventDefault();
+              navigation.navigate('(purchases)', { screen: 'index' });
+            },
+          })}
           options={{
             title: "Mis Compras",
             headerShown: true,

@@ -46,6 +46,7 @@ export const userFields = {
   freeRafflesUsedThisMonth: v.float64(), // Contador de sorteos gratuitos usados.
   freeRafflesResetDate: v.float64(), // Timestamp de cuándo se debe resetear el contador.
   freeRafflesRemaining: v.number(), // Nuevo campo para el conteo de rifas gratuitas restantes
+  termsAccepted: v.optional(v.boolean()), // Indica si el usuario ha aceptado los términos y condiciones.
 }
 
 export const raffleFields = {
