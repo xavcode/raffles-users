@@ -1,10 +1,10 @@
-import ModalPurchase from '@/app/components/ModalPurchase';
+import ModalPurchase from '@/components/ModalPurchase';
 import { PURCHASE_STATUS } from '@/constants/status';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 
-import Paymentmethods from '@/app/components/Paymentmethods'; // Importar el componente Paymentmethods
-import toastConfig from '@/app/components/ToastConfig'; // Importar la configuración del toast
+import Paymentmethods from '@/components/Paymentmethods'; // Importar el componente Paymentmethods
+import toastConfig from '@/components/ToastConfig'; // Importar la configuración del toast
 import { formatCOP } from '@/utils/format';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from 'convex/react';

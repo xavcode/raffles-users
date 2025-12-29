@@ -1,6 +1,7 @@
 // app/raffles/[id].tsx o similar
 
-import Paymentmethods from '@/app/components/Paymentmethods'; // Importar el componente Paymentmethods
+import Paymentmethods from '@/components/Paymentmethods'; // Importar el componente Paymentmethods
+import ReviewModal from '@/components/ReviewModal'; // Modal de reviews
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { formatUtcToLocal } from '@/utils/date';
@@ -92,6 +93,7 @@ const RaffleDetailsScreen = () => {
   const [isFinalizingRaffle, setIsFinalizingRaffle] = useState(false); // Estado para la carga de finalización
   const [showAdminActionsModal, setShowAdminActionsModal] = useState(false); // Nuevo estado para el modal de administración
   const [showPaymentMethodsModal, setShowPaymentMethodsModal] = useState(false); // Nuevo estado para el modal de métodos de pago
+  const [showReviewModal, setShowReviewModal] = useState(false); // Estado para el modal de review
 
   // Consultar la rifa directamente por customRaffleId
   const raffle = useQuery(api.raffles.getByCustomRaffleId, paramCustomRaffleId ? { customRaffleId: paramCustomRaffleId as string } : 'skip');
@@ -109,6 +111,19 @@ const RaffleDetailsScreen = () => {
   const isCreator = useMemo(() => currentUser && raffle && currentUser._id === raffle.creatorId, [currentUser, raffle]);
   const isRaffleActive = raffle?.status === 'active';
   const isRaffleFinished = raffle?.status === 'finished';
+
+  // Verificar si el usuario puede dejar una review (para sorteos finalizados)
+  const canReviewResult = useQuery(
+    api.reviews.canUserReview,
+    raffle?._id && isRaffleFinished ? { raffleId: raffle._id } : 'skip'
+  );
+
+  // Mostrar modal de review automáticamente si el usuario puede votar
+  useEffect(() => {
+    if (canReviewResult?.canReview && isRaffleFinished) {
+      setShowReviewModal(true);
+    }
+  }, [canReviewResult, isRaffleFinished]);
 
   const nonAvailableTickets = useQuery(api.tickets.getNonAvailableTickets, raffle?._id ? { raffleId: raffle._id as Id<'raffles'> } : 'skip');
   const reserveTicketsMutation = useMutation(api.tickets.reserveTickets);
@@ -830,6 +845,16 @@ const RaffleDetailsScreen = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Modal de Review para sorteos finalizados */}
+      {raffle && isRaffleFinished && (
+        <ReviewModal
+          visible={showReviewModal}
+          onClose={() => setShowReviewModal(false)}
+          raffleId={raffle._id}
+          creatorName={raffle.userName}
+        />
+      )}
     </SafeAreaView>
   );
 };

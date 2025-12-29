@@ -1,9 +1,9 @@
+import SocialButton from "@/components/SocialButton";
 import { Ionicons } from '@expo/vector-icons';
 import React from "react";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { icons } from "../../constants";
-import SocialButton from "../components/SocialButton";
 
 // Esta es la versión para WEB.
 // Para evitar errores de compilación, no importamos 'moti'.

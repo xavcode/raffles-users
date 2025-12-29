@@ -1,5 +1,5 @@
 // import { useAuth } from '@clerk/clerk-expo';
-import TabScreenHeader from '@/app/components/TabScreenHeader';
+import TabScreenHeader from '@/components/TabScreenHeader';
 import { api } from '@/convex/_generated/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useConvexAuth, usePaginatedQuery, useQuery } from 'convex/react';

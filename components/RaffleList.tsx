@@ -1,10 +1,10 @@
-import React from 'react';
-import { View, Text, FlatList, ActivityIndicator } from 'react-native';
-import { usePaginatedQuery } from 'convex/react';
+import { RaffleCard, RaffleCardSkeleton } from '@/components/RaffleCard';
 import { api } from '@/convex/_generated/api';
 import { Doc, Id } from '@/convex/_generated/dataModel';
 import { Ionicons } from '@expo/vector-icons';
-import { RaffleCard, RaffleCardSkeleton } from '@/app/components/RaffleCard';
+import { usePaginatedQuery } from 'convex/react';
+import React from 'react';
+import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 
 type RaffleListProps = {
   type: 'active' | 'finished' | 'myRaffles';

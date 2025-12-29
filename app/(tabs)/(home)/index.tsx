@@ -1,3 +1,7 @@
+import AuthFallback from '@/components/AuthFallback';
+import { RaffleCardSkeleton } from '@/components/RaffleCard';
+import RaffleList from '@/components/RaffleList';
+import SearchBar from '@/components/SearchBar';
 import { api } from '@/convex/_generated/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from 'convex/react';
@@ -6,10 +10,6 @@ import React, { useState } from 'react';
 import { Pressable, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TabBar, TabView } from 'react-native-tab-view';
-import AuthFallback from '../../components/AuthFallback';
-import { RaffleCardSkeleton } from '../../components/RaffleCard';
-import RaffleList from '../../components/RaffleList';
-import SearchBar from '../../components/SearchBar';
 
 const HomeScreen = () => {
   const layout = useWindowDimensions();

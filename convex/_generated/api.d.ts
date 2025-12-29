@@ -18,6 +18,7 @@ import type * as clerk from "../clerk.js";
 import type * as http from "../http.js";
 import type * as notifications from "../notifications.js";
 import type * as raffles from "../raffles.js";
+import type * as reviews from "../reviews.js";
 import type * as tickets from "../tickets.js";
 import type * as users from "../users.js";
 
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   notifications: typeof notifications;
   raffles: typeof raffles;
+  reviews: typeof reviews;
   tickets: typeof tickets;
   users: typeof users;
 }>;

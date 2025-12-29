@@ -1,3 +1,5 @@
+import OfflineBanner from '@/components/OfflineBanner';
+import toastConfig from '@/components/ToastConfig';
 import { NetworkProvider } from '@/contexts/NetworkContext';
 import { ClerkLoaded, ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import { tokenCache } from '@clerk/clerk-expo/token-cache';
@@ -11,8 +13,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { configureReanimatedLogger } from 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import OfflineBanner from './components/OfflineBanner';
-import toastConfig from './components/ToastConfig';
 import './global.css';
 
 

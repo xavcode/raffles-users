@@ -1,4 +1,6 @@
-import PurchaseListItemSkeleton from '@/app/components/skeletons/PurchaseListItemSkeleton';
+import AuthFallback from '@/components/AuthFallback';
+import GlobalHeader from '@/components/GlobalHeader';
+import PurchaseListItemSkeleton from '@/components/skeletons/PurchaseListItemSkeleton';
 import { PURCHASE_STATUS_STYLES } from '@/constants/status';
 import { api } from '@/convex/_generated/api';
 import { Doc } from '@/convex/_generated/dataModel';
@@ -10,8 +12,6 @@ import React from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TabBar, TabView } from 'react-native-tab-view';
-import AuthFallback from '../../components/AuthFallback';
-import GlobalHeader from '../../components/GlobalHeader';
 
 
 type PurchaseWithDetails = Doc<'purchases'> & {

@@ -1,4 +1,4 @@
-import SocialButton from "@/app/components/SocialButton";
+import SocialButton from "@/components/SocialButton";
 import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import React from "react";

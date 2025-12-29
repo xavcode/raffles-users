@@ -47,6 +47,17 @@ export const userFields = {
   freeRafflesResetDate: v.float64(), // Timestamp de cuándo se debe resetear el contador.
   freeRafflesRemaining: v.number(), // Nuevo campo para el conteo de rifas gratuitas restantes
   termsAccepted: v.optional(v.boolean()), // Indica si el usuario ha aceptado los términos y condiciones.
+
+  // --- Reputación ---
+  totalReviewsReceived: v.optional(v.number()), // Total de reviews recibidas
+  averageRating: v.optional(v.float64()), // Promedio de estrellas (1-5)
+  completedRafflesCount: v.optional(v.number()), // Contador de sorteos completados
+  bio: v.optional(v.string()), // Descripción/biografía del usuario
+  totalReviews: v.optional(v.number()), // Total de reviews
+
+  // --- Campos Legacy (para compatibilidad con datos existentes) ---
+  rafflesCreated: v.optional(v.number()), // Deprecated: contador anterior
+  reputationScore: v.optional(v.number()), // Deprecated: sistema anterior
 }
 
 export const raffleFields = {
@@ -181,5 +192,16 @@ export default defineSchema({
     releaseTime: v.number(),
     purchasesEnabled: v.boolean(),
     maintenanceMessage: v.optional(v.string()),
+  }),
+
+  // --- Reviews para el sistema de reputación ---
+  reviews: defineTable({
+    raffleId: v.id("raffles"),
+    reviewerId: v.id("users"),
+    reviewedUserId: v.id("users"),
+    rating: v.number(), // 1-5 estrellas
+    comment: v.optional(v.string()),
   })
+    .index("by_reviewed_user", ["reviewedUserId"])
+    .index("by_raffle_reviewer", ["raffleId", "reviewerId"]),
 });

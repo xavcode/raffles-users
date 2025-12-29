@@ -1,4 +1,4 @@
-import Paymentmethods from '@/app/components/Paymentmethods'; // Importar el componente Paymentmethods
+import Paymentmethods from '@/components/Paymentmethods'; // Importar el componente Paymentmethods
 import { api } from '@/convex/_generated/api';
 import { Doc, Id } from '@/convex/_generated/dataModel';
 import { Ionicons } from '@expo/vector-icons';

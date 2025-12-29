@@ -1,4 +1,4 @@
-import HeaderRigth from '@/app/components/HeaderRigth';
+import HeaderRigth from '@/components/HeaderRigth';
 import { Stack } from 'expo-router';
 import React from 'react';
 
