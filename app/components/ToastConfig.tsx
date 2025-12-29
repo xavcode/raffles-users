@@ -1,7 +1,10 @@
 // app/components/toastConfig.tsx
 
 import React from 'react';
+import { Platform } from 'react-native';
 import { BaseToast, ErrorToast } from 'react-native-toast-message';
+
+
 
 /*
   Este es el objeto de configuración para los toasts.
@@ -22,17 +25,21 @@ const toastConfig = {
         minHeight: 70, // Aseguramos una altura mínima para que sea más grande
         paddingVertical: 8, // Añadimos padding vertical para darle más altura
         backgroundColor: '#F0FDF4',
-        zIndex: 9999, // Para que se vea sobre el toast de error
+        // OPTIMIZACIÓN: zIndex alto solo en web, en móvil causa problemas de rendimiento
+        zIndex: Platform.OS === 'web' ? 9999 : undefined,
       }}
       contentContainerStyle={{ paddingHorizontal: 15 }}
       text1Style={{
         fontSize: 14,
-        fontFamily: 'quicksand-bold', // Usando las fuentes de tu app
+        // OPTIMIZACIÓN: Usar fuente del sistema en móvil para evitar retrasos de carga
+        fontFamily: Platform.OS === 'web' ? 'quicksand-bold' : undefined,
+        fontWeight: Platform.OS === 'web' ? undefined : '700',
         color: '#065F46',
       }}
       text2Style={{
         fontSize: 12,
-        fontFamily: 'quicksand-medium',
+        fontFamily: Platform.OS === 'web' ? 'quicksand-medium' : undefined,
+        fontWeight: Platform.OS === 'web' ? undefined : '500',
         color: '#047857',
       }}
     />
@@ -50,17 +57,19 @@ const toastConfig = {
         minHeight: 70,
         paddingVertical: 10,
         backgroundColor: '#FEF2F2',
-        zIndex: 9999, // Para que se vea sobre el toast de error
+        zIndex: Platform.OS === 'web' ? 9999 : undefined,
       }}
       contentContainerStyle={{ paddingHorizontal: 15 }}
       text1Style={{
         fontSize: 14,
-        fontFamily: 'quicksand-bold',
+        fontFamily: Platform.OS === 'web' ? 'quicksand-bold' : undefined,
+        fontWeight: Platform.OS === 'web' ? undefined : '700',
         color: '#991B1B',
       }}
       text2Style={{
         fontSize: 12,
-        fontFamily: 'quicksand-medium',
+        fontFamily: Platform.OS === 'web' ? 'quicksand-medium' : undefined,
+        fontWeight: Platform.OS === 'web' ? undefined : '500',
         color: '#B91C1C',
       }}
     />
@@ -78,17 +87,19 @@ const toastConfig = {
         minHeight: 70,
         paddingVertical: 10,
         backgroundColor: '#EFF6FF',
-        zIndex: 9999, // Para que se vea sobre el toast de error
+        zIndex: Platform.OS === 'web' ? 9999 : undefined,
       }}
       contentContainerStyle={{ paddingHorizontal: 15 }}
       text1Style={{
         fontSize: 14,
-        fontFamily: 'quicksand-bold',
+        fontFamily: Platform.OS === 'web' ? 'quicksand-bold' : undefined,
+        fontWeight: Platform.OS === 'web' ? undefined : '700',
         color: '#107df6',
       }}
       text2Style={{
         fontSize: 12,
-        fontFamily: 'quicksand-medium',
+        fontFamily: Platform.OS === 'web' ? 'quicksand-medium' : undefined,
+        fontWeight: Platform.OS === 'web' ? undefined : '500',
         color: '#09f',
       }}
     />
@@ -97,16 +108,21 @@ const toastConfig = {
     <BaseToast
       {...props}
       // Sobrescribimos los estilos para que sea naranja
-      style={{ borderLeftColor: '#F59E0B', zIndex: 9999 }} // Un color naranja de Tailwind (amber-500)
+      style={{
+        borderLeftColor: '#F59E0B',
+        zIndex: Platform.OS === 'web' ? 9999 : undefined
+      }}
       contentContainerStyle={{ paddingHorizontal: 15 }}
       // Puedes mantener las fuentes que ya usas
       text1Style={{
         fontSize: 16,
-        fontFamily: 'Quicksand-Bold'
+        fontFamily: Platform.OS === 'web' ? 'Quicksand-Bold' : undefined,
+        fontWeight: Platform.OS === 'web' ? undefined : '700',
       }}
       text2Style={{
         fontSize: 14,
-        fontFamily: 'Quicksand-Regular',
+        fontFamily: Platform.OS === 'web' ? 'Quicksand-Regular' : undefined,
+        fontWeight: Platform.OS === 'web' ? undefined : '400',
         color: '#4B5563' // Color de texto un poco más oscuro
       }}
     />
