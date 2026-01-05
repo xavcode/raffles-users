@@ -27,6 +27,12 @@ module.exports = {
         warning: '#f59e0b',
         info: '#3b82f6',
 
+        // iOS Specific Colors
+        'ios-bg': '#F2F2F7',
+        'ios-red': '#FF3B30',
+        'ios-blue': '#007AFF',
+        'ios-gray': '#8E8E93',
+
         muted: '#64748b' // slate-500 (updated from '#440' which seemed wrong)
       },
       fontFamily: {

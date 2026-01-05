@@ -5,7 +5,6 @@ import { useQuery } from 'convex/react';
 import { Link, useRouter } from 'expo-router';
 import React from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
-import StarRating from './StarRating';
 
 type RaffleWithDetails = Doc<'raffles'> & { creatorName?: string; winnerName?: string; };
 
@@ -19,20 +18,21 @@ const getDaysRemaining = (endTime: number): string => {
 };
 
 export const RaffleCardSkeleton = () => (
-  <View className="mx-4 mb-4 bg-white rounded-2xl p-4 flex-row">
-    <View className="flex-1 pr-4">
-      <View className="bg-slate-200 h-3 w-20 rounded animate-pulse" />
-      <View className="bg-slate-200 h-5 w-3/4 rounded mt-2 animate-pulse" />
-      <View className="bg-slate-200 h-3 w-1/2 rounded mt-2 animate-pulse" />
-      <View className="bg-slate-200 h-8 w-24 rounded-full mt-3 animate-pulse" />
+  <View className="mx-4 mb-4 bg-surface p-4 rounded-3xl flex-row items-center border border-border shadow-sm">
+    <View className="w-24 h-24 bg-slate-200 rounded-2xl animate-pulse" />
+    <View className="flex-1 ml-4 space-y-2">
+      <View className="bg-slate-200 h-4 w-3/4 rounded animate-pulse" />
+      <View className="bg-slate-200 h-3 w-1/2 rounded animate-pulse" />
+      <View className="bg-slate-200 h-6 w-1/2 rounded animate-pulse" />
     </View>
-    <View className="w-24 h-24 bg-slate-200 rounded-xl" />
+    <View className="w-16 h-10 bg-slate-200 rounded-full animate-pulse ml-2" />
   </View>
 );
 
 export const RaffleCard = ({ item, currentUserId }: { item: RaffleWithDetails, currentUserId?: Id<'users'> }) => {
   const router = useRouter();
   const formattedPrice = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(item.ticketPrice);
+  const formattedPrize = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(item.prize || 0);
   const isActive = item.status === 'active';
   const isOwner = currentUserId && item.creatorId === currentUserId;
 
@@ -47,86 +47,77 @@ export const RaffleCard = ({ item, currentUserId }: { item: RaffleWithDetails, c
   const getStatusInfo = () => {
     if (!isActive) {
       if (item.winningTicketNumber) {
-        return { text: `Ganador: #${item.winningTicketNumber.toString().padStart(3, '0')}`, color: 'text-green-600' };
+        return { text: `Ganador: #${item.winningTicketNumber.toString().padStart(3, '0')}`, color: 'text-green-600', icon: 'trophy' };
       }
-      return { text: 'Finalizado', color: 'text-red-500' };
+      return { text: 'Finalizado', color: 'text-text-muted', icon: 'checkmark-circle' };
     }
-    return { text: getDaysRemaining(item.endTime), color: 'text-amber-700' };
+    const days = Math.ceil((item.endTime - Date.now()) / (1000 * 60 * 60 * 24));
+    const isUrgent = days <= 2;
+    return {
+      text: getDaysRemaining(item.endTime),
+      color: isUrgent ? 'text-ios-red' : 'text-text-muted',
+      icon: 'timer'
+    };
   };
 
   const statusInfo = getStatusInfo();
 
   const CardContent = (
     <Pressable
-      className={`mx-4 mb-4 bg-white rounded-2xl p-4 shadow-sm ${!isActive ? 'opacity-80' : 'active:scale-[0.99]'}`}
-      disabled={!isActive}
+      className={`mx-4 mb-4 bg-surface p-4 rounded-3xl flex-row items-center border border-border shadow-sm ${!isActive ? 'opacity-80' : 'active:scale-[0.98]'}`}
     >
-      {/* ROW CONTAINER */}
-      <View className="flex-row">
-        {/* LEFT: Content */}
-        <View className="flex-1 pr-4">
-          {/* Status */}
-          <Text className={`text-xs font-quicksand-medium ${statusInfo.color}`}>
-            {statusInfo.text}
-          </Text>
-
-          {/* Creator */}
-          <Pressable onPress={handleCreatorPress} className="flex-row items-center mt-2 self-start bg-slate-50 border border-slate-200 pl-1 pr-3 py-1 rounded-full active:bg-slate-100">
-            {reputation?.profileImageUrl ? (
-              <Image
-                source={{ uri: reputation.profileImageUrl }}
-                className="w-8 h-8 rounded-full bg-slate-200 mr-2"
-              />
-            ) : (
-              <View className="w-10 h-10 rounded-full bg-slate-200 mr-2 items-center justify-center">
-                <Ionicons name="person" size={28} color="#94a3b8" />
-              </View>
-            )}
-            <View>
-              <Text className="text-xs font-quicksand-bold text-slate-700" numberOfLines={1}>
-                {item.userName}
-              </Text>
-              {reputation && reputation.totalReviews > 0 && (
-                <View className="flex-row items-center">
-                  <StarRating rating={reputation.averageRating} size={10} maxStars={1} />
-                  <Text className="text-[10px] font-quicksand-bold text-amber-600 ml-0.5">
-                    {reputation.averageRating.toFixed(1)}
-                  </Text>
-                </View>
-              )}
-            </View>
-          </Pressable>
-          {/* Title */}
-          <Text className="text-base font-quicksand-bold text-slate-800 mt-1 leading-5" numberOfLines={2}>
-            {item.title}
-          </Text>
-
-
-          {/* Button Row */}
-          <View className="flex-row items-center mt-3">
-            {isActive ? (
-              <View className="bg-amber-100 px-4 py-2 rounded-full">
-                <Text className="text-sm font-quicksand-bold text-amber-800">{formattedPrice}</Text>
-              </View>
-            ) : (
-              <View className="bg-slate-100 px-4 py-2 rounded-full">
-                <Text className="text-sm font-quicksand-semibold text-slate-600">Ver detalles</Text>
-              </View>
-            )}
-            {isOwner && (
-              <View className="bg-indigo-100 px-3 py-1.5 rounded-full ml-2">
-                <Text className="text-xs font-quicksand-bold text-indigo-600">Tuyo</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* RIGHT: Image */}
+      {/* LEFT: Image */}
+      <View className="relative shadow-inner">
         <Image
           source={{ uri: item.imageUrl }}
-          className="w-24 h-24 bg-slate-200 rounded-xl"
+          className="w-24 h-24 rounded-2xl bg-slate-100 shadow-inner"
           resizeMode="cover"
         />
+        {isOwner && (
+          <View className="absolute -top-1 -left-1 bg-primary px-2 py-0.5 rounded-full shadow-sm z-10">
+            <Text className="text-[8px] font-quicksand-bold text-white uppercase">Tuyo</Text>
+          </View>
+        )}
+      </View>
+
+      {/* CENTER: Content */}
+      <View className="flex-1 ml-4 min-w-0">
+        {/* Creator Identity */}
+        <Pressable
+          onPress={handleCreatorPress}
+          className="flex-row items-center mb-1 self-start bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-full active:opacity-70"
+        >
+          <Ionicons name="person" size={10} color="#94a3b8" />
+          <Text className="ml-1.5 text-[10px] font-quicksand-bold text-text-muted" numberOfLines={1}>
+            {item.userName}
+          </Text>
+        </Pressable>
+
+        {/* Time Status */}
+        <View className="flex-row items-center mb-0.5">
+          <Ionicons name={statusInfo.icon as any} size={12} color={statusInfo.color === 'text-ios-red' ? '#FF3B30' : '#8E8E93'} />
+          <Text className={`ml-1 text-[11px] font-quicksand-bold uppercase tracking-wide ${statusInfo.color}`}>
+            {statusInfo.text}
+          </Text>
+        </View>
+
+        {/* Title */}
+        <Text className="text-[15px] font-quicksand-semibold text-text-main truncate" numberOfLines={1}>
+          {item.title}
+        </Text>
+
+        {/* Big Prize Amount */}
+        <Text className="text-[22px] font-quicksand-bold text-text-main tracking-tight leading-none mt-0.5">
+          {formattedPrize !== '$ 0' ? formattedPrize : formattedPrice}
+        </Text>
+      </View>
+
+      {/* RIGHT: Price Pill */}
+      <View className="items-end justify-center ml-2">
+        <View className="bg-ios-bg px-4 py-2 rounded-2xl min-w-[70px] items-center">
+          <Text className="text-sm font-quicksand-bold text-ios-blue">{formattedPrice}</Text>
+        </View>
+        <Text className="text-[10px] text-ios-gray font-quicksand-medium mt-1 pr-1">por boleto</Text>
       </View>
     </Pressable>
   );
