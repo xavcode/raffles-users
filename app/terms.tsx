@@ -200,12 +200,12 @@ Para consultas, reclamos o ejercicio de derechos de datos personales, puede comu
 ---`;
 
     return (
-        <SafeAreaView className="flex-1 bg-slate-50">
-            <View className="flex-row items-center justify-between p-4 bg-white border-b border-slate-200">
+        <SafeAreaView className="flex-1 bg-background">
+            <View className="flex-row items-center justify-between p-4 bg-surface border-b border-border">
                 <Pressable onPress={() => router.back()} className="p-2">
                     <Ionicons name="arrow-back" size={24} color="#64748b" />
                 </Pressable>
-                <Text className="text-lg font-quicksand-bold text-slate-800">Términos y Condiciones</Text>
+                <Text className="text-lg font-quicksand-bold text-text-main">Términos y Condiciones</Text>
                 <View className="w-10" />
             </View>
             <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={true}>

@@ -159,7 +159,7 @@ const Settings = () => {
   // Preferencias locales adicionales
 
   return (
-    <View className="flex-1 bg-slate-50">
+    <View className="flex-1 bg-background">
       <KeyboardAwareScrollView
         contentContainerClassName='flex-1'
         enableOnAndroid={true}
@@ -169,7 +169,7 @@ const Settings = () => {
         extraScrollHeight={20}
       >
         <ScrollView
-          className="p-4 pb-10 bg-blue-800"
+          className="p-4 pb-10"
           keyboardShouldPersistTaps="always"
         >
 
@@ -233,29 +233,29 @@ const Settings = () => {
           </View> */}
 
           {/* Sección: metodos de pago */}
-          <View className="bg-white rounded-2xl p-4 shadow-sm shadow-slate-300/50 mb-5">
+          <View className="bg-surface rounded-2xl p-4 shadow-sm shadow-slate-300/50 mb-5">
             <View className="flex-row items-center mb-3">
               <Ionicons name="card-outline" size={18} color="#64748b" />
-              <Text className="ml-2 text-base font-quicksand-bold text-slate-800">Métodos de Pago</Text>
+              <Text className="ml-2 text-base font-quicksand-bold text-text-main">Métodos de Pago</Text>
             </View>
-            <Text className="text-sm text-slate-600 mb-4">Agrega o elimina los métodos de pago que los usuarios verán al comprar.</Text>
+            <Text className="text-sm text-text-muted mb-4">Agrega o elimina los métodos de pago que los usuarios verán al comprar.</Text>
 
             {/* Formulario para agregar */}
             <View className='space-y-3 gap-2 mb-4'>
               <TextInput
-                className="flex-1 bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium"
+                className="flex-1 bg-input border border-border h-12 rounded-lg px-4 text-base font-quicksand-medium"
                 placeholder='Nequi - daviplata'
                 value={createPaymentMethodForm.name}
                 onChangeText={(text) => setCreatePaymentMethodForm({ ...createPaymentMethodForm, name: text })}
               />
               <TextInput
-                className="flex-1 bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium"
+                className="flex-1 bg-input border border-border h-12 rounded-lg px-4 text-base font-quicksand-medium"
                 placeholder='Andres Perez'
                 value={createPaymentMethodForm.userName}
                 onChangeText={(text) => setCreatePaymentMethodForm({ ...createPaymentMethodForm, userName: text })}
               />
               <TextInput
-                className="flex-1 bg-slate-100 border border-slate-200 h-12 rounded-lg px-4 text-base font-quicksand-medium"
+                className="flex-1 bg-input border border-border h-12 rounded-lg px-4 text-base font-quicksand-medium"
                 value={createPaymentMethodForm.paymentsNumber}
                 onChangeText={(text) => setCreatePaymentMethodForm({ ...createPaymentMethodForm, paymentsNumber: text })}
                 placeholder='300 000 00 00'
@@ -267,7 +267,7 @@ const Settings = () => {
             </View>
 
             {/* Lista de métodos existentes */}
-            <View className="border-t border-slate-200 pt-3 space-y-3 gap-2">
+            <View className="border-t border-border pt-3 space-y-3 gap-2">
               {paymentMethods === undefined && <ActivityIndicator className="mt-2" />}
               {/* Reemplazamos la lista manual por el componente Paymentmethods */}
               <Paymentmethods paymentMethods={paymentMethods} />
@@ -276,11 +276,11 @@ const Settings = () => {
             <View className="mt-2 mb-6">
               <Pressable
                 onPress={() => router.push('/terms')}
-                className="flex-row items-center justify-between bg-white p-4 rounded-xl shadow-sm shadow-slate-300/50 active:opacity-70"
+                className="flex-row items-center justify-between bg-surface p-4 rounded-xl shadow-sm shadow-slate-300/50 active:opacity-70"
               >
                 <View className="flex-row items-center">
                   <Ionicons name="document-text-outline" size={22} color="#4f46e5" />
-                  <Text className="ml-3 text-base font-quicksand-bold text-slate-700">Ver Términos y Condiciones</Text>
+                  <Text className="ml-3 text-base font-quicksand-bold text-text-main">Ver Términos y Condiciones</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
               </Pressable>
