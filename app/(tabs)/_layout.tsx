@@ -190,7 +190,7 @@ const TabsLayout = () => {
         {/* Rutas que no son pestañas se ocultan con href: null */}
         <Tabs.Screen name="profile/edit-profile" options={{ href: null }} />
         <Tabs.Screen name="oauth-native-callback" options={{ href: null }} />
-        <Tabs.Screen name="(raffles)" options={{ href: null }} />
+        <Tabs.Screen name="(raffles)" options={{ href: null, headerShown: false }} />
       </Tabs>
     </>
   );
