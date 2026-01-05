@@ -242,6 +242,7 @@ export const getCreatorReputation = query({
         return {
             totalReviews: user.totalReviewsReceived ?? 0,
             averageRating: user.averageRating ?? 0,
+            profileImageUrl: user.profileImageUrl,
         };
     },
 });

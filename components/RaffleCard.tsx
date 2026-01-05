@@ -1,5 +1,6 @@
 import { api } from '@/convex/_generated/api';
 import { Doc, Id } from '@/convex/_generated/dataModel';
+import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from 'convex/react';
 import { Link, useRouter } from 'expo-router';
 import React from 'react';
@@ -69,25 +70,37 @@ export const RaffleCard = ({ item, currentUserId }: { item: RaffleWithDetails, c
             {statusInfo.text}
           </Text>
 
+          {/* Creator */}
+          <Pressable onPress={handleCreatorPress} className="flex-row items-center mt-2 self-start bg-slate-50 border border-slate-200 pl-1 pr-3 py-1 rounded-full active:bg-slate-100">
+            {reputation?.profileImageUrl ? (
+              <Image
+                source={{ uri: reputation.profileImageUrl }}
+                className="w-8 h-8 rounded-full bg-slate-200 mr-2"
+              />
+            ) : (
+              <View className="w-10 h-10 rounded-full bg-slate-200 mr-2 items-center justify-center">
+                <Ionicons name="person" size={28} color="#94a3b8" />
+              </View>
+            )}
+            <View>
+              <Text className="text-xs font-quicksand-bold text-slate-700" numberOfLines={1}>
+                {item.userName}
+              </Text>
+              {reputation && reputation.totalReviews > 0 && (
+                <View className="flex-row items-center">
+                  <StarRating rating={reputation.averageRating} size={10} maxStars={1} />
+                  <Text className="text-[10px] font-quicksand-bold text-amber-600 ml-0.5">
+                    {reputation.averageRating.toFixed(1)}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </Pressable>
           {/* Title */}
           <Text className="text-base font-quicksand-bold text-slate-800 mt-1 leading-5" numberOfLines={2}>
             {item.title}
           </Text>
 
-          {/* Creator */}
-          <Pressable onPress={handleCreatorPress} className="flex-row items-center mt-1 active:opacity-70">
-            <Text className="text-sm font-quicksand-medium text-slate-500" numberOfLines={1}>
-              {item.userName}
-            </Text>
-            {reputation && reputation.totalReviews > 0 && (
-              <View className="flex-row items-center ml-2">
-                <StarRating rating={reputation.averageRating} size={10} maxStars={1} />
-                <Text className="text-xs font-quicksand-bold text-amber-600 ml-0.5">
-                  {reputation.averageRating.toFixed(1)}
-                </Text>
-              </View>
-            )}
-          </Pressable>
 
           {/* Button Row */}
           <View className="flex-row items-center mt-3">
