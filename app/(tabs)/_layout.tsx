@@ -113,20 +113,14 @@ const TabsLayout = () => {
           name="(home)"
           options={{
             title: "Sorteos",
-            headerShown: true,
-            header: () => (
-              <TabScreenHeader
-                userName={convexUser?.userName}
-                isAdmin={convexUser?.userType === 'admin'}
-              />
-            ),
+            headerShown: false,
             tabBarIcon: ({ color }) => <Ionicons name="list-outline" color={color} size={26} />,
           }}
         />
         <Tabs.Screen
           name="(purchases)"
           listeners={({ navigation }) => ({
-            tabPress: (e) => {
+            tabPress: (e: any) => {
               // Resetear el stack navegando explícitamente al índice
               e.preventDefault();
               navigation.navigate('(purchases)', { screen: 'index' });
@@ -134,13 +128,7 @@ const TabsLayout = () => {
           })}
           options={{
             title: "Mis Compras",
-            headerShown: true,
-            header: () => (
-              <TabScreenHeader
-                userName={convexUser?.userName}
-                isAdmin={convexUser?.userType === 'admin'}
-              />
-            ),
+            headerShown: false,
             tabBarIcon: ({ color }) => <Ionicons name="ticket-outline" color={color} size={26} />,
           }}
         />

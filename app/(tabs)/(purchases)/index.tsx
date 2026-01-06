@@ -1,5 +1,4 @@
 import AuthFallback from '@/components/AuthFallback';
-import GlobalHeader from '@/components/GlobalHeader';
 import PurchaseListItemSkeleton from '@/components/skeletons/PurchaseListItemSkeleton';
 import { PURCHASE_STATUS_STYLES } from '@/constants/status';
 import { api } from '@/convex/_generated/api';
@@ -100,8 +99,7 @@ const MyPurchases = () => {
   // Estado de carga (mientras se obtiene el usuario o las compras iniciales)
   if (convexUser === undefined || (convexUser && status === 'LoadingFirstPage')) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-50">
-        <GlobalHeader />
+      <SafeAreaView className="flex-1 bg-slate-50" edges={['left', 'right', 'bottom']}>
         <View className="pt-4">
           <PurchaseListItemSkeleton />
           <PurchaseListItemSkeleton />

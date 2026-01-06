@@ -179,7 +179,7 @@ const RaffleSalesPage = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
+    <SafeAreaView className="flex-1 bg-slate-50" edges={['left', 'right', 'bottom']}>
       {/* <Stack.Screen options={{ title: raffle?.title ? `Ventas: ${raffle.title}` : 'Historial de Ventas' }} /> */}
       <FlatList
         data={purchases}

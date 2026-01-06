@@ -21,7 +21,7 @@ export default function RaffleDetailLayout() {
                 name="sales"
                 options={{
                     headerShown: true,
-                    title: 'Ventas del Sorteo'
+                    header: ({ options }) => <CustomHeader title={options.title || "Ventas del Sorteo"} showBackButton={true} />
                 }} />
         </Stack>
     );

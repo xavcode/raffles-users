@@ -1,3 +1,4 @@
+import CustomHeader from '@/components/CustomHeader';
 import HeaderRigth from '@/components/HeaderRigth';
 import { Stack } from 'expo-router';
 import React from 'react';
@@ -6,25 +7,29 @@ export default function RafflesStackLayout() {
   return (
     <Stack
       screenOptions={{
-        // Reutilizamos los estilos de header que ya tenías para consistencia
-        headerStyle: {
-          backgroundColor: '#f8fafc', // slate-50
-        },
-        headerTintColor: '#1e293b', // text-slate-800
-        headerTitleStyle: {
-          fontFamily: 'Quicksand-Bold',
-          fontSize: 18,
-        },
-        // headerTitleAlign: 'center',
-        // headerLeft: () => <HeaderLeft />,
-        headerRight: () => <HeaderRigth />,
-
+        headerShown: true,
       }}>
-      {/* Esta es la pantalla principal del Stack. El header no tendrá botón de "atrás", lo cual es correcto. */}
-      <Stack.Screen name="raffle" options={{ title: 'Administrar Sorteos', headerShown: false }} />
-      <Stack.Screen name="create-raffle" options={{ title: 'Crear Nuevo Sorteo' }} />
-      {/* Al navegar a estas pantallas, el Stack añadirá automáticamente un botón de "Atrás" a la izquierda. */}
-      <Stack.Screen name="edit/[id]" options={{ title: 'Editar Sorteo' }} />
+      <Stack.Screen
+        name="raffle"
+        options={{
+          title: 'Administrar Sorteos',
+          header: ({ options }) => <CustomHeader title={options.title || ""} renderRight={() => <HeaderRigth />} />
+        }}
+      />
+      <Stack.Screen
+        name="create-raffle"
+        options={{
+          title: 'Crear Nuevo Sorteo',
+          header: ({ options }) => <CustomHeader title={options.title || ""} showBackButton={true} />
+        }}
+      />
+      <Stack.Screen
+        name="edit/[id]"
+        options={{
+          title: 'Editar Sorteo',
+          header: ({ options }) => <CustomHeader title={options.title || ""} showBackButton={true} />
+        }}
+      />
     </Stack>
   );
 }

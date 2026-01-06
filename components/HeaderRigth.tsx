@@ -8,8 +8,8 @@ const HeaderRigth = () => {
         <Pressable onPress={() => { router.push('/(admin)/settings') }}>
             {
                 ({ pressed }) => (
-                    <View className={`flex mr-5 p-2 rounded-lg ${pressed ? 'bg-indigo-100' : 'bg-transparent'}`}>
-                        <Ionicons name="settings-outline" size={28} color={'#4f46e5'} />
+                    <View className={`w-12 h-12 items-center justify-center rounded-2xl ${pressed ? 'bg-indigo-100' : 'bg-indigo-50'}`}>
+                        <Ionicons name="settings-sharp" size={24} color={'#4f46e5'} />
                     </View>
                 )
             }

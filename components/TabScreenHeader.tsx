@@ -13,21 +13,25 @@ const TabScreenHeader = ({ userName, isAdmin }: TabScreenHeaderProps) => {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={{ backgroundColor: '#f8fafc', paddingTop: insets.top }}>
-      {/* <View style={{ backgroundColor: 'red', paddingTop: insets.top }}> */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 50, paddingHorizontal: 16 }}>
-        <View style={{ marginRight: 'auto' }}>
+    <View
+      style={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom - 8 }}
+      className='bg-white border-b border-slate-100 shadow-sm shadow-slate-200/50'
+    >
+      <View className='flex-row items-center justify-between h-14 px-4'>
+        <View className="flex-1">
           {userName ? (
-            <Text className="text-2xl font-quicksand-semibold text-primary">@{userName}</Text>
-          ) : null}
+            <Text className="text-2xl font-quicksand-bold text-primary tracking-tight">@{userName}</Text>
+          ) : (
+            <Text className="text-2xl font-quicksand-bold text-slate-800 tracking-tight">Sorteos</Text>
+          )}
         </View>
 
-        <View style={{ marginLeft: 'auto' }}>
+        <View>
           {isAdmin ? (
             <Link href="/(admin)" asChild>
-              <Pressable className="flex-row items-center bg-white p-3 rounded-full shadow-lg shadow-gray-300/50 active:bg-gray-100">
-                <Ionicons name="shield-checkmark-outline" size={24} color="#4f46e5" />
-                <Text className="text-primary font-quicksand-bold ml-2">Admin</Text>
+              <Pressable className="flex-row items-center bg-indigo-50 px-3 py-2 rounded-xl border border-indigo-100 active:bg-indigo-100">
+                <Ionicons name="shield-checkmark" size={18} color="#4f46e5" />
+                <Text className="text-sm text-primary font-quicksand-bold ml-1.5">Admin</Text>
               </Pressable>
             </Link>
           ) : null}

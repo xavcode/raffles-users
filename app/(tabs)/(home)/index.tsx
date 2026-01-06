@@ -67,7 +67,7 @@ const HomeScreen = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50" edges={['top', 'left', 'right']}>
+    <SafeAreaView className="flex-1 bg-slate-50" edges={['left', 'right']}>
       <TabView
         navigationState={{ index, routes: filteredRoutes }}
         renderScene={renderScene}

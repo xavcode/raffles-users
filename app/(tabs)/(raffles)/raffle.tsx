@@ -170,7 +170,7 @@ const RafflesPage = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
+    <SafeAreaView className="flex-1 bg-slate-50" edges={['left', 'right', 'bottom']}>
       <SectionList
         sections={sections}
         keyExtractor={(item) => item._id}
