@@ -87,7 +87,7 @@ const RaffleCard = ({ raffle }: { raffle: RaffleWithSales }) => {
       <View className="bg-slate-50/70 px-4 py-3 border-t border-slate-200/80 flex-row items-center justify-between gap-x-4">
         {/* Left Side: Actions */}
         <View className="flex-row items-center gap-x-1">
-          <Link href={`./${String(raffle._id)}/sales`} asChild>
+          <Link href={`/(tabs)/(home)/${raffle.customRaffleId}/sales`} asChild>
             <Pressable className="bg-indigo-50 h-10 px-3 rounded-lg flex-row items-center active:bg-indigo-100">
               <Ionicons name="list-outline" size={20} color="#4f46e5" />
               <Text className="text-indigo-700 font-quicksand-bold text-sm ml-1.5">Ventas</Text>

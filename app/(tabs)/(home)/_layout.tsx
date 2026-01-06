@@ -1,4 +1,3 @@
-import CustomHeader from "@/components/CustomHeader";
 import { Stack } from 'expo-router';
 import React from 'react';
 
@@ -27,8 +26,7 @@ export default function HomeStackLayout() {
       <Stack.Screen
         name="[customRaffleId]"
         options={{
-          headerShown: true,
-          header: ({ options }) => <CustomHeader title={options.title || ""} showBackButton={true} />
+          headerShown: false, // Delegamos el header al layout interno
         }} />
     </Stack>
   );
